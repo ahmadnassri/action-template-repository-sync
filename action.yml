@@ -1,0 +1,24 @@
+name: Template Repository Sync
+description: Keep projects in sync with the template repository they came from
+
+branding:
+  color: blue
+  icon: refresh-cw
+
+inputs:
+  github-token:
+    description: The GitHub token to use
+    required: true
+
+  config:
+    description: Path to configuration file (relative to root)
+    default: .github/template-sync.yml
+    required: false
+
+  dry-run:
+    description: dry-run mode
+    default: false
+
+runs:
+  using: docker
+  image: docker://ghcr.io/ahmadnassri/action-template-repository-sync:v1

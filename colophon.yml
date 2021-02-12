@@ -1,0 +1,8 @@
+version: 2.0
+
+id: action-template-repository-sync
+
+about:
+  title: "GitHub Action: Template Repository Sync"
+  description: Keep projects in sync with the template repository they came from
+  repository: ahmadnassri/action-template-repository-sync
