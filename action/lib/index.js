@@ -87,7 +87,7 @@ export default async function ({ token, dry, config: path }) {
       // update the repo
         await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
           message: `chore(template): sync with ${github.context.repo.owner}/${github.context.repo.repo}`,
-          content: contents.get(path),
+          content: contents.get(path).toString('base64'),
           owner: github.context.repo.owner,
           repo,
           path,
