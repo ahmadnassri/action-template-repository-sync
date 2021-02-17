@@ -16,10 +16,26 @@ import repos from './repos.js'
 
 const workspace = process.env.GITHUB_WORKSPACE || '/github/workspace'
 
+const allowed = [
+  'schedule',
+  'workflow_dispatch',
+  'repository_dispatch',
+  'pull_request',
+  'release',
+  'workflow_run',
+  'push'
+]
+
 export default async function ({ token, dry, config: path }) {
   if (dry) {
     core.info('running in dry-run mode')
   }
+
+  if (!allowed.includes(github.context.eventName)) {
+    core.setFailed(`action ran on incompatible event "${github.context.eventName}", only "${allowed.join('", "')}" are allowed`)
+    process.exit(1)
+  }
+
   // init octokit
   const octokit = github.getOctokit(token)
 

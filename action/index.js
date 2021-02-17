@@ -16,7 +16,7 @@ const inputs = {
 
 // error handler
 function errorHandler ({ message }) {
-  core.error(`${message}`)
+  core.setFailed(`${message}`)
   process.exit(1)
 }
 

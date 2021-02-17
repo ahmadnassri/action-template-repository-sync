@@ -27,7 +27,7 @@ export default function ({ workspace, path }) {
     core.debug(`config loaded: ${inspect(options)}`)
     return options
   } catch (err) {
-    core.error('failed to parse config')
+    core.setFailed('failed to parse config')
     process.exit(1)
   }
 }
