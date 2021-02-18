@@ -33,8 +33,8 @@ export default async function ({ token, dry, config: path }) {
   }
 
   if (!allowed.includes(github.context.eventName)) {
-    core.setFailed(`action ran on incompatible event "${github.context.eventName}", only "${allowed.join('", "')}" are allowed`)
-    process.exit(1)
+    core.warning(`action ran on incompatible event "${github.context.eventName}", only "${allowed.join('", "')}" are allowed`)
+    process.exit(0)
   }
 
   // init octokit
