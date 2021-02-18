@@ -30,7 +30,38 @@ jobs:
           dry-run: true
 ```
 
+<details>
+  <summary><em>A more practical example</em></summary>
+
+```yaml
+name: template-sync
+
+on:
+  pull_request: # run on pull requests to preview changes before applying
+
+  workflow_run: # setup this workflow as a dependency of others
+    workflows: [ test, release ] # don't sync template unless tests and other important workflows have passed
+
+jobs:
+  template-sync:
+    timeout-minutes: 20
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ahmadnassri/action-workflow-run-wait@v1 # wait for workflow_run to be successful
+      - uses: ahmadnassri/action-workflow-queue@v1 # avoid conflicts, by running this template one at a time
+      - uses: ahmadnassri/action-template-repository-sync@v1
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+```
+</details>
+
+>  
+
 > :warning: **HIGHLY RECOMMEND** to set `dry-run: true` for the first time you use this action, inspect the output to confirm if the affected repositories list is what you wanted to commit files to
+
 
 ###### `.github/template-sync.yml`
 
