@@ -100,28 +100,29 @@ export default async function ({ token, dry, config: path }) {
         continue
       }
 
-      if (dry) {
-        core.info(`[dry-run] ⚠ ${repo}:${path}`)
+      // in pull request mode
+      if (github.context.eventName === 'pull_request') {
+        const before = content ? content.toString('utf8') : ''
+        const after = contents.get(path).toString('utf8')
+
+        const patch = createPatch(`${repo}:${path}`, before, after)
+
+        patches.push(patch)
       } else {
-        // in pull request mode
-        if (github.context.eventName === 'pull_request') {
-          const before = content ? content.toString('utf8') : ''
-          const after = contents.get(path).toString('utf8')
-
-          const patch = createPatch(`${repo}:${path}`, before, after)
-
-          patches.push(patch)
-        } else {
-          // update the repo
-          await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
-            message: `chore(template): sync with ${github.context.repo.owner}/${github.context.repo.repo}`,
-            content: contents.get(path).toString('base64'),
-            owner: github.context.repo.owner,
-            repo,
-            path,
-            sha
-          })
+        if (dry) {
+          core.info(`[dry-run] ⚠ ${repo}:${path}`)
+          continue
         }
+
+        // update the repo
+        await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
+          message: `chore(template): sync with ${github.context.repo.owner}/${github.context.repo.repo}`,
+          content: contents.get(path).toString('base64'),
+          owner: github.context.repo.owner,
+          repo,
+          path,
+          sha
+        })
 
         core.info(`✔ ${repo}:${path}`)
       }
