@@ -32,18 +32,19 @@ export default async function (octokit, options) {
 
   const api = (type === 'User') ? 'GET /users/{username}/repos' : 'GET /orgs/{org}/repos'
 
-  const repositories = await octokit.paginate(api, {
+  const all = await octokit.paginate(api, {
     username: github.context.repo.owner,
     org: github.context.repo.owner,
     per_page: 100,
     mediaType
   })
 
+  const repositories = all.filter(repo => repo.archived === false) // only include non-archived repos
+
   core.debug(`repo owner type is "${type}" with ${repositories.length} repositories`)
 
   // find all repos that mark this template as their source
   let dependents = repositories
-    .filter(repo => repo.archived === false) // only include non-archived repos
     .filter(repo => repo.template_repository && repo.template_repository.full_name === full_name)
     .map(repo => repo.name)
 
