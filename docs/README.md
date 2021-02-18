@@ -16,7 +16,7 @@ This action will **automatically** detect all repositories within your account _
 ###### `.github/workflows/template-sync.yml`
 
 ```yaml
-on: push
+on: [push, pull_request]
 
 jobs:
   template-sync:
@@ -86,6 +86,8 @@ a list of file name patterns to include or exclude
 
 ## :warning: Operational Logic
 
+- The action will only run on the following event types: 'schedule`, `workflow_dispatch`, `repository_dispatch`, `pull_request`, `release`, `workflow_run`, `push`.
+- The when run in `pull_request`, the action will post post a comment on the the Pull Request with the diff view of files to be changed.
 - The action will look for files under the `GITHUB_WORKSPACE` environment path
 - The action will read file contents **AT RUN TIME** _(so you can run build steps or modify content before running the action if you so wish)_
 - If no config file is present indicating which files to filter, the action will sync **ALL FILES** in the template repository
