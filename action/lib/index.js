@@ -9,6 +9,7 @@ import core from '@actions/core'
 import github from '@actions/github'
 import globby from 'globby'
 import micromatch from 'micromatch'
+import { createPatch } from 'diff'
 
 // modules
 import config from './config.js'
@@ -71,6 +72,8 @@ export default async function ({ token, dry, config: path }) {
   core.debug(`found ${paths.length} files to sync`)
   if (paths.length > 0) core.debug(inspect(paths))
 
+  const patches = []
+
   // iterate through the repos
   for (const repo of repositories) {
     // iterate through files
@@ -100,18 +103,49 @@ export default async function ({ token, dry, config: path }) {
       if (dry) {
         core.info(`[dry-run] ⚠ ${repo}:${path}`)
       } else {
-      // update the repo
-        await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
-          message: `chore(template): sync with ${github.context.repo.owner}/${github.context.repo.repo}`,
-          content: contents.get(path).toString('base64'),
-          owner: github.context.repo.owner,
-          repo,
-          path,
-          sha
-        })
+        // in pull request mode
+        if (github.context.eventName === 'pull_request') {
+          const before = content ? content.toString('utf8') : ''
+          const after = contents.get(path).toString('utf8')
+
+          const patch = createPatch(`${repo}:${path}`, before, after)
+
+          patches.push(patch)
+        } else {
+          // update the repo
+          await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
+            message: `chore(template): sync with ${github.context.repo.owner}/${github.context.repo.repo}`,
+            content: contents.get(path).toString('base64'),
+            owner: github.context.repo.owner,
+            repo,
+            path,
+            sha
+          })
+        }
 
         core.info(`✔ ${repo}:${path}`)
       }
     }
+  }
+
+  if (patches.length > 0) {
+    const { payload: { pull_request } } = github.context
+
+    const body = `
+##### Template Repository Sync Report:
+
+${patches.length} files to update:
+
+<details><summary>Show Diff</summary>
+
+${patches.map(patch => `\`\`\`diff\n${patch}\n\`\`\``).join('\n\n')}
+</details>
+`
+    // update PR
+    await octokit.issues.createComment({
+      ...github.context.repo,
+      issue_number: pull_request.number,
+      body
+    })
   }
 }

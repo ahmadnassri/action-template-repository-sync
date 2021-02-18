@@ -1,6 +1,3 @@
-// node modules
-import { inspect } from 'util'
-
 // packages
 import core from '@actions/core'
 
