@@ -43,7 +43,7 @@ export default async function (octokit, options) {
 
   // find all repos that mark this template as their source
   let dependents = repositories
-    .filter(repo => !repo.archived) // only include non-archived repos
+    .filter(repo => repo.archived === false) // only include non-archived repos
     .filter(repo => repo.template_repository && repo.template_repository.full_name === full_name)
     .map(repo => repo.name)
 
