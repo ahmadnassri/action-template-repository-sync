@@ -69,7 +69,7 @@ export default async function ({ token, dry, config: path }) {
     contents.set(path, content)
   }
 
-  core.debug(`found ${paths.length} files to sync`)
+  core.info(`found ${paths.length} files to sync`)
   if (paths.length > 0) core.debug(inspect(paths))
 
   const patches = []
@@ -96,7 +96,7 @@ export default async function ({ token, dry, config: path }) {
 
       // exit early
       if (content && content.compare(contents.get(path)) === 0) {
-        core.info(`ℹ ${repo}:${path} is up to date`)
+        core.debug(`✔ ${repo}:${path} is up to date`)
         continue
       }
 
@@ -110,7 +110,7 @@ export default async function ({ token, dry, config: path }) {
         patches.push(patch)
       } else {
         if (dry) {
-          core.info(`[dry-run] ⚠ ${repo}:${path}`)
+          core.info(`⚠ ${repo}:${path} will be updated [dry-run]`)
           continue
         }
 
@@ -124,7 +124,7 @@ export default async function ({ token, dry, config: path }) {
           sha
         })
 
-        core.info(`✔ ${repo}:${path}`)
+        core.info(`✔ ${repo}:${path} is updated`)
       }
     }
   }

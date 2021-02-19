@@ -51,11 +51,12 @@ export default async function (octokit, options) {
   // run filter
   if (options.dependents.length > 0) dependents = micromatch(dependents, options.dependents)
 
-  core.debug(`found ${dependents.length} repositories marked as dependents`)
+  core.info(`found ${dependents.length} repositories marked as dependents`)
   if (dependents.length > 0) core.debug(inspect(dependents))
 
   let additional = []
 
+  // TODO run a schema validation for config
   if (options.additional.length > 0) {
     // create list of all repos
     additional = repositories.map(repo => repo.name)
@@ -63,14 +64,14 @@ export default async function (octokit, options) {
     // any special ones to include?
     additional = micromatch(additional, options.additional)
 
-    core.debug(`found ${additional.length} repositories marked as additional`)
+    core.info(`found ${additional.length} repositories marked as additional`)
     if (additional.length > 0) core.debug(inspect(additional))
   }
 
   // combine them & remove duplicates
   const final = [...new Set([...dependents, ...additional])]
 
-  core.debug(`final list of repos includes ${final.length} repositories`)
+  core.info(`final list of repos includes ${final.length} repositories`)
   if (final.length > 0) core.debug(inspect(final))
 
   return final
