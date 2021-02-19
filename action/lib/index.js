@@ -129,24 +129,30 @@ export default async function ({ token, dry, config: path }) {
     }
   }
 
-  if (patches.length > 0) {
+  // pull request mode
+  if (github.context.eventName === 'pull_request') {
     const { payload: { pull_request } } = github.context
 
-    const body = `
-##### Template Repository Sync Report:
+    const header = ['##### Template Repository Sync Report']
 
-${patches.length} files to update:
+    let message
 
-<details><summary>Show Diff</summary>
+    if (patches.length === 0) {
+      message = ['no changes to sync']
+    } else {
+      message = [
+        `> Found ${patches.length} files to update`,
+        '<details><summary>Show Diff</summary>',
+        patches.map(patch => `\`\`\`diff\n${patch}\n\`\`\``).join('\n\n'),
+        '</details>'
+      ]
+    }
 
-${patches.map(patch => `\`\`\`diff\n${patch}\n\`\`\``).join('\n\n')}
-</details>
-`
     // update PR
     await octokit.issues.createComment({
       ...github.context.repo,
       issue_number: pull_request.number,
-      body
+      body: header.concat(message).join('\n')
     })
   }
 }
