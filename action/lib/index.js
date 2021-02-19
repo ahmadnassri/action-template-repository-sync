@@ -143,7 +143,9 @@ export default async function ({ token, dry, config: path }) {
       message = [
         `> Found ${patches.length} files to update`,
         '<details><summary>Show Diff</summary>',
+        '',
         patches.map(patch => `\`\`\`diff\n${patch}\n\`\`\``).join('\n\n'),
+        '',
         '</details>'
       ]
     }
