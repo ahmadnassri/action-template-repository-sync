@@ -76,6 +76,8 @@ export default async function ({ token, dry, config: path }) {
 
   // iterate through the repos
   for (const repo of repositories) {
+
+    const newTree = []
     // iterate through files
     for (const path of paths) {
       let sha
@@ -115,17 +117,58 @@ export default async function ({ token, dry, config: path }) {
         }
 
         // update the repo
-        await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
-          message: `chore(template): sync with ${github.context.repo.owner}/${github.context.repo.repo}`,
-          content: contents.get(path).toString('base64'),
-          owner: github.context.repo.owner,
-          repo,
+        newTree.push({
           path,
-          sha
+          content: contents.get(path).toString('base64'),
+          mode: '100644'
         })
 
         core.info(`✔ ${repo}:${path} is updated`)
       }
+    }
+
+    if (newTree) {
+      // get the default branch
+      const repoInfo = await octokit.request('GET /repos/{owner}/{repo}', {
+        owner: github.context.repo.owner,
+        repo
+      })
+
+      // Grab the latest commits
+      const commits = await octokit.request('GET /repos/{owner}/{repo}/commits?per_page=1', {
+        owner: github.context.repo.owner,
+        repo: repo
+      })
+
+      // Get the latest commit data
+      const latestCommit = commits.data[0]
+
+      // Make a new tree for the deltas
+      const newTree = await octokit.request('POST /repos/{owner}/{repo}/git/trees', {
+        owner: github.context.repo.owner,
+        repo: repo,
+        base_tree: latestCommit.commit.tree.sha,
+        tree: newTree
+      })
+
+      // Make a new commit with the delta tree
+      const newCommit = await octokit.request('POST /repos/{owner}/{repo}/git/commits', {
+        owner: github.context.repo.owner,
+        repo: repo,
+        message: `chore(template): sync with ${github.context.repo.owner}/${github.context.repo.repo}`,
+        tree: newTree.data.sha,
+        parents: [
+          latestCommit.sha
+        ]
+      })
+
+      // Set HEAD of default branch to the new commit
+      await octokit.request('PATCH /repos/{owner}/{repo}/git/refs/{ref}', {
+        owner: github.context.repo.owner,
+        repo: repo,
+        ref: `heads/${repoInfo.data.default_branch}`,
+        sha: newCommit.data.sha
+      })
     }
   }
 
