@@ -117,7 +117,7 @@ export default async function ({ token, dry, config: path }) {
         }
 
         // update the repo
-        newTree.push({
+        newTreeContent.push({
           path,
           content: contents.get(path).toString('base64'),
           mode: '100644'
@@ -137,7 +137,7 @@ export default async function ({ token, dry, config: path }) {
       // Grab the latest commits
       const commits = await octokit.request('GET /repos/{owner}/{repo}/commits?per_page=1', {
         owner: github.context.repo.owner,
-        repo: repo
+        repo
       })
 
       // Get the latest commit data
@@ -146,7 +146,7 @@ export default async function ({ token, dry, config: path }) {
       // Make a new tree for the deltas
       const newTree = await octokit.request('POST /repos/{owner}/{repo}/git/trees', {
         owner: github.context.repo.owner,
-        repo: repo,
+        repo,
         base_tree: latestCommit.commit.tree.sha,
         tree: newTreeContent
       })
@@ -154,7 +154,7 @@ export default async function ({ token, dry, config: path }) {
       // Make a new commit with the delta tree
       const newCommit = await octokit.request('POST /repos/{owner}/{repo}/git/commits', {
         owner: github.context.repo.owner,
-        repo: repo,
+        repo,
         message: `chore(template): sync with ${github.context.repo.owner}/${github.context.repo.repo}`,
         tree: newTree.data.sha,
         parents: [
@@ -165,7 +165,7 @@ export default async function ({ token, dry, config: path }) {
       // Set HEAD of default branch to the new commit
       await octokit.request('PATCH /repos/{owner}/{repo}/git/refs/{ref}', {
         owner: github.context.repo.owner,
-        repo: repo,
+        repo,
         ref: `heads/${repoInfo.data.default_branch}`,
         sha: newCommit.data.sha
       })
