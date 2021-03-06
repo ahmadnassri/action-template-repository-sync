@@ -77,7 +77,7 @@ export default async function ({ token, dry, config: path }) {
   // iterate through the repos
   for (const repo of repositories) {
 
-    const newTree = []
+    const newTreeContent = []
     // iterate through files
     for (const path of paths) {
       let sha
@@ -127,7 +127,7 @@ export default async function ({ token, dry, config: path }) {
       }
     }
 
-    if (newTree) {
+    if (newTreeContent) {
       // get the default branch
       const repoInfo = await octokit.request('GET /repos/{owner}/{repo}', {
         owner: github.context.repo.owner,
@@ -148,7 +148,7 @@ export default async function ({ token, dry, config: path }) {
         owner: github.context.repo.owner,
         repo: repo,
         base_tree: latestCommit.commit.tree.sha,
-        tree: newTree
+        tree: newTreeContent
       })
 
       // Make a new commit with the delta tree
