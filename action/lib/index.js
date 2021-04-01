@@ -22,6 +22,7 @@ const allowed = [
   'workflow_dispatch',
   'repository_dispatch',
   'pull_request',
+  'pull_request_target',
   'release',
   'workflow_run',
   'push'
@@ -101,7 +102,7 @@ export default async function ({ token, dry, config: path }) {
       }
 
       // in pull request mode
-      if (github.context.eventName === 'pull_request') {
+      if (['pull_request', 'pull_request_target'].includes(github.context.eventName)) {
         const before = content ? content.toString('utf8') : ''
         const after = contents.get(path).toString('utf8')
 
@@ -130,7 +131,7 @@ export default async function ({ token, dry, config: path }) {
   }
 
   // pull request mode
-  if (github.context.eventName === 'pull_request') {
+  if (['pull_request', 'pull_request_target'].includes(github.context.eventName)) {
     const { payload: { pull_request } } = github.context
 
     const header = ['##### Template Repository Sync Report']
