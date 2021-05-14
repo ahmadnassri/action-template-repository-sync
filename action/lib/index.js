@@ -70,38 +70,41 @@ export default async function ({ token, dry, config: path }) {
     contents.set(path, content)
   }
 
-  core.info(`found ${paths.length} files to sync`)
+  core.info(`found ${paths.length} files available to sync`)
+
   if (paths.length > 0) core.debug(inspect(paths))
 
   const patches = []
 
   // iterate through the repos
   for (const repo of repositories) {
+    const newContent = []
+
     // iterate through files
     for (const path of paths) {
-      let sha
       let content
 
       try {
-        const { data } = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
+        // fetch the content from the target repo to compare against it
+        const { data: { content: encoded } } = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
           owner: github.context.repo.owner,
           repo,
           path
         })
 
-        sha = data.sha
-        content = Buffer.from(data.content, 'base64')
+        // convert to a buffer
+        content = Buffer.from(encoded, 'base64')
       } catch (err) {
         core.debug(`GET /repos/{owner}/${repo}/contents/${path} => ${err.message}`)
       }
 
-      // exit early
+      // exit early if content is the same
       if (content && content.compare(contents.get(path)) === 0) {
         core.debug(`✔ ${repo}:${path} is up to date`)
         continue
       }
 
-      // in pull request mode
+      // check if in pull request mode
       if (['pull_request', 'pull_request_target'].includes(github.context.eventName)) {
         const before = content ? content.toString('utf8') : ''
         const after = contents.get(path).toString('utf8')
@@ -115,18 +118,56 @@ export default async function ({ token, dry, config: path }) {
           continue
         }
 
-        // update the repo
-        await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
-          message: `chore(template): sync with ${github.context.repo.owner}/${github.context.repo.repo}`,
-          content: contents.get(path).toString('base64'),
-          owner: github.context.repo.owner,
-          repo,
+        // add file to update tree
+        newContent.push({
           path,
-          sha
+          content: contents.get(path).toString('base64'),
+          mode: '100644' // TODO fetch current file mode
         })
 
-        core.info(`✔ ${repo}:${path} is updated`)
+        core.info(`⚠ ${repo}:${path} will be updated`)
       }
+    }
+
+    if (newContent) {
+      // get the default branch
+      const { data: { default_branch } } = await octokit.request('GET /repos/{owner}/{repo}', {
+        owner: github.context.repo.owner,
+        repo
+      })
+
+      // Grab the latest commit
+      const { data: [{ sha, commit: { tree } }] } = await octokit.request('GET /repos/{owner}/{repo}/commits?per_page=1', {
+        owner: github.context.repo.owner,
+        repo
+      })
+
+      // Make a new tree for the deltas
+      const { data: newTree } = await octokit.request('POST /repos/{owner}/{repo}/git/trees', {
+        owner: github.context.repo.owner,
+        repo,
+        base_tree: tree.sha,
+        tree: newContent
+      })
+
+      // Make a new commit with the delta tree
+      const { data: newCommit } = await octokit.request('POST /repos/{owner}/{repo}/git/commits', {
+        owner: github.context.repo.owner,
+        repo,
+        message: `chore(template): sync with ${github.context.repo.owner}/${github.context.repo.repo}`,
+        tree: newTree.sha,
+        parents: [sha]
+      })
+
+      // Set HEAD of default branch to the new commit
+      await octokit.request('PATCH /repos/{owner}/{repo}/git/refs/{ref}', {
+        owner: github.context.repo.owner,
+        repo,
+        ref: `heads/${default_branch}`,
+        sha: newCommit.sha
+      })
+
+      core.info(`✔ ${repo} is updated`)
     }
   }
 
