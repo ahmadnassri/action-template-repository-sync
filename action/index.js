@@ -12,8 +12,9 @@ const inputs = {
 }
 
 // error handler
-function errorHandler ({ message }) {
-  core.setFailed(`${message}`)
+function errorHandler (error) {
+  core.setFailed(`${error.message}`)
+  core.debug(error)
   process.exit(1)
 }
 
