@@ -1,3 +1,6 @@
+// node modules
+import { inspect } from 'util'
+
 // packages
 import core from '@actions/core'
 
@@ -14,7 +17,7 @@ const inputs = {
 // error handler
 function errorHandler (error) {
   core.setFailed(`${error.message}`)
-  core.debug(error)
+  core.debug(inspect(error))
   process.exit(1)
 }
 
