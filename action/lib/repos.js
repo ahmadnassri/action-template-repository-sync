@@ -57,13 +57,13 @@ export default async function (octokit, options) {
   let additional = []
 
   // TODO run a schema validation for config
-  
+
   if (options.additional.length > 0) {
     additional = repositories
-        // exclude the template repo itself
-        .filter(repo => repo.full_name != full_name)
-        // create list of all names
-       .map(repo => repo.name)
+      // exclude the template repo itself
+      .filter(repo => repo.full_name !== full_name)
+      // create list of all names
+      .map(repo => repo.name)
 
     // any special ones to include?
     additional = micromatch(additional, options.additional)

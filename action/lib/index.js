@@ -155,6 +155,7 @@ export default async function ({ token, dry, config: path }) {
       })
 
       core.debug(`${repo}: new tree: ${newTree.sha}`)
+      core.debug(inspect(newTree))
 
       // Make a new commit with the delta tree
       const { data: newCommit } = await octokit.request('POST /repos/{owner}/{repo}/git/commits', {
@@ -166,6 +167,7 @@ export default async function ({ token, dry, config: path }) {
       })
 
       core.debug(`${repo}: new commit: ${newCommit.sha}`)
+      core.debug(inspect(newCommit))
 
       // Set HEAD of default branch to the new commit
       await octokit.request('PATCH /repos/{owner}/{repo}/git/refs/{ref}', {
