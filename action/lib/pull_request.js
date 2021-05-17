@@ -4,42 +4,36 @@ import { createPatch } from 'diff'
 import github from '@actions/github'
 
 export default async function (octokit, { changedRepositories, localFiles }) {
-  const patches = []
+  const body = ['##### Template Repository Sync Report']
 
-  for (const [repo, remoteFiles] of changedRepositories.entries()) {
-    for (const [path, remoteContent] of remoteFiles.entries()) {
-      const before = remoteContent.toString('utf8')
-      const after = localFiles.get(path).toString('utf8')
+  if (changedRepositories.size === 0) {
+    body.push('> no changes to sync')
+  } else {
+    const count = [...changedRepositories.values()].map(x => [...x.values()]).flat().length
 
-      const patch = createPatch(`${repo}:${path}`, before, after)
+    body.push(`> Found ${count} files to update in ${changedRepositories.size} repositories`, '')
 
-      patches.push(patch)
+    for (const [repo, remoteFiles] of changedRepositories.entries()) {
+      body.push(`<details><summary>${repo}</summary>`, '')
+
+      for (const [path, remoteContent] of remoteFiles.entries()) {
+        const before = remoteContent.toString('utf8')
+        const after = localFiles.get(path).toString('utf8')
+
+        const patch = createPatch(path, before, after)
+
+        body.push('```diff', patch, '```', '', '')
+      }
+
+      body.push('</details>', '')
     }
   }
 
   const { payload: { pull_request } } = github.context
-
-  const header = ['##### Template Repository Sync Report']
-
-  let message
-
-  if (patches.length === 0) {
-    message = ['no changes to sync']
-  } else {
-    message = [
-        `> Found ${patches.length} files to update`,
-        '<details><summary>Show Diff</summary>',
-        '',
-        patches.map(patch => `\`\`\`diff\n${patch}\n\`\`\``).join('\n\n'),
-        '',
-        '</details>'
-    ]
-  }
-
   // update PR
   await octokit.issues.createComment({
     ...github.context.repo,
     issue_number: pull_request.number,
-    body: header.concat(message).join('\n')
+    body: body.join('\n')
   })
 }
