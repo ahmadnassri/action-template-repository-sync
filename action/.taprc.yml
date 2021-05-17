@@ -1,0 +1,15 @@
+# ----------------------------------------------------------- #
+# Note: this file originates in ahmadnassri/template-node-lib #
+# ----------------------------------------------------------- #
+
+ts: false
+jsx: false
+flow: false
+coverage: true
+browser: false
+color: true
+coverage-report: html
+node-arg:
+  - --no-warnings
+  - --experimental-loader
+  - '@istanbuljs/esm-loader-hook'

@@ -1,0 +1,11 @@
+dependents:
+  - "include*"
+  - "!exclude*"
+
+additional:
+  - "additional-include*"
+  - "!additional-exclude-*"
+
+files:
+  - "include-file"
+  - "!exclude-file"

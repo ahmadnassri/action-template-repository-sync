@@ -9,8 +9,10 @@
     "url": "https://ahmadnassri.com"
   },
   "scripts": {
-    "test": "echo nothing to test && exit 0",
-    "test:ci": "echo nothing to test && exit 0"
+    "test": "tap test --no-coverage",
+    "test:watch": "tap test --watch",
+    "test:ci": "tap test --100",
+    "test:report": "opener coverage/lcov-report/index.html"
   },
   "type": "module",
   "main": "index.js",
@@ -22,5 +24,10 @@
     "globby": "^11.0.3",
     "micromatch": "^4.0.2",
     "yaml": "^1.10.2"
+  },
+  "devDependencies": {
+    "@istanbuljs/esm-loader-hook": "^0.1.2",
+    "sinon": "^10.0.0",
+    "tap": "^15.0.9"
   }
 }

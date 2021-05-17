@@ -1,7 +1,7 @@
 // internals
-import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { inspect } from 'util'
+import { readFileSync, existsSync } from 'fs'
 
 // packages
 import yaml from 'yaml'
@@ -22,7 +22,7 @@ export default function ({ workspace, path }) {
     let options = yaml.parse(readFileSync(configPath, 'utf8'))
 
     // set some defaults
-    options = Object.assign(initial, options)
+    options = { ...initial, ...options }
 
     core.debug(`config loaded: ${inspect(options)}`)
     return options

@@ -1,0 +1,3 @@
+dependents:
+ include: foo
+ - bar
