@@ -6,9 +6,12 @@ import core from '@actions/core'
 import github from '@actions/github'
 
 // modules
-import repos from './lib/repos.js'
-import push from './lib/push.js'
+import config from './lib/config.js'
+import files from './lib/files.js'
 import pull_request from './lib/pull_request.js'
+import push from './lib/push.js'
+import repos from './lib/repos.js'
+import scan from './lib/scan.js'
 
 const workspace = process.env.GITHUB_WORKSPACE || '/github/workspace'
 
