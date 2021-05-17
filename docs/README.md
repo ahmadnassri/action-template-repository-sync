@@ -11,7 +11,7 @@ However, after you "use" the template for first time, the two repositories will 
 
 This action will **automatically** detect all repositories within your account _(user or org)_ that has been "initialized" from the template repository _(referred to as "dependents" in this doc)_
 
-> :fire: **NOTE** There is currently a [bug in the GitHub APIs](https://github.com/github/docs/issues/3630) preventing this action from automatically detecting dependent repositories, until this is tis resolved, please use `additional` property in the config file to manually include repositories you want to sync
+> :fire: **NOTE** There is currently a [bug in the GitHub APIs](https://github.com/github/docs/issues/4894) preventing this action from automatically detecting dependent repositories, until this is tis resolved, please use `additional` property in the config file to manually include repositories you want to sync
 
 ###### `.github/workflows/template-sync.yml`
 
