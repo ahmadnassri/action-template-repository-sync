@@ -13,7 +13,7 @@ export default async function (octokit, { changedRepositories, localFiles, input
       // add file to update tree
       newContent.push({
         path,
-        content: localFiles.get(path),
+        content: localFiles.get(path).toString(),
         mode: '100644' // TODO fetch current file mode
       })
 
