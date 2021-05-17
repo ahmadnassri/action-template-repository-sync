@@ -71,7 +71,7 @@ if (repositories.length === 0) {
 }
 
 // load files
-const localFiles = files(workspace, options)
+const localFiles = await files(workspace, options)
 
 // scan repos
 const changedRepositories = await scan(octokit, { repositories, localFiles })
