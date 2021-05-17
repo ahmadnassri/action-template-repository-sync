@@ -54,8 +54,8 @@ test('remote files as the same', async assert => {
   assert.equal(changedRepositories.size, 0)
 })
 
-test('remote file failed', async assert => {
-  assert.plan(3)
+test('remote file = 404', async assert => {
+  assert.plan(2)
 
   const octokit = {
     request: sinon.fake.throws('errorMessage')
@@ -63,8 +63,24 @@ test('remote file failed', async assert => {
 
   const changedRepositories = await scan(octokit, { repositories, localFiles })
 
-  assert.ok(core.debug.calledWith('GET /repos/{owner}/foo/contents//path/file => errorMessage'))
-  assert.ok(core.warning.calledWith('✖ foo:/path/file remote lookup failed'))
+  assert.same(changedRepositories, new Map([
+    ['foo', new Map([['/path/file', Buffer.from('')]])]
+  ]))
 
-  assert.equal(changedRepositories.size, 0)
+  assert.equal(changedRepositories.size, 1)
 })
+
+// test('remote file failed', async assert => {
+//   assert.plan(3)
+
+//   const octokit = {
+//     request: sinon.fake.throws('errorMessage')
+//   }
+
+//   const changedRepositories = await scan(octokit, { repositories, localFiles })
+
+//   assert.ok(core.debug.calledWith('GET /repos/{owner}/foo/contents//path/file => errorMessage'))
+//   assert.ok(core.warning.calledWith('✖ foo:/path/file remote lookup failed'))
+
+//   assert.equal(changedRepositories.size, 0)
+// })

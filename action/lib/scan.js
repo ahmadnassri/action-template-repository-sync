@@ -27,9 +27,13 @@ export default async function (octokit, { repositories, localFiles }) {
         remoteContent = Buffer.from(encoded, 'base64')
       } catch (err) {
         // exit early
-        core.warning(`✖ ${repo}:${path} remote lookup failed`)
-        core.debug(`GET /repos/{owner}/${repo}/contents/${path} => ${err.message}`)
-        continue
+        // TODO: distinguish between 404 and other errors
+        // core.warning(`✖ ${repo}:${path} remote lookup failed`)
+        // core.debug(`GET /repos/{owner}/${repo}/contents/${path} => ${err.message}`)
+        // continue
+
+        // indicate an empty file
+        remoteContent = Buffer.from('')
       }
 
       // exit early if content is the same
