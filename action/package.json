@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@istanbuljs/esm-loader-hook": "^0.1.2",
-    "sinon": "^10.0.0",
+    "sinon": "^11.1.0",
     "tap": "^15.0.9"
   }
 }
