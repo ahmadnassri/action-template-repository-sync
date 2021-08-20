@@ -18,7 +18,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.2.6",
+    "@actions/core": "^1.5.0",
     "@actions/github": "^4.0.0",
     "diff": "^5.0.0",
     "globby": "^11.0.3",
