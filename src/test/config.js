@@ -2,12 +2,11 @@ import sinon from 'sinon'
 import { inspect } from 'util'
 import { test, afterEach } from 'tap'
 
-import { URL, fileURLToPath } from 'url'
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
-
-// packages
 import core from '@actions/core'
 import config from '../lib/config.js'
+
+import { URL, fileURLToPath } from 'url'
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 afterEach(() => {
   sinon.restore()

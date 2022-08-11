@@ -2,13 +2,12 @@ import sinon from 'sinon'
 import { join } from 'path'
 import { test } from 'tap'
 
-import { URL, fileURLToPath } from 'url'
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
-
-// packages
 import core from '@actions/core'
 import files from '../lib/files.js'
 import { inspect } from 'util'
+
+import { URL, fileURLToPath } from 'url'
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 sinon.stub(core, 'info')
 sinon.stub(core, 'debug')

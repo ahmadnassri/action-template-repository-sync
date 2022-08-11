@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+
 // node modules
 import { inspect } from 'util'
 
