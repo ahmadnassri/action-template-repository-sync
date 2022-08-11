@@ -17,8 +17,9 @@ inputs:
 
   dry-run:
     description: dry-run mode
-    default: false
+    default: "false"
+    required: false
 
 runs:
-  using: docker
-  image: docker://ghcr.io/ahmadnassri/action-template-repository-sync:v1
+  using: node16
+  main: dist/index.js

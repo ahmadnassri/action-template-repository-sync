@@ -30,7 +30,7 @@ const allowed = [
 const inputs = {
   token: core.getInput('github-token', { required: true }),
   config: core.getInput('config', { required: false }),
-  dry: core.getInput('dry-run', { required: false }) === 'true'
+  dry: core.getInput('dry-run', { required: false })
 }
 
 // error handler
@@ -45,7 +45,7 @@ process.on('unhandledRejection', errorHandler)
 process.on('uncaughtException', errorHandler)
 
 // dry run
-if (inputs.dry) {
+if (inputs.dry === 'true') {
   core.info('running in dry-run mode')
 }
 

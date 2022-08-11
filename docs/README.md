@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2 # important!
-      - uses: ahmadnassri/action-template-repository-sync@v1
+      - uses: ahmadnassri/action-template-repository-sync@v2
         with:
           github-token: ${{ secrets.GH_TOKEN }}
           dry-run: true
@@ -56,12 +56,10 @@ jobs:
         with:
           github-token: ${{ secrets.GH_TOKEN }}
 ```
+
 </details>
 
->  
-
 > :warning: **HIGHLY RECOMMEND** to set `dry-run: true` for the first time you use this action, inspect the output to confirm if the affected repositories list is what you wanted to commit files to
-
 
 ###### `.github/template-sync.yml`
 
@@ -79,7 +77,7 @@ files:
   - "!package.json" # exclude
   - "!(package-lock.json|yarn.lock)"
 
-   # you probably want to exclude these files:
+  # you probably want to exclude these files:
   - "!.github/workflows/template-sync.yml"
   - "!.github/template-sync.yml"
 ```
@@ -100,7 +98,7 @@ a list of repository name patterns
 
 ###### `files`
 
-a list of file name patterns to include or exclude
+a list of filename patterns to include or exclude
 
 #### Pattern syntax
 
@@ -117,10 +115,10 @@ a list of file name patterns to include or exclude
 
 ## :warning: Operational Logic
 
-- The action will only run on the following event types: 'schedule`, `workflow_dispatch`, `repository_dispatch`, `pull_request`, `release`, `workflow_run`, `push`.
+- The action will only run on the following event types: 'schedule`,`workflow_dispatch`,`repository_dispatch`,`pull_request`,`release`,`workflow_run`,`push`.
 - The when run in `pull_request`, the action will post post a comment on the the Pull Request with the diff view of files to be changed.
 - The action will look for files under the `GITHUB_WORKSPACE` environment path
-- The action will read file contents **AT RUN TIME** _(so you can run build steps or modify content before running the action if you so wish)_
+- The action will read file contents **AT RUNTIME** _(so you can run build steps or modify content before running the action if you so wish)_
 - If no config file is present indicating which files to filter, the action will sync **ALL FILES** in the template repository
 - The action will respect **`.gitignore`** files
 - Files on target repos **WILL BE CREATED** if they do not exist
