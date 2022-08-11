@@ -18,9 +18,9 @@
   "license": "MIT",
   "scripts": {
     "build": "microbundle --no-pkg-main --no-sourcemap --external none --target node --format esm --entry src/index.js --output dist/index.js",
-    "test": "tap test --no-coverage",
-    "test:watch": "tap test --watch",
-    "test:ci": "tap test --100",
+    "test": "tap src/test --no-coverage",
+    "test:watch": "tap src/test --watch",
+    "test:ci": "tap src/test --100",
     "test:report": "opener coverage/lcov-report/index.html"
   },
   "type": "module",
@@ -28,10 +28,10 @@
   "dependencies": {
     "@actions/core": "^1.9.1",
     "@actions/github": "^5.0.3",
-    "diff": "^5.0.0",
-    "globby": "^11.0.3",
-    "micromatch": "^4.0.2",
-    "yaml": "^1.10.2"
+    "diff": "^5.1.0",
+    "globby": "^13.1.2",
+    "micromatch": "^4.0.5",
+    "yaml": "^2.1.1"
   },
   "devDependencies": {
     "sinon": "^10.0.0",
