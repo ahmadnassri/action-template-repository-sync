@@ -103415,7 +103415,7 @@ async function repos (octokit, options) {
     process.exit(0);
   }
 
-  const api = type === 'User' ? 'GET /users/{username}/repos' : 'GET /orgs/{org}/repos';
+  const api = type === 'User' ? 'GET /user/repos' : 'GET /orgs/{org}/repos';
   const all = await octokit.paginate(api, {
     username: github$1.context.repo.owner,
     org: github$1.context.repo.owner,
@@ -103505,7 +103505,7 @@ async function scan (octokit, {
   return changedRepositories;
 }
 
-// node modules
+/* eslint-disable camelcase */
 const workspace = process.env.GITHUB_WORKSPACE || '/github/workspace';
 const allowed = ['schedule', 'workflow_dispatch', 'repository_dispatch', 'pull_request', 'pull_request_target', 'release', 'workflow_run', 'push']; // parse inputs
 

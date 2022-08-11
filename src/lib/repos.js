@@ -30,7 +30,7 @@ export default async function (octokit, options) {
     process.exit(0)
   }
 
-  const api = (type === 'User') ? 'GET /users/{username}/repos' : 'GET /orgs/{org}/repos'
+  const api = (type === 'User') ? 'GET /user/repos' : 'GET /orgs/{org}/repos'
 
   const all = await octokit.paginate(api, {
     username: github.context.repo.owner,
