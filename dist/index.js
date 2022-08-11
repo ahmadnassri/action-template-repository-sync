@@ -103307,7 +103307,7 @@ async function pull_request (octokit, {
     }
   } = github$1.context; // update PR
 
-  await octokit.issues.createComment(_extends({}, github$1.context.repo, {
+  await octokit.rest.issues.createComment(_extends({}, github$1.context.repo, {
     issue_number: pull_request.number,
     body: body.join('\n')
   }));

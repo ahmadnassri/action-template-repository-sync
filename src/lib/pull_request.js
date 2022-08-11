@@ -31,7 +31,7 @@ export default async function (octokit, { changedRepositories, localFiles }) {
 
   const { payload: { pull_request } } = github.context
   // update PR
-  await octokit.issues.createComment({
+  await octokit.rest.issues.createComment({
     ...github.context.repo,
     issue_number: pull_request.number,
     body: body.join('\n')
