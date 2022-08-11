@@ -36,6 +36,7 @@ export default async function (octokit, options) {
     username: github.context.repo.owner,
     org: github.context.repo.owner,
     per_page: 100,
+    affiliation: 'owner',
     mediaType
   })
 

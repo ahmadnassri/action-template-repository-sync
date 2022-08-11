@@ -103420,6 +103420,7 @@ async function repos (octokit, options) {
     username: github$1.context.repo.owner,
     org: github$1.context.repo.owner,
     per_page: 100,
+    affiliation: 'owner',
     mediaType
   });
   const repositories = all.filter(repo => repo.archived === false); // only include non-archived repos
