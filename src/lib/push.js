@@ -21,7 +21,7 @@ export default async function (octokit, { changedRepositories, localFiles, input
     }
 
     // dry run
-    if (inputs.dry) continue
+    if (inputs.dry === 'true') continue
 
     // get the default branch
     const { data: { default_branch } } = await octokit.request('GET /repos/{owner}/{repo}', {

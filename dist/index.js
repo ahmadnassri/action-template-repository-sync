@@ -103334,7 +103334,7 @@ async function push (octokit, {
     } // dry run
 
 
-    if (inputs.dry) continue; // get the default branch
+    if (inputs.dry === 'true') continue; // get the default branch
 
     const {
       data: {
