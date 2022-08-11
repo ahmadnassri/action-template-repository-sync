@@ -29,7 +29,7 @@
     "@actions/core": "^1.9.1",
     "@actions/github": "^5.0.3",
     "diff": "^5.1.0",
-    "globby": "^11.1.0",
+    "globby": "^13.1.2",
     "micromatch": "^4.0.5",
     "yaml": "^2.1.1"
   },
