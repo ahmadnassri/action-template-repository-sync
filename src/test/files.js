@@ -2,7 +2,7 @@ import sinon from 'sinon'
 import { join } from 'path'
 import { test } from 'tap'
 
-import { URL, fileURLToPath } from 'node:url'
+import { URL, fileURLToPath } from 'url'
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 // packages
