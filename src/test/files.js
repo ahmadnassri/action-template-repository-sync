@@ -2,6 +2,9 @@ import sinon from 'sinon'
 import { join } from 'path'
 import { test } from 'tap'
 
+import { URL, fileURLToPath } from 'node:url'
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
+
 // packages
 import core from '@actions/core'
 import files from '../lib/files.js'
@@ -10,7 +13,7 @@ import { inspect } from 'util'
 sinon.stub(core, 'info')
 sinon.stub(core, 'debug')
 
-const workspace = join(process.cwd(), 'test/fixtures')
+const workspace = join(__dirname, 'fixtures')
 
 test('lists files', async assert => {
   assert.plan(3)

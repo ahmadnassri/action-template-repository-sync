@@ -2,6 +2,9 @@ import sinon from 'sinon'
 import { inspect } from 'util'
 import { test, afterEach } from 'tap'
 
+import { URL, fileURLToPath } from 'node:url'
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
+
 // packages
 import core from '@actions/core'
 import config from '../lib/config.js'
@@ -27,7 +30,7 @@ test('invalid config', assert => {
 
   sinon.stub(core, 'info')
 
-  const options = config({ workspace: process.cwd(), path: '/test/fixtures/nonexistent.yml' })
+  const options = config({ workspace: __dirname, path: 'fixtures/nonexistent.yml' })
 
   // debug
   assert.ok(core.info.calledWith('no config file found'))
@@ -40,7 +43,7 @@ test('config does not exist', assert => {
   sinon.stub(core, 'setFailed')
   sinon.stub(process, 'exit')
 
-  config({ workspace: process.cwd(), path: '/test/fixtures/invalid.yml' })
+  config({ workspace: __dirname, path: 'fixtures/invalid.yml' })
 
   // debug
   assert.ok(core.setFailed.calledWith('failed to parse config'))
@@ -54,7 +57,7 @@ test('valid config', assert => {
   sinon.stub(core, 'setFailed')
   sinon.stub(process, 'exit')
 
-  const options = config({ workspace: process.cwd(), path: '/test/fixtures/valid.yml' })
+  const options = config({ workspace: __dirname, path: 'fixtures/valid.yml' })
 
   // debug
   assert.ok(core.debug.calledWith(`config loaded: ${inspect(options)}`))
