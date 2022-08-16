@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "sinon": "^14.0.0",
-    "microbundle": "^0.15.0",
+    "microbundle": "^0.15.1",
     "tap": "^16.3.0"
   }
 }
