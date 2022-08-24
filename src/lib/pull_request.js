@@ -14,7 +14,7 @@ export default async function (octokit, { changedRepositories, localFiles }) {
     output.push(`> Found ${count} files to update in ${changedRepositories.size} repositories`, '')
 
     for (const [repo, remoteFiles] of changedRepositories.entries()) {
-      output.push(`<details><summary>${repo}</summary>`, '')
+      output.push(`<details><summary>${repo} <a target="_blank" href="/${github.context.repo.owner}/${repo}">🔗</a></summary>`, '')
 
       for (const [path, remoteContent] of remoteFiles.entries()) {
         const before = remoteContent.toString('utf8')
