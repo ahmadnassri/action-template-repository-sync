@@ -102479,7 +102479,7 @@ const globby = normalizeArguments(async (patterns, options) => {
 // node modules
 async function files (workspace, options) {
   // convert list of files to entries array
-  const filesEntries = options.files.map(item => typeof item === 'string' ? [[item], item] : Object.entries(item).pop()); // convert entries array to an object
+  const filesEntries = options.files.map(item => typeof item === 'string' ? [item, item] : Object.entries(item).pop()); // convert entries array to an object
 
   const filesObject = Object.fromEntries(filesEntries); // get list of files in current workspace
 
