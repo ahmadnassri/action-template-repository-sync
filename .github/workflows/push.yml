@@ -45,7 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3.0.2
 
-      - uses: oxsecurity/megalinter/flavors/javascript@v6
+      - uses: oxsecurity/megalinter/flavors/javascript@v6.15.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
           MEGALINTER_CONFIG: .github/linters/.mega-linter.yml
@@ -143,7 +143,7 @@ jobs:
     strategy:
       matrix:
         release: [ "v${{ needs.release.outputs.version }}" ]
-        alias: 
+        alias:
           - "v${{ needs.release.outputs.version-major }}"
           - "v${{ needs.release.outputs.version-major }}.${{ needs.release.outputs.version-minor }}"
 
