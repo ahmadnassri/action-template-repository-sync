@@ -103177,34 +103177,46 @@ function createPatch(fileName, oldStr, newStr, oldHeader, newHeader, options) {
   return createTwoFilesPatch(fileName, fileName, oldStr, newStr, oldHeader, newHeader, options);
 }
 
-/* eslint-disable camelcase */
-async function pull_request (octokit, {
-  changedRepositories,
-  localFiles
-}) {
-  const output = ['## Template Repository Sync Report'];
+const header = '## Template Repository Sync Report';
+function report (changedRepositories, localFiles) {
+  const output = [header, ''];
 
   if (changedRepositories.size === 0) {
     output.push('> no changes to sync');
   } else {
     const count = [...changedRepositories.values()].map(x => [...x.values()]).flat().length;
-    output.push(`> Found ${count} files to update in ${changedRepositories.size} repositories`, '');
+    output.push(`> Found ${count} file${count > 1 ? 's' : ''} to update in ${changedRepositories.size} repositories`, '');
 
     for (const [repo, remoteFiles] of changedRepositories.entries()) {
-      output.push(`<details><summary>${repo} <a target="_blank" href="/${github$1.context.repo.owner}/${repo}">🔗</a></summary>`, '');
+      output.push(`### [${repo}](/${github$1.context.repo.owner}/${repo})`, '');
 
       for (const [path, remoteContent] of remoteFiles.entries()) {
         const before = remoteContent.toString('utf8');
         const after = localFiles.get(path).toString('utf8');
         const patch = createPatch(path, before, after);
-        output.push('```diff', patch, '```', '', '');
+        output.push(`<details><summary><code>${path}</code></summary>`, '');
+        output.push('```diff', patch.split('\n').splice(2).join('\n'), '```', '');
+        output.push('</details>', '');
       }
-
-      output.push('</details>', '');
     }
   }
 
   const body = output.join('\n');
+  return {
+    header,
+    body
+  };
+}
+
+/* eslint-disable camelcase */
+async function pull_request (octokit, {
+  changedRepositories,
+  localFiles
+}) {
+  const {
+    header,
+    body
+  } = report(changedRepositories, localFiles);
   const {
     issue: {
       number: issue_number
@@ -103217,7 +103229,7 @@ async function pull_request (octokit, {
     issue_number
   }); // find existing comment
 
-  const old = comments.find(comment => comment.body.includes('## Template Repository Sync Report')); // update PR
+  const old = comments.find(comment => comment.body.includes(header)); // update PR
 
   if (old) {
     await octokit.rest.issues.updateComment({ ...github$1.context.repo,
