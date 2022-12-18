@@ -10,7 +10,7 @@ import github from '@actions/github'
 // modules
 import config from './lib/config.js'
 import files from './lib/files.js'
-import pull_request from './lib/pull_request.js'
+import pull_request from './lib/pull-request.js'
 import push from './lib/push.js'
 import repos from './lib/repos.js'
 import scan from './lib/scan.js'
