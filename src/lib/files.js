@@ -10,7 +10,7 @@ import core from '@actions/core'
 
 export default async function (workspace, options) {
   // convert list of files to entries array
-  const filesEntries = options.files.map(item => typeof item === 'string' ? [[item], item] : Object.entries(item).pop())
+  const filesEntries = options.files.map(item => typeof item === 'string' ? [item, item] : Object.entries(item).pop())
 
   // convert entries array to an object
   const filesObject = Object.fromEntries(filesEntries)

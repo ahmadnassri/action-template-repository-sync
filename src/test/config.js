@@ -42,7 +42,7 @@ test('config does not exist', assert => {
   sinon.stub(core, 'setFailed')
   sinon.stub(process, 'exit')
 
-  config({ workspace: __dirname, path: 'fixtures/invalid.yml' })
+  config({ workspace: __dirname, path: 'fixtures/configs/invalid.yml' })
 
   // debug
   assert.ok(core.setFailed.calledWith('failed to parse config'))
@@ -56,7 +56,7 @@ test('valid config', assert => {
   sinon.stub(core, 'setFailed')
   sinon.stub(process, 'exit')
 
-  const options = config({ workspace: __dirname, path: 'fixtures/valid.yml' })
+  const options = config({ workspace: __dirname, path: 'fixtures/configs/valid.yml' })
 
   // debug
   assert.ok(core.debug.calledWith(`config loaded: ${inspect(options)}`))
