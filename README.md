@@ -88,6 +88,9 @@ files:
   # you probably want to exclude these files:
   - "!.github/workflows/template-sync.yml"
   - "!.github/template-sync.yml"
+
+  # remap file names at destination repo
+  - .gitignore-example: .gitignore
 ```
 
 ### Config File
@@ -107,6 +110,16 @@ a list of repository name patterns
 ###### `files`
 
 a list of filename patterns to include or exclude
+
+> **NOTE**: You can set a different destination for synced files using the object syntax: `source_path: destination_path`
+
+###### Example
+
+``` yaml
+files:
+  # remap file names at destination repo
+  - templates/.gitignore-example: .gitignore
+```
 
 #### Pattern syntax
 
