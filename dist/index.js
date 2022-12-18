@@ -1,8 +1,8 @@
 import util, { inspect } from 'util';
 import require$$0 from 'os';
 import fs$2, { existsSync, readFileSync } from 'fs';
-import path, { join } from 'path';
 import crypto from 'crypto';
+import path, { join } from 'path';
 import http from 'http';
 import https from 'https';
 import 'net';
@@ -14,6 +14,11 @@ import Url from 'url';
 import punycode from 'punycode';
 import zlib from 'zlib';
 import { readFile } from 'fs/promises';
+import fs$3 from 'node:fs';
+import path$1 from 'node:path';
+import process$1 from 'node:process';
+import { fileURLToPath } from 'node:url';
+import 'node:stream';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -159,50 +164,6 @@ function escapeProperty(s) {
         .replace(/:/g, '%3A')
         .replace(/,/g, '%2C');
 }
-
-});
-
-var fileCommand = createCommonjsModule(function (module, exports) {
-// For internal use, subject to change.
-var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (commonjsGlobal && commonjsGlobal.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (commonjsGlobal && commonjsGlobal.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.issueCommand = void 0;
-// We use any as a valid input type
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const fs = __importStar(fs$2);
-const os = __importStar(require$$0);
-
-function issueCommand(command, message) {
-    const filePath = process.env[`GITHUB_${command}`];
-    if (!filePath) {
-        throw new Error(`Unable to find environment variable for file command ${command}`);
-    }
-    if (!fs.existsSync(filePath)) {
-        throw new Error(`Missing file at path: ${filePath}`);
-    }
-    fs.appendFileSync(filePath, `${utils$7.toCommandValue(message)}${os.EOL}`, {
-        encoding: 'utf8'
-    });
-}
-exports.issueCommand = issueCommand;
 
 });
 
@@ -505,6 +466,66 @@ var esmNode = {
 	stringify: stringify$7,
 	parse: parse$5
 };
+
+var fileCommand = createCommonjsModule(function (module, exports) {
+// For internal use, subject to change.
+var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (commonjsGlobal && commonjsGlobal.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (commonjsGlobal && commonjsGlobal.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.prepareKeyValueMessage = exports.issueFileCommand = void 0;
+// We use any as a valid input type
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const fs = __importStar(fs$2);
+const os = __importStar(require$$0);
+
+
+function issueFileCommand(command, message) {
+    const filePath = process.env[`GITHUB_${command}`];
+    if (!filePath) {
+        throw new Error(`Unable to find environment variable for file command ${command}`);
+    }
+    if (!fs.existsSync(filePath)) {
+        throw new Error(`Missing file at path: ${filePath}`);
+    }
+    fs.appendFileSync(filePath, `${utils$7.toCommandValue(message)}${os.EOL}`, {
+        encoding: 'utf8'
+    });
+}
+exports.issueFileCommand = issueFileCommand;
+function prepareKeyValueMessage(key, value) {
+    const delimiter = `ghadelimiter_${esmNode.v4()}`;
+    const convertedValue = utils$7.toCommandValue(value);
+    // These should realistically never happen, but just in case someone finds a
+    // way to exploit uuid generation let's not allow keys or values that contain
+    // the delimiter.
+    if (key.includes(delimiter)) {
+        throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
+    }
+    if (convertedValue.includes(delimiter)) {
+        throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
+    }
+    return `${key}<<${delimiter}${os.EOL}${convertedValue}${os.EOL}${delimiter}`;
+}
+exports.prepareKeyValueMessage = prepareKeyValueMessage;
+
+});
 
 var proxy = createCommonjsModule(function (module, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -1986,7 +2007,6 @@ exports.getIDToken = exports.getState = exports.saveState = exports.group = expo
 const os = __importStar(require$$0);
 const path$1 = __importStar(path);
 
-
 /**
  * The code to exit an action
  */
@@ -2015,20 +2035,9 @@ function exportVariable(name, val) {
     process.env[name] = convertedVal;
     const filePath = process.env['GITHUB_ENV'] || '';
     if (filePath) {
-        const delimiter = `ghadelimiter_${esmNode.v4()}`;
-        // These should realistically never happen, but just in case someone finds a way to exploit uuid generation let's not allow keys or values that contain the delimiter.
-        if (name.includes(delimiter)) {
-            throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
-        }
-        if (convertedVal.includes(delimiter)) {
-            throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
-        }
-        const commandValue = `${name}<<${delimiter}${os.EOL}${convertedVal}${os.EOL}${delimiter}`;
-        fileCommand.issueCommand('ENV', commandValue);
+        return fileCommand.issueFileCommand('ENV', fileCommand.prepareKeyValueMessage(name, val));
     }
-    else {
-        command.issueCommand('set-env', { name }, convertedVal);
-    }
+    command.issueCommand('set-env', { name }, convertedVal);
 }
 exports.exportVariable = exportVariable;
 /**
@@ -2046,7 +2055,7 @@ exports.setSecret = setSecret;
 function addPath(inputPath) {
     const filePath = process.env['GITHUB_PATH'] || '';
     if (filePath) {
-        fileCommand.issueCommand('PATH', inputPath);
+        fileCommand.issueFileCommand('PATH', inputPath);
     }
     else {
         command.issueCommand('add-path', {}, inputPath);
@@ -2086,7 +2095,10 @@ function getMultilineInput(name, options) {
     const inputs = getInput(name, options)
         .split('\n')
         .filter(x => x !== '');
-    return inputs;
+    if (options && options.trimWhitespace === false) {
+        return inputs;
+    }
+    return inputs.map(input => input.trim());
 }
 exports.getMultilineInput = getMultilineInput;
 /**
@@ -2119,8 +2131,12 @@ exports.getBooleanInput = getBooleanInput;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setOutput(name, value) {
+    const filePath = process.env['GITHUB_OUTPUT'] || '';
+    if (filePath) {
+        return fileCommand.issueFileCommand('OUTPUT', fileCommand.prepareKeyValueMessage(name, value));
+    }
     process.stdout.write(os.EOL);
-    command.issueCommand('set-output', { name }, value);
+    command.issueCommand('set-output', { name }, utils$7.toCommandValue(value));
 }
 exports.setOutput = setOutput;
 /**
@@ -2249,7 +2265,11 @@ exports.group = group;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function saveState(name, value) {
-    command.issueCommand('save-state', { name }, value);
+    const filePath = process.env['GITHUB_STATE'] || '';
+    if (filePath) {
+        return fileCommand.issueFileCommand('STATE', fileCommand.prepareKeyValueMessage(name, value));
+    }
+    command.issueCommand('save-state', { name }, utils$7.toCommandValue(value));
 }
 exports.saveState = saveState;
 /**
@@ -87121,7 +87141,7 @@ var __importStar = (commonjsGlobal && commonjsGlobal.__importStar) || function (
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getOctokitOptions = exports.GitHub = exports.context = void 0;
+exports.getOctokitOptions = exports.GitHub = exports.defaults = exports.context = void 0;
 const Context = __importStar(context);
 const Utils = __importStar(utils$6);
 // octokit + plugins
@@ -87130,13 +87150,13 @@ const Utils = __importStar(utils$6);
 
 exports.context = new Context.Context();
 const baseUrl = Utils.getApiBaseUrl();
-const defaults = {
+exports.defaults = {
     baseUrl,
     request: {
         agent: Utils.getProxyAgent(baseUrl)
     }
 };
-exports.GitHub = distWeb$2.Octokit.plugin(distWeb$1.restEndpointMethods, distWeb.paginateRest).defaults(defaults);
+exports.GitHub = distWeb$2.Octokit.plugin(distWeb$1.restEndpointMethods, distWeb.paginateRest).defaults(exports.defaults);
 /**
  * Convience function to correctly format Octokit Options to pass into the constructor.
  *
@@ -87187,31 +87207,15 @@ exports.context = new Context.Context();
  * @param     token    the repo PAT or GITHUB_TOKEN
  * @param     options  other options to set
  */
-function getOctokit(token, options) {
-    return new utils$4.GitHub(utils$4.getOctokitOptions(token, options));
+function getOctokit(token, options, ...additionalPlugins) {
+    const GitHubWithPlugins = utils$4.GitHub.plugin(...additionalPlugins);
+    return new GitHubWithPlugins(utils$4.getOctokitOptions(token, options));
 }
 exports.getOctokit = getOctokit;
 
 });
 
 var github$1 = /*@__PURE__*/getDefaultExportFromCjs(github);
-
-function _extends() {
-  _extends = Object.assign ? Object.assign.bind() : function (target) {
-    for (var i = 1; i < arguments.length; i++) {
-      var source = arguments[i];
-
-      for (var key in source) {
-        if (Object.prototype.hasOwnProperty.call(source, key)) {
-          target[key] = source[key];
-        }
-      }
-    }
-
-    return target;
-  };
-  return _extends.apply(this, arguments);
-}
 
 const ALIAS = Symbol.for('yaml.alias');
 const DOC = Symbol.for('yaml.document');
@@ -87973,7 +87977,7 @@ function createNode(value, tagName, ctx) {
     if (value instanceof String ||
         value instanceof Number ||
         value instanceof Boolean ||
-        (typeof BigInt === 'function' && value instanceof BigInt) // not supported everywhere
+        (typeof BigInt !== 'undefined' && value instanceof BigInt) // not supported everywhere
     ) {
         // https://tc39.es/ecma262/#sec-serializejsonproperty
         value = value.valueOf();
@@ -90188,7 +90192,8 @@ class YAMLSet extends YAMLMap_1$1.YAMLMap {
         let pair;
         if (Node.isPair(key))
             pair = key;
-        else if (typeof key === 'object' &&
+        else if (key &&
+            typeof key === 'object' &&
             'key' in key &&
             'value' in key &&
             key.value === null)
@@ -91280,6 +91285,7 @@ function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError) {
     if (ctx.atRoot)
         ctx.atRoot = false;
     let offset = bm.offset;
+    let commentEnd = null;
     for (const collItem of bm.items) {
         const { start, key, sep, value } = collItem;
         // key properties
@@ -91299,7 +91305,7 @@ function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError) {
                     onError(offset, 'BAD_INDENT', startColMsg);
             }
             if (!keyProps.anchor && !keyProps.tag && !sep) {
-                // TODO: assert being at last item?
+                commentEnd = keyProps.end;
                 if (keyProps.comment) {
                     if (map.comment)
                         map.comment += '\n' + keyProps.comment;
@@ -91369,7 +91375,9 @@ function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError) {
             map.items.push(pair);
         }
     }
-    map.range = [bm.offset, offset, offset];
+    if (commentEnd && commentEnd < offset)
+        onError(commentEnd, 'IMPOSSIBLE', 'Map comment with trailing content');
+    map.range = [bm.offset, offset, commentEnd ?? offset];
     return map;
 }
 
@@ -91384,6 +91392,7 @@ function resolveBlockSeq({ composeNode, composeEmptyNode }, ctx, bs, onError) {
     if (ctx.atRoot)
         ctx.atRoot = false;
     let offset = bs.offset;
+    let commentEnd = null;
     for (const { start, value } of bs.items) {
         const props = resolveProps_1.resolveProps(start, {
             indicator: 'seq-item-ind',
@@ -91392,16 +91401,15 @@ function resolveBlockSeq({ composeNode, composeEmptyNode }, ctx, bs, onError) {
             onError,
             startOnNewline: true
         });
-        offset = props.end;
         if (!props.found) {
             if (props.anchor || props.tag || value) {
                 if (value && value.type === 'block-seq')
-                    onError(offset, 'BAD_INDENT', 'All sequence items must start at the same column');
+                    onError(props.end, 'BAD_INDENT', 'All sequence items must start at the same column');
                 else
                     onError(offset, 'MISSING_CHAR', 'Sequence item without - indicator');
             }
             else {
-                // TODO: assert being at last item?
+                commentEnd = props.end;
                 if (props.comment)
                     seq.comment = props.comment;
                 continue;
@@ -91409,13 +91417,13 @@ function resolveBlockSeq({ composeNode, composeEmptyNode }, ctx, bs, onError) {
         }
         const node = value
             ? composeNode(ctx, value, props, onError)
-            : composeEmptyNode(ctx, offset, start, null, props, onError);
+            : composeEmptyNode(ctx, props.end, start, null, props, onError);
         if (ctx.schema.compat)
             utilFlowIndentCheck.flowIndentCheck(bs.indent, value, onError);
         offset = node.range[2];
         seq.items.push(node);
     }
-    seq.range = [bs.offset, offset, offset];
+    seq.range = [bs.offset, offset, commentEnd ?? offset];
     return seq;
 }
 
@@ -92305,7 +92313,7 @@ function composeNode(ctx, token, props, onError) {
         node.srcToken = token;
     return node;
 }
-function composeEmptyNode(ctx, offset, before, pos, { spaceBefore, comment, anchor, tag }, onError) {
+function composeEmptyNode(ctx, offset, before, pos, { spaceBefore, comment, anchor, tag, end }, onError) {
     const token = {
         type: 'scalar',
         offset: utilEmptyScalarPosition.emptyScalarPosition(offset, before, pos),
@@ -92320,8 +92328,10 @@ function composeEmptyNode(ctx, offset, before, pos, { spaceBefore, comment, anch
     }
     if (spaceBefore)
         node.spaceBefore = true;
-    if (comment)
+    if (comment) {
         node.comment = comment;
+        node.range[2] = end;
+    }
     return node;
 }
 function composeAlias({ options }, { offset, source, end }, onError) {
@@ -94979,6 +94989,7 @@ var dist = {
 	visitAsync: visitAsync
 };
 
+// internals
 const initial = {
   dependents: [],
   additional: [],
@@ -94999,7 +95010,9 @@ function config ({
   try {
     let options = dist.parse(readFileSync(configPath, 'utf8')); // set some defaults
 
-    options = _extends({}, initial, options);
+    options = { ...initial,
+      ...options
+    };
     core$1.debug(`config loaded: ${inspect(options)}`);
     return options;
   } catch (err) {
@@ -95007,10 +95020,6 @@ function config ({
     process.exit(1);
   }
 }
-
-var arrayUnion = (...arguments_) => {
-	return [...new Set([].concat(...arguments_))];
-};
 
 /*
  * merge2
@@ -99547,7 +99556,7 @@ function matchAny(entry, patternsRe) {
 exports.matchAny = matchAny;
 });
 
-var stream$4 = createCommonjsModule(function (module, exports) {
+var stream$3 = createCommonjsModule(function (module, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.merge = void 0;
 
@@ -99593,7 +99602,7 @@ exports.path = path_1;
 
 exports.pattern = pattern;
 
-exports.stream = stream$4;
+exports.stream = stream$3;
 
 exports.string = string;
 });
@@ -99741,7 +99750,7 @@ function callSuccessCallback(callback, result) {
 }
 });
 
-var sync$8 = createCommonjsModule(function (module, exports) {
+var sync$6 = createCommonjsModule(function (module, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.read = void 0;
 function read(path, settings) {
@@ -99820,7 +99829,7 @@ function stat(path, optionsOrSettingsOrCallback, callback) {
 exports.stat = stat;
 function statSync(path, optionsOrSettings) {
     const settings = getSettings(optionsOrSettings);
-    return sync$8.read(path, settings);
+    return sync$6.read(path, settings);
 }
 exports.statSync = statSync;
 function getSettings(settingsOrOptions = {}) {
@@ -100063,7 +100072,7 @@ function callSuccessCallback(callback, result) {
 }
 });
 
-var sync$7 = createCommonjsModule(function (module, exports) {
+var sync$5 = createCommonjsModule(function (module, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.readdir = exports.readdirWithFileTypes = exports.read = void 0;
 
@@ -100181,7 +100190,7 @@ function scandir(path, optionsOrSettingsOrCallback, callback) {
 exports.scandir = scandir;
 function scandirSync(path, optionsOrSettings) {
     const settings = getSettings(optionsOrSettings);
-    return sync$7.read(path, settings);
+    return sync$5.read(path, settings);
 }
 exports.scandirSync = scandirSync;
 function getSettings(settingsOrOptions = {}) {
@@ -100711,7 +100720,7 @@ class StreamProvider {
 }
 var _default$g = StreamProvider;
 
-var stream$3 = /*#__PURE__*/Object.defineProperty({
+var stream$2 = /*#__PURE__*/Object.defineProperty({
 	default: _default$g
 }, '__esModule', {value: true});
 
@@ -100770,7 +100779,7 @@ class SyncReader extends reader$1.default {
 }
 var _default$f = SyncReader;
 
-var sync$6 = /*#__PURE__*/Object.defineProperty({
+var sync$4 = /*#__PURE__*/Object.defineProperty({
 	default: _default$f
 }, '__esModule', {value: true});
 
@@ -100778,7 +100787,7 @@ class SyncProvider {
     constructor(_root, _settings) {
         this._root = _root;
         this._settings = _settings;
-        this._reader = new sync$6.default(this._root, this._settings);
+        this._reader = new sync$4.default(this._root, this._settings);
     }
     read() {
         return this._reader.read();
@@ -100786,7 +100795,7 @@ class SyncProvider {
 }
 var _default$e = SyncProvider;
 
-var sync$5 = /*#__PURE__*/Object.defineProperty({
+var sync$3 = /*#__PURE__*/Object.defineProperty({
 	default: _default$e
 }, '__esModule', {value: true});
 
@@ -100835,13 +100844,13 @@ function walk(directory, optionsOrSettingsOrCallback, callback) {
 exports.walk = walk;
 function walkSync(directory, optionsOrSettings) {
     const settings = getSettings(optionsOrSettings);
-    const provider = new sync$5.default(directory, settings);
+    const provider = new sync$3.default(directory, settings);
     return provider.read();
 }
 exports.walkSync = walkSync;
 function walkStream(directory, optionsOrSettings) {
     const settings = getSettings(optionsOrSettings);
-    const provider = new stream$3.default(directory, settings);
+    const provider = new stream$2.default(directory, settings);
     return provider.read();
 }
 exports.walkStream = walkStream;
@@ -100936,7 +100945,7 @@ class ReaderStream extends reader.default {
 }
 var _default$b = ReaderStream;
 
-var stream$2 = /*#__PURE__*/Object.defineProperty({
+var stream$1 = /*#__PURE__*/Object.defineProperty({
 	default: _default$b
 }, '__esModule', {value: true});
 
@@ -101251,7 +101260,7 @@ var provider = /*#__PURE__*/Object.defineProperty({
 class ProviderAsync extends provider.default {
     constructor() {
         super(...arguments);
-        this._reader = new stream$2.default(this._settings);
+        this._reader = new stream$1.default(this._settings);
     }
     read(task) {
         const root = this._getRootDirectory(task);
@@ -101280,7 +101289,7 @@ var async = /*#__PURE__*/Object.defineProperty({
 class ProviderStream extends provider.default {
     constructor() {
         super(...arguments);
-        this._reader = new stream$2.default(this._settings);
+        this._reader = new stream$1.default(this._settings);
     }
     read(task) {
         const root = this._getRootDirectory(task);
@@ -101304,7 +101313,7 @@ class ProviderStream extends provider.default {
 }
 var _default$2 = ProviderStream;
 
-var stream$1 = /*#__PURE__*/Object.defineProperty({
+var stream = /*#__PURE__*/Object.defineProperty({
 	default: _default$2
 }, '__esModule', {value: true});
 
@@ -101347,14 +101356,14 @@ class ReaderSync extends reader.default {
 }
 var _default$1 = ReaderSync;
 
-var sync$4 = /*#__PURE__*/Object.defineProperty({
+var sync$2 = /*#__PURE__*/Object.defineProperty({
 	default: _default$1
 }, '__esModule', {value: true});
 
 class ProviderSync extends provider.default {
     constructor() {
         super(...arguments);
-        this._reader = new sync$4.default(this._settings);
+        this._reader = new sync$2.default(this._settings);
     }
     read(task) {
         const root = this._getRootDirectory(task);
@@ -101371,7 +101380,7 @@ class ProviderSync extends provider.default {
 }
 var _default = ProviderSync;
 
-var sync$3 = /*#__PURE__*/Object.defineProperty({
+var sync$1 = /*#__PURE__*/Object.defineProperty({
 	default: _default
 }, '__esModule', {value: true});
 
@@ -101445,13 +101454,13 @@ async function FastGlob(source, options) {
 (function (FastGlob) {
     function sync(source, options) {
         assertPatternsInput$1(source);
-        const works = getWorks(source, sync$3.default, options);
+        const works = getWorks(source, sync$1.default, options);
         return utils$1.array.flatten(works);
     }
     FastGlob.sync = sync;
-    function stream(source, options) {
+    function stream$1(source, options) {
         assertPatternsInput$1(source);
-        const works = getWorks(source, stream$1.default, options);
+        const works = getWorks(source, stream.default, options);
         /**
          * The stream returned by the provider cannot work with an asynchronous iterator.
          * To support asynchronous iterators, regardless of the number of tasks, we always multiplex streams.
@@ -101459,7 +101468,7 @@ async function FastGlob(source, options) {
          */
         return utils$1.stream.merge(works);
     }
-    FastGlob.stream = stream;
+    FastGlob.stream = stream$1;
     function generateTasks(source, options) {
         assertPatternsInput$1(source);
         const patterns$1 = patterns.transform([].concat(source));
@@ -101495,7 +101504,7 @@ function assertPatternsInput$1(input) {
 }
 var out = FastGlob;
 
-const {promisify: promisify$1} = util;
+const {promisify} = util;
 
 
 async function isType(fsStatType, statsMethodName, filePath) {
@@ -101504,7 +101513,7 @@ async function isType(fsStatType, statsMethodName, filePath) {
 	}
 
 	try {
-		const stats = await promisify$1(fs$2[fsStatType])(filePath);
+		const stats = await promisify(fs$2[fsStatType])(filePath);
 		return stats[statsMethodName]();
 	} catch (error) {
 		if (error.code === 'ENOENT') {
@@ -101604,7 +101613,7 @@ var dirGlob = async (input, options) => {
 	return [].concat.apply([], globs); // eslint-disable-line prefer-spread
 };
 
-var sync$2 = (input, options) => {
+var sync = (input, options) => {
 	options = {
 		cwd: process.cwd(),
 		...options
@@ -101618,7 +101627,7 @@ var sync$2 = (input, options) => {
 
 	return [].concat.apply([], globs); // eslint-disable-line prefer-spread
 };
-dirGlob.sync = sync$2;
+dirGlob.sync = sync;
 
 // A simple implementation of make-array
 function makeArray (subject) {
@@ -102224,7 +102233,7 @@ if (
     || isNotRelative(path);
 }
 
-var slash = path => {
+function slash(path) {
 	const isExtendedLengthPath = /^\\\\\?\\/.test(path);
 	const hasNonAscii = /[^\u0000-\u0080]+/.test(path); // eslint-disable-line no-control-regex
 
@@ -102233,195 +102242,101 @@ var slash = path => {
 	}
 
 	return path.replace(/\\/g, '/');
+}
+
+const toPath = urlOrPath => urlOrPath instanceof URL ? fileURLToPath(urlOrPath) : urlOrPath;
+
+const isNegativePattern = pattern => pattern[0] === '!';
+
+const ignoreFilesGlobOptions = {
+	ignore: [
+		'**/node_modules',
+		'**/flow-typed',
+		'**/coverage',
+		'**/.git',
+	],
+	absolute: true,
+	dot: true,
 };
 
-const {promisify} = util;
+const GITIGNORE_FILES_PATTERN = '**/.gitignore';
 
+const applyBaseToPattern = (pattern, base) => isNegativePattern(pattern)
+	? '!' + path$1.posix.join(base, pattern.slice(1))
+	: path$1.posix.join(base, pattern);
 
+const parseIgnoreFile = (file, cwd) => {
+	const base = slash(path$1.relative(cwd, path$1.dirname(file.filePath)));
 
-
-
-
-const DEFAULT_IGNORE = [
-	'**/node_modules/**',
-	'**/flow-typed/**',
-	'**/coverage/**',
-	'**/.git'
-];
-
-const readFileP = promisify(fs$2.readFile);
-
-const mapGitIgnorePatternTo = base => ignore => {
-	if (ignore.startsWith('!')) {
-		return '!' + path.posix.join(base, ignore.slice(1));
-	}
-
-	return path.posix.join(base, ignore);
-};
-
-const parseGitIgnore = (content, options) => {
-	const base = slash(path.relative(options.cwd, path.dirname(options.fileName)));
-
-	return content
+	return file.content
 		.split(/\r?\n/)
-		.filter(Boolean)
-		.filter(line => !line.startsWith('#'))
-		.map(mapGitIgnorePatternTo(base));
+		.filter(line => line && !line.startsWith('#'))
+		.map(pattern => applyBaseToPattern(pattern, base));
 };
 
-const reduceIgnore = files => {
-	const ignores = ignore();
-	for (const file of files) {
-		ignores.add(parseGitIgnore(file.content, {
-			cwd: file.cwd,
-			fileName: file.filePath
-		}));
-	}
-
-	return ignores;
-};
-
-const ensureAbsolutePathForCwd = (cwd, p) => {
+const toRelativePath = (fileOrDirectory, cwd) => {
 	cwd = slash(cwd);
-	if (path.isAbsolute(p)) {
-		if (slash(p).startsWith(cwd)) {
-			return p;
+	if (path$1.isAbsolute(fileOrDirectory)) {
+		if (slash(fileOrDirectory).startsWith(cwd)) {
+			return path$1.relative(cwd, fileOrDirectory);
 		}
 
-		throw new Error(`Path ${p} is not in cwd ${cwd}`);
+		throw new Error(`Path ${fileOrDirectory} is not in cwd ${cwd}`);
 	}
 
-	return path.join(cwd, p);
+	return fileOrDirectory;
 };
 
-const getIsIgnoredPredecate = (ignores, cwd) => {
-	return p => ignores.ignores(slash(path.relative(cwd, ensureAbsolutePathForCwd(cwd, p.path || p))));
-};
+const getIsIgnoredPredicate = (files, cwd) => {
+	const patterns = files.flatMap(file => parseIgnoreFile(file, cwd));
+	const ignores = ignore().add(patterns);
 
-const getFile = async (file, cwd) => {
-	const filePath = path.join(cwd, file);
-	const content = await readFileP(filePath, 'utf8');
-
-	return {
-		cwd,
-		filePath,
-		content
+	return fileOrDirectory => {
+		fileOrDirectory = toPath(fileOrDirectory);
+		fileOrDirectory = toRelativePath(fileOrDirectory, cwd);
+		return fileOrDirectory ? ignores.ignores(slash(fileOrDirectory)) : false;
 	};
 };
 
-const getFileSync = (file, cwd) => {
-	const filePath = path.join(cwd, file);
-	const content = fs$2.readFileSync(filePath, 'utf8');
+const normalizeOptions$1 = (options = {}) => ({
+	cwd: toPath(options.cwd) || process$1.cwd(),
+});
 
-	return {
-		cwd,
-		filePath,
-		content
-	};
+const isIgnoredByIgnoreFiles = async (patterns, options) => {
+	const {cwd} = normalizeOptions$1(options);
+
+	const paths = await out(patterns, {cwd, ...ignoreFilesGlobOptions});
+
+	const files = await Promise.all(
+		paths.map(async filePath => ({
+			filePath,
+			content: await fs$3.promises.readFile(filePath, 'utf8'),
+		})),
+	);
+
+	return getIsIgnoredPredicate(files, cwd);
 };
-
-const normalizeOptions = ({
-	ignore = [],
-	cwd = slash(process.cwd())
-} = {}) => {
-	return {ignore, cwd};
-};
-
-var gitignore = async options => {
-	options = normalizeOptions(options);
-
-	const paths = await out('**/.gitignore', {
-		ignore: DEFAULT_IGNORE.concat(options.ignore),
-		cwd: options.cwd
-	});
-
-	const files = await Promise.all(paths.map(file => getFile(file, options.cwd)));
-	const ignores = reduceIgnore(files);
-
-	return getIsIgnoredPredecate(ignores, options.cwd);
-};
-
-var sync$1 = options => {
-	options = normalizeOptions(options);
-
-	const paths = out.sync('**/.gitignore', {
-		ignore: DEFAULT_IGNORE.concat(options.ignore),
-		cwd: options.cwd
-	});
-
-	const files = paths.map(file => getFileSync(file, options.cwd));
-	const ignores = reduceIgnore(files);
-
-	return getIsIgnoredPredecate(ignores, options.cwd);
-};
-gitignore.sync = sync$1;
-
-const {Transform} = Stream;
-
-class ObjectTransform extends Transform {
-	constructor() {
-		super({
-			objectMode: true
-		});
-	}
-}
-
-class FilterStream$1 extends ObjectTransform {
-	constructor(filter) {
-		super();
-		this._filter = filter;
-	}
-
-	_transform(data, encoding, callback) {
-		if (this._filter(data)) {
-			this.push(data);
-		}
-
-		callback();
-	}
-}
-
-class UniqueStream$1 extends ObjectTransform {
-	constructor() {
-		super();
-		this._pushed = new Set();
-	}
-
-	_transform(data, encoding, callback) {
-		if (!this._pushed.has(data)) {
-			this.push(data);
-			this._pushed.add(data);
-		}
-
-		callback();
-	}
-}
-
-var streamUtils = {
-	FilterStream: FilterStream$1,
-	UniqueStream: UniqueStream$1
-};
-
-const {FilterStream, UniqueStream} = streamUtils;
-
-const DEFAULT_FILTER = () => false;
-
-const isNegative = pattern => pattern[0] === '!';
 
 const assertPatternsInput = patterns => {
-	if (!patterns.every(pattern => typeof pattern === 'string')) {
+	if (patterns.some(pattern => typeof pattern !== 'string')) {
 		throw new TypeError('Patterns must be a string or an array of strings');
 	}
 };
 
-const checkCwdOption = (options = {}) => {
+const toPatternsArray = patterns => {
+	patterns = [...new Set([patterns].flat())];
+	assertPatternsInput(patterns);
+	return patterns;
+};
+
+const checkCwdOption = options => {
 	if (!options.cwd) {
 		return;
 	}
 
 	let stat;
 	try {
-		stat = fs$2.statSync(options.cwd);
+		stat = fs$3.statSync(options.cwd);
 	} catch {
 		return;
 	}
@@ -102431,161 +102346,144 @@ const checkCwdOption = (options = {}) => {
 	}
 };
 
-const getPathString = p => p.stats instanceof fs$2.Stats ? p.path : p;
-
-const generateGlobTasks = (patterns, taskOptions) => {
-	patterns = arrayUnion([].concat(patterns));
-	assertPatternsInput(patterns);
-	checkCwdOption(taskOptions);
-
-	const globTasks = [];
-
-	taskOptions = {
+const normalizeOptions = (options = {}) => {
+	options = {
 		ignore: [],
 		expandDirectories: true,
-		...taskOptions
+		...options,
+		cwd: toPath(options.cwd),
 	};
 
-	for (const [index, pattern] of patterns.entries()) {
-		if (isNegative(pattern)) {
-			continue;
+	checkCwdOption(options);
+
+	return options;
+};
+
+const normalizeArguments = fn => async (patterns, options) => fn(toPatternsArray(patterns), normalizeOptions(options));
+
+const getIgnoreFilesPatterns = options => {
+	const {ignoreFiles, gitignore} = options;
+
+	const patterns = ignoreFiles ? toPatternsArray(ignoreFiles) : [];
+	if (gitignore) {
+		patterns.push(GITIGNORE_FILES_PATTERN);
+	}
+
+	return patterns;
+};
+
+const getFilter = async options => {
+	const ignoreFilesPatterns = getIgnoreFilesPatterns(options);
+	return createFilterFunction(
+		ignoreFilesPatterns.length > 0 && await isIgnoredByIgnoreFiles(ignoreFilesPatterns, {cwd: options.cwd}),
+	);
+};
+
+const createFilterFunction = isIgnored => {
+	const seen = new Set();
+
+	return fastGlobResult => {
+		const path = fastGlobResult.path || fastGlobResult;
+		const pathKey = path$1.normalize(path);
+		const seenOrIgnored = seen.has(pathKey) || (isIgnored && isIgnored(path));
+		seen.add(pathKey);
+		return !seenOrIgnored;
+	};
+};
+
+const unionFastGlobResults = (results, filter) => results.flat().filter(fastGlobResult => filter(fastGlobResult));
+
+const convertNegativePatterns = (patterns, options) => {
+	const tasks = [];
+
+	while (patterns.length > 0) {
+		const index = patterns.findIndex(pattern => isNegativePattern(pattern));
+
+		if (index === -1) {
+			tasks.push({patterns, options});
+			break;
 		}
 
-		const ignore = patterns
-			.slice(index)
-			.filter(pattern => isNegative(pattern))
-			.map(pattern => pattern.slice(1));
+		const ignorePattern = patterns[index].slice(1);
 
-		const options = {
-			...taskOptions,
-			ignore: taskOptions.ignore.concat(ignore)
-		};
+		for (const task of tasks) {
+			task.options.ignore.push(ignorePattern);
+		}
 
-		globTasks.push({pattern, options});
+		if (index !== 0) {
+			tasks.push({
+				patterns: patterns.slice(0, index),
+				options: {
+					...options,
+					ignore: [
+						...options.ignore,
+						ignorePattern,
+					],
+				},
+			});
+		}
+
+		patterns = patterns.slice(index + 1);
 	}
 
-	return globTasks;
+	return tasks;
 };
 
-const globDirs = (task, fn) => {
-	let options = {};
-	if (task.options.cwd) {
-		options.cwd = task.options.cwd;
+const getDirGlobOptions = (options, cwd) => ({
+	...(cwd ? {cwd} : {}),
+	...(Array.isArray(options) ? {files: options} : options),
+});
+
+const generateTasks = async (patterns, options) => {
+	const globTasks = convertNegativePatterns(patterns, options);
+
+	const {cwd, expandDirectories} = options;
+
+	if (!expandDirectories) {
+		return globTasks;
 	}
 
-	if (Array.isArray(task.options.expandDirectories)) {
-		options = {
-			...options,
-			files: task.options.expandDirectories
-		};
-	} else if (typeof task.options.expandDirectories === 'object') {
-		options = {
-			...options,
-			...task.options.expandDirectories
-		};
-	}
+	const patternExpandOptions = getDirGlobOptions(expandDirectories, cwd);
+	const ignoreExpandOptions = cwd ? {cwd} : undefined;
 
-	return fn(task.pattern, options);
+	return Promise.all(
+		globTasks.map(async task => {
+			let {patterns, options} = task;
+
+			[
+				patterns,
+				options.ignore,
+			] = await Promise.all([
+				dirGlob(patterns, patternExpandOptions),
+				dirGlob(options.ignore, ignoreExpandOptions),
+			]);
+
+			return {patterns, options};
+		}),
+	);
 };
 
-const getPattern = (task, fn) => task.options.expandDirectories ? globDirs(task, fn) : [task.pattern];
+const globby = normalizeArguments(async (patterns, options) => {
+	const [
+		tasks,
+		filter,
+	] = await Promise.all([
+		generateTasks(patterns, options),
+		getFilter(options),
+	]);
+	const results = await Promise.all(tasks.map(task => out(task.patterns, task.options)));
 
-const getFilterSync = options => {
-	return options && options.gitignore ?
-		gitignore.sync({cwd: options.cwd, ignore: options.ignore}) :
-		DEFAULT_FILTER;
-};
-
-const globToTask = task => glob => {
-	const {options} = task;
-	if (options.ignore && Array.isArray(options.ignore) && options.expandDirectories) {
-		options.ignore = dirGlob.sync(options.ignore);
-	}
-
-	return {
-		pattern: glob,
-		options
-	};
-};
-
-var globby = async (patterns, options) => {
-	const globTasks = generateGlobTasks(patterns, options);
-
-	const getFilter = async () => {
-		return options && options.gitignore ?
-			gitignore({cwd: options.cwd, ignore: options.ignore}) :
-			DEFAULT_FILTER;
-	};
-
-	const getTasks = async () => {
-		const tasks = await Promise.all(globTasks.map(async task => {
-			const globs = await getPattern(task, dirGlob);
-			return Promise.all(globs.map(globToTask(task)));
-		}));
-
-		return arrayUnion(...tasks);
-	};
-
-	const [filter, tasks] = await Promise.all([getFilter(), getTasks()]);
-	const paths = await Promise.all(tasks.map(task => out(task.pattern, task.options)));
-
-	return arrayUnion(...paths).filter(path_ => !filter(getPathString(path_)));
-};
-
-var sync = (patterns, options) => {
-	const globTasks = generateGlobTasks(patterns, options);
-
-	const tasks = [];
-	for (const task of globTasks) {
-		const newTask = getPattern(task, dirGlob.sync).map(globToTask(task));
-		tasks.push(...newTask);
-	}
-
-	const filter = getFilterSync(options);
-
-	let matches = [];
-	for (const task of tasks) {
-		matches = arrayUnion(matches, out.sync(task.pattern, task.options));
-	}
-
-	return matches.filter(path_ => !filter(path_));
-};
-
-var stream = (patterns, options) => {
-	const globTasks = generateGlobTasks(patterns, options);
-
-	const tasks = [];
-	for (const task of globTasks) {
-		const newTask = getPattern(task, dirGlob.sync).map(globToTask(task));
-		tasks.push(...newTask);
-	}
-
-	const filter = getFilterSync(options);
-	const filterStream = new FilterStream(p => !filter(p));
-	const uniqueStream = new UniqueStream();
-
-	return merge2_1(tasks.map(task => out.stream(task.pattern, task.options)))
-		.pipe(filterStream)
-		.pipe(uniqueStream);
-};
-
-var generateGlobTasks_1 = generateGlobTasks;
-
-var hasMagic = (patterns, options) => []
-	.concat(patterns)
-	.some(pattern => out.isDynamicPattern(pattern, options));
-
-var gitignore_1 = gitignore;
-globby.sync = sync;
-globby.stream = stream;
-globby.generateGlobTasks = generateGlobTasks_1;
-globby.hasMagic = hasMagic;
-globby.gitignore = gitignore_1;
+	return unionFastGlobResults(results, filter);
+});
 
 // node modules
 async function files (workspace, options) {
-  // get list of files in current workspace
-  let paths = await globby(['**', ...options.files], {
+  // convert list of files to entries array
+  const filesEntries = options.files.map(item => typeof item === 'string' ? [[item], item] : Object.entries(item).pop()); // convert entries array to an object
+
+  const filesObject = Object.fromEntries(filesEntries); // get list of files in current workspace
+
+  let paths = await globby(['**', ...Object.keys(filesObject)], {
     cwd: workspace,
     gitignore: true,
     dot: true
@@ -102593,19 +102491,23 @@ async function files (workspace, options) {
 
   paths = micromatch_1(paths, ['!.git/**']); // lets store our files in a Map
 
-  const contents = new Map(); // iterate over files
+  const contents = new Map();
+  const finalPaths = []; // iterate over files
 
   for (const path of paths) {
     // read file content
-    const content = await readFile(join(workspace, path)); // store as base64 encoded string
+    const content = await readFile(join(workspace, path)); // set new path (if any)
 
-    contents.set(path, content);
+    const newPath = filesObject[path] || path;
+    finalPaths.push(newPath); // store as base64 encoded string
+
+    contents.set(newPath, content);
   }
 
   core$1.info(`found ${paths.length} files available to sync`);
   /* istanbul ignore next */
 
-  if (paths.length > 0) core$1.debug(inspect(paths));
+  if (paths.length > 0) core$1.debug(inspect(finalPaths));
   return contents;
 }
 
@@ -103275,6 +103177,7 @@ function createPatch(fileName, oldStr, newStr, oldHeader, newHeader, options) {
   return createTwoFilesPatch(fileName, fileName, oldStr, newStr, oldHeader, newHeader, options);
 }
 
+/* eslint-disable camelcase */
 async function pull_request (octokit, {
   changedRepositories,
   localFiles
@@ -103310,22 +103213,22 @@ async function pull_request (octokit, {
 
   const {
     data: comments
-  } = await octokit.rest.issues.listComments(_extends({}, github$1.context.repo, {
+  } = await octokit.rest.issues.listComments({ ...github$1.context.repo,
     issue_number
-  })); // find existing comment
+  }); // find existing comment
 
   const old = comments.find(comment => comment.body.includes('## Template Repository Sync Report')); // update PR
 
   if (old) {
-    await octokit.rest.issues.updateComment(_extends({}, github$1.context.repo, {
+    await octokit.rest.issues.updateComment({ ...github$1.context.repo,
       comment_id: old.id,
       body
-    }));
+    });
   } else {
-    await octokit.rest.issues.createComment(_extends({}, github$1.context.repo, {
+    await octokit.rest.issues.createComment({ ...github$1.context.repo,
       issue_number,
       body
-    }));
+    });
   }
 }
 
@@ -103408,6 +103311,7 @@ async function push (octokit, {
   }
 }
 
+/* eslint-disable camelcase */
 const mediaType = {
   previews: ['baptiste']
 };
@@ -103422,9 +103326,9 @@ async function repos (octokit, options) {
         type
       }
     }
-  } = await octokit.request('GET /repos/{owner}/{repo}', _extends({}, github$1.context.repo, {
+  } = await octokit.request('GET /repos/{owner}/{repo}', { ...github$1.context.repo,
     mediaType
-  })); // exit early
+  }); // exit early
 
   if (!is_template) {
     core$1.warning('action executed on non template repository');
