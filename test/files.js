@@ -3,7 +3,7 @@ import { join } from 'path'
 import { test } from 'tap'
 
 import core from '@actions/core'
-import files from '../lib/files.js'
+import files from '../src/lib/files.js'
 import { inspect } from 'util'
 
 import { URL, fileURLToPath } from 'url'

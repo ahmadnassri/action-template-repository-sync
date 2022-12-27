@@ -13,7 +13,7 @@ github.context = { repo: { owner: 'ahmad' } }
 sinon.stub(core, 'debug')
 sinon.stub(core, 'warning')
 
-import report from '../lib/report.js'
+import report from '../src/lib/report.js'
 
 test('generats report', async assert => {
   assert.plan(2)

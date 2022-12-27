@@ -3,7 +3,7 @@ import { inspect } from 'util'
 import { test, afterEach } from 'tap'
 
 import core from '@actions/core'
-import config from '../lib/config.js'
+import config from '../src/lib/config.js'
 
 import { URL, fileURLToPath } from 'url'
 const __dirname = fileURLToPath(new URL('.', import.meta.url))

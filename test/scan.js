@@ -5,7 +5,7 @@ import { test, afterEach } from 'tap'
 import core from '@actions/core'
 import github from '@actions/github'
 
-import scan from '../lib/scan.js'
+import scan from '../src/lib/scan.js'
 
 // override context
 github.context = { repo: { owner: 'ahmad' } }
