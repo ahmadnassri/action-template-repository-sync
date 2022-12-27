@@ -20,7 +20,7 @@ test('default values', assert => {
   const options = config({})
 
   // debug
-  assert.ok(core.info.calledWith('no config file found'))
+  assert.ok(core.info.calledWith('ℹ️ no config file found'))
   assert.same(options, { dependents: [], additional: [], files: [] })
 })
 
@@ -32,7 +32,7 @@ test('invalid config', assert => {
   const options = config({ workspace: __dirname, path: 'fixtures/nonexistent.yml' })
 
   // debug
-  assert.ok(core.info.calledWith('no config file found'))
+  assert.ok(core.info.calledWith('ℹ️ no config file found'))
   assert.same(options, { dependents: [], additional: [], files: [] })
 })
 
@@ -45,7 +45,7 @@ test('config does not exist', assert => {
   config({ workspace: __dirname, path: 'fixtures/configs/invalid.yml' })
 
   // debug
-  assert.ok(core.setFailed.calledWith('failed to parse config'))
+  assert.ok(core.setFailed.calledWith('❌ failed to parse config'))
   assert.ok(process.exit.calledWith(1))
 })
 
@@ -59,7 +59,7 @@ test('valid config', assert => {
   const options = config({ workspace: __dirname, path: 'fixtures/configs/valid.yml' })
 
   // debug
-  assert.ok(core.debug.calledWith(`config loaded: ${inspect(options)}`))
+  assert.ok(core.debug.calledWith(`✅ config loaded: ${inspect(options)}`))
 
   // file was parsed correctly
   assert.same(options, {

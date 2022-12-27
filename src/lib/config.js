@@ -13,7 +13,7 @@ export default function ({ workspace, path }) {
   const configPath = join(workspace || '', path || '.github/template-sync.yml')
 
   if (!existsSync(configPath)) {
-    core.info('no config file found')
+    core.info('ℹ️ no config file found')
     return initial
   }
 
@@ -24,10 +24,10 @@ export default function ({ workspace, path }) {
     // set some defaults
     options = { ...initial, ...options }
 
-    core.debug(`config loaded: ${inspect(options)}`)
+    core.debug(`✅ config loaded: ${inspect(options)}`)
     return options
   } catch (err) {
-    core.setFailed('failed to parse config')
+    core.setFailed('❌ failed to parse config')
     process.exit(1)
   }
 }
