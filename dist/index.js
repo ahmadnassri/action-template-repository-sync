@@ -2,7 +2,7 @@ import util, { inspect } from 'util';
 import require$$0 from 'os';
 import fs$2, { existsSync, readFileSync } from 'fs';
 import crypto from 'crypto';
-import path, { join } from 'path';
+import path$1, { join } from 'path';
 import http from 'http';
 import https from 'https';
 import 'net';
@@ -15,7 +15,7 @@ import punycode from 'punycode';
 import zlib from 'zlib';
 import { readFile } from 'fs/promises';
 import fs$3 from 'node:fs';
-import path$1 from 'node:path';
+import path$2 from 'node:path';
 import process$1 from 'node:process';
 import { fileURLToPath } from 'node:url';
 import 'node:stream';
@@ -1932,7 +1932,7 @@ var __importStar = (commonjsGlobal && commonjsGlobal.__importStar) || function (
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toPlatformPath = exports.toWin32Path = exports.toPosixPath = void 0;
-const path$1 = __importStar(path);
+const path = __importStar(path$1);
 /**
  * toPosixPath converts the given path to the posix form. On Windows, \\ will be
  * replaced with /.
@@ -1964,7 +1964,7 @@ exports.toWin32Path = toWin32Path;
  * @return string The platform-specific path.
  */
 function toPlatformPath(pth) {
-    return pth.replace(/[/\\]/g, path$1.sep);
+    return pth.replace(/[/\\]/g, path.sep);
 }
 exports.toPlatformPath = toPlatformPath;
 
@@ -2005,7 +2005,7 @@ exports.getIDToken = exports.getState = exports.saveState = exports.group = expo
 
 
 const os = __importStar(require$$0);
-const path$1 = __importStar(path);
+const path = __importStar(path$1);
 
 /**
  * The code to exit an action
@@ -2060,7 +2060,7 @@ function addPath(inputPath) {
     else {
         command.issueCommand('add-path', {}, inputPath);
     }
-    process.env['PATH'] = `${inputPath}${path$1.delimiter}${process.env['PATH']}`;
+    process.env['PATH'] = `${inputPath}${path.delimiter}${process.env['PATH']}`;
 }
 exports.addPath = addPath;
 /**
@@ -88693,6 +88693,7 @@ function createStringifyContext(doc, options) {
         doubleQuotedAsJSON: false,
         doubleQuotedMinMultiLineLength: 40,
         falseStr: 'false',
+        flowCollectionPadding: true,
         indentSeq: true,
         lineWidth: 80,
         minContentWidth: 20,
@@ -88716,6 +88717,7 @@ function createStringifyContext(doc, options) {
     return {
         anchors: new Set(),
         doc,
+        flowCollectionPadding: opt.flowCollectionPadding ? ' ' : '',
         indent: '',
         indentStep: typeof opt.indent === 'number' ? ' '.repeat(opt.indent) : '  ',
         inFlow,
@@ -88867,19 +88869,18 @@ function stringifyPair({ key, value }, ctx, onComment, onChompKeep) {
         if (keyComment)
             str += stringifyComment_1.lineComment(str, ctx.indent, commentString(keyComment));
     }
-    let vcb = '';
-    let valueComment = null;
+    let vsb, vcb, valueComment;
     if (Node.isNode(value)) {
-        if (value.spaceBefore)
-            vcb = '\n';
-        if (value.commentBefore) {
-            const cs = commentString(value.commentBefore);
-            vcb += `\n${stringifyComment_1.indentComment(cs, ctx.indent)}`;
-        }
+        vsb = !!value.spaceBefore;
+        vcb = value.commentBefore;
         valueComment = value.comment;
     }
-    else if (value && typeof value === 'object') {
-        value = doc.createNode(value);
+    else {
+        vsb = false;
+        vcb = null;
+        valueComment = null;
+        if (value && typeof value === 'object')
+            value = doc.createNode(value);
     }
     ctx.implicitKey = false;
     if (!explicitKey && !keyComment && Node.isScalar(value))
@@ -88894,24 +88895,50 @@ function stringifyPair({ key, value }, ctx, onComment, onChompKeep) {
         !value.tag &&
         !value.anchor) {
         // If indentSeq === false, consider '- ' as part of indentation where possible
-        ctx.indent = ctx.indent.substr(2);
+        ctx.indent = ctx.indent.substring(2);
     }
     let valueCommentDone = false;
     const valueStr = stringify_1$2.stringify(value, ctx, () => (valueCommentDone = true), () => (chompKeep = true));
     let ws = ' ';
-    if (vcb || keyComment) {
-        if (valueStr === '' && !ctx.inFlow)
-            ws = vcb === '\n' ? '\n\n' : vcb;
-        else
-            ws = `${vcb}\n${ctx.indent}`;
+    if (keyComment || vsb || vcb) {
+        ws = vsb ? '\n' : '';
+        if (vcb) {
+            const cs = commentString(vcb);
+            ws += `\n${stringifyComment_1.indentComment(cs, ctx.indent)}`;
+        }
+        if (valueStr === '' && !ctx.inFlow) {
+            if (ws === '\n')
+                ws = '\n\n';
+        }
+        else {
+            ws += `\n${ctx.indent}`;
+        }
     }
     else if (!explicitKey && Node.isCollection(value)) {
-        const flow = valueStr[0] === '[' || valueStr[0] === '{';
-        if (!flow || valueStr.includes('\n'))
-            ws = `\n${ctx.indent}`;
+        const vs0 = valueStr[0];
+        const nl0 = valueStr.indexOf('\n');
+        const hasNewline = nl0 !== -1;
+        const flow = ctx.inFlow ?? value.flow ?? value.items.length === 0;
+        if (hasNewline || !flow) {
+            let hasPropsLine = false;
+            if (hasNewline && (vs0 === '&' || vs0 === '!')) {
+                let sp0 = valueStr.indexOf(' ');
+                if (vs0 === '&' &&
+                    sp0 !== -1 &&
+                    sp0 < nl0 &&
+                    valueStr[sp0 + 1] === '!') {
+                    sp0 = valueStr.indexOf(' ', sp0 + 1);
+                }
+                if (sp0 === -1 || nl0 < sp0)
+                    hasPropsLine = true;
+            }
+            if (!hasPropsLine)
+                ws = `\n${ctx.indent}`;
+        }
     }
-    else if (valueStr === '' || valueStr[0] === '\n')
+    else if (valueStr === '' || valueStr[0] === '\n') {
         ws = '';
+    }
     str += ws + valueStr;
     if (ctx.inFlow) {
         if (valueCommentDone && onComment)
@@ -89151,7 +89178,7 @@ function stringifyBlockCollection({ comment, items }, ctx, { blockItemPrefix, fl
     return str;
 }
 function stringifyFlowCollection({ comment, items }, ctx, { flowChars, itemIndent, onComment }) {
-    const { indent, indentStep, options: { commentString } } = ctx;
+    const { indent, indentStep, flowCollectionPadding: fcPadding, options: { commentString } } = ctx;
     itemIndent += indentStep;
     const itemCtx = Object.assign({}, ctx, {
         indent: itemIndent,
@@ -89220,7 +89247,7 @@ function stringifyFlowCollection({ comment, items }, ctx, { flowChars, itemInden
             str += `\n${indent}${end}`;
         }
         else {
-            str = `${start} ${lines.join(' ')} ${end}`;
+            str = `${start}${fcPadding}${lines.join(' ')}${fcPadding}${end}`;
         }
     }
     if (comment) {
@@ -89258,12 +89285,12 @@ function findPair(items, key) {
     return undefined;
 }
 class YAMLMap extends Collection_1.Collection {
+    static get tagName() {
+        return 'tag:yaml.org,2002:map';
+    }
     constructor(schema) {
         super(Node.MAP, schema);
         this.items = [];
-    }
-    static get tagName() {
-        return 'tag:yaml.org,2002:map';
     }
     /**
      * Adds a value to the collection.
@@ -89405,12 +89432,12 @@ var map_1 = {
 };
 
 class YAMLSeq extends Collection_1.Collection {
+    static get tagName() {
+        return 'tag:yaml.org,2002:seq';
+    }
     constructor(schema) {
         super(Node.SEQ, schema);
         this.items = [];
-    }
-    static get tagName() {
-        return 'tag:yaml.org,2002:seq';
     }
     add(value) {
         this.items.push(value);
@@ -95002,7 +95029,7 @@ function config ({
   const configPath = join(workspace || '', path || '.github/template-sync.yml');
 
   if (!existsSync(configPath)) {
-    core$1.info('no config file found');
+    core$1.info('ℹ️ no config file found');
     return initial;
   } // parse .github/template-sync.yml
 
@@ -95013,10 +95040,10 @@ function config ({
     options = { ...initial,
       ...options
     };
-    core$1.debug(`config loaded: ${inspect(options)}`);
+    core$1.debug(`✅ config loaded: ${inspect(options)}`);
     return options;
   } catch (err) {
-    core$1.setFailed('failed to parse config');
+    core$1.setFailed('❌ failed to parse config');
     process.exit(1);
   }
 }
@@ -95233,7 +95260,7 @@ function unixify(filepath) {
 }
 exports.unixify = unixify;
 function makeAbsolute(cwd, filepath) {
-    return path.resolve(cwd, filepath);
+    return path$1.resolve(cwd, filepath);
 }
 exports.makeAbsolute = makeAbsolute;
 function escape(pattern) {
@@ -95424,7 +95451,7 @@ var isGlob = function isGlob(str, options) {
   return check(str);
 };
 
-var pathPosixDirname = path.posix.dirname;
+var pathPosixDirname = path$1.posix.dirname;
 var isWin32 = require$$0.platform() === 'win32';
 
 var slash$1 = '/';
@@ -97018,7 +97045,7 @@ var constants$1 = {
   CHAR_VERTICAL_LINE: 124, /* | */
   CHAR_ZERO_WIDTH_NOBREAK_SPACE: 65279, /* \uFEFF */
 
-  SEP: path.sep,
+  SEP: path$1.sep,
 
   /**
    * Create EXTGLOB_CHARS
@@ -97078,7 +97105,7 @@ exports.isWindows = options => {
   if (options && typeof options.windows === 'boolean') {
     return options.windows;
   }
-  return win32 === true || path.sep === '\\';
+  return win32 === true || path$1.sep === '\\';
 };
 
 exports.escapeLast = (input, char, lastIdx) => {
@@ -98740,7 +98767,7 @@ picomatch$1.test = (input, regex, options, { glob, posix } = {}) => {
 
 picomatch$1.matchBase = (input, glob, options, posix = utils$2.isWindows(options)) => {
   const regex = glob instanceof RegExp ? glob : picomatch$1.makeRe(glob, options);
-  return regex.test(path.basename(input));
+  return regex.test(path$1.basename(input));
 };
 
 /**
@@ -99505,7 +99532,7 @@ function endsWithSlashGlobStar(pattern) {
 }
 exports.endsWithSlashGlobStar = endsWithSlashGlobStar;
 function isAffectDepthOfReadingPattern(pattern) {
-    const basename = path.basename(pattern);
+    const basename = path$1.basename(pattern);
     return endsWithSlashGlobStar(pattern) || isStaticPattern(basename);
 }
 exports.isAffectDepthOfReadingPattern = isAffectDepthOfReadingPattern;
@@ -100154,7 +100181,7 @@ class Settings$1 {
         this._options = _options;
         this.followSymbolicLinks = this._getValue(this._options.followSymbolicLinks, false);
         this.fs = fs_1.createFileSystemAdapter(this._options.fs);
-        this.pathSegmentSeparator = this._getValue(this._options.pathSegmentSeparator, path.sep);
+        this.pathSegmentSeparator = this._getValue(this._options.pathSegmentSeparator, path$1.sep);
         this.stats = this._getValue(this._options.stats, false);
         this.throwErrorOnBrokenSymbolicLink = this._getValue(this._options.throwErrorOnBrokenSymbolicLink, true);
         this.fsStatSettings = new out$3.Settings({
@@ -100807,7 +100834,7 @@ class Settings {
         this.deepFilter = this._getValue(this._options.deepFilter, null);
         this.entryFilter = this._getValue(this._options.entryFilter, null);
         this.errorFilter = this._getValue(this._options.errorFilter, null);
-        this.pathSegmentSeparator = this._getValue(this._options.pathSegmentSeparator, path.sep);
+        this.pathSegmentSeparator = this._getValue(this._options.pathSegmentSeparator, path$1.sep);
         this.fsScandirSettings = new out$2.Settings({
             followSymbolicLinks: this._options.followSymbolicLinks,
             fs: this._options.fs,
@@ -100872,7 +100899,7 @@ class Reader {
         });
     }
     _getFullEntryPath(filepath) {
-        return path.resolve(this._settings.cwd, filepath);
+        return path$1.resolve(this._settings.cwd, filepath);
     }
     _makeEntry(stats, pattern) {
         const entry = {
@@ -101220,7 +101247,7 @@ class Provider {
         this.entryTransformer = new entry.default(this._settings);
     }
     _getRootDirectory(task) {
-        return path.resolve(this._settings.cwd, task.base);
+        return path$1.resolve(this._settings.cwd, task.base);
     }
     _getReaderOptions(task) {
         const basePath = task.base === '.' ? '' : task.base;
@@ -101560,11 +101587,11 @@ const getExtensions = extensions => extensions.length > 1 ? `{${extensions.join(
 
 const getPath = (filepath, cwd) => {
 	const pth = filepath[0] === '!' ? filepath.slice(1) : filepath;
-	return path.isAbsolute(pth) ? pth : path.join(cwd, pth);
+	return path$1.isAbsolute(pth) ? pth : path$1.join(cwd, pth);
 };
 
 const addExtensions = (file, extensions) => {
-	if (path.extname(file)) {
+	if (path$1.extname(file)) {
 		return `**/${file}`;
 	}
 
@@ -101581,18 +101608,18 @@ const getGlob = (directory, options) => {
 	}
 
 	if (options.files && options.extensions) {
-		return options.files.map(x => path.posix.join(directory, addExtensions(x, options.extensions)));
+		return options.files.map(x => path$1.posix.join(directory, addExtensions(x, options.extensions)));
 	}
 
 	if (options.files) {
-		return options.files.map(x => path.posix.join(directory, `**/${x}`));
+		return options.files.map(x => path$1.posix.join(directory, `**/${x}`));
 	}
 
 	if (options.extensions) {
-		return [path.posix.join(directory, `**/*.${getExtensions(options.extensions)}`)];
+		return [path$1.posix.join(directory, `**/*.${getExtensions(options.extensions)}`)];
 	}
 
-	return [path.posix.join(directory, '**')];
+	return [path$1.posix.join(directory, '**')];
 };
 
 var dirGlob = async (input, options) => {
@@ -102262,11 +102289,11 @@ const ignoreFilesGlobOptions = {
 const GITIGNORE_FILES_PATTERN = '**/.gitignore';
 
 const applyBaseToPattern = (pattern, base) => isNegativePattern(pattern)
-	? '!' + path$1.posix.join(base, pattern.slice(1))
-	: path$1.posix.join(base, pattern);
+	? '!' + path$2.posix.join(base, pattern.slice(1))
+	: path$2.posix.join(base, pattern);
 
 const parseIgnoreFile = (file, cwd) => {
-	const base = slash(path$1.relative(cwd, path$1.dirname(file.filePath)));
+	const base = slash(path$2.relative(cwd, path$2.dirname(file.filePath)));
 
 	return file.content
 		.split(/\r?\n/)
@@ -102276,9 +102303,9 @@ const parseIgnoreFile = (file, cwd) => {
 
 const toRelativePath = (fileOrDirectory, cwd) => {
 	cwd = slash(cwd);
-	if (path$1.isAbsolute(fileOrDirectory)) {
+	if (path$2.isAbsolute(fileOrDirectory)) {
 		if (slash(fileOrDirectory).startsWith(cwd)) {
-			return path$1.relative(cwd, fileOrDirectory);
+			return path$2.relative(cwd, fileOrDirectory);
 		}
 
 		throw new Error(`Path ${fileOrDirectory} is not in cwd ${cwd}`);
@@ -102384,7 +102411,7 @@ const createFilterFunction = isIgnored => {
 
 	return fastGlobResult => {
 		const path = fastGlobResult.path || fastGlobResult;
-		const pathKey = path$1.normalize(path);
+		const pathKey = path$2.normalize(path);
 		const seenOrIgnored = seen.has(pathKey) || (isIgnored && isIgnored(path));
 		seen.add(pathKey);
 		return !seenOrIgnored;
@@ -103252,7 +103279,7 @@ async function push (octokit, {
 }) {
   const newContent = [];
 
-  for (const [repo, remoteFiles] of changedRepositories.entries()) {
+  main: for (const [repo, remoteFiles] of changedRepositories.entries()) {
     for (const path of remoteFiles.keys()) {
       // add file to update tree
       newContent.push({
@@ -103261,65 +103288,106 @@ async function push (octokit, {
         mode: '100644' // TODO fetch current file mode
 
       });
-      core$1.info(`⚠ ${repo}:${path} will be updated`);
+      core$1.info(`⚠️ ${repo}:${path} will be updated`);
     } // dry run
 
 
-    if (inputs.dry === 'true') continue; // get the default branch
+    if (inputs.dry === 'true') continue main;
+    let default_branch, sha, tree, newTree, newCommit; // get the default branch
 
-    const {
-      data: {
-        default_branch
-      }
-    } = await octokit.request('GET /repos/{owner}/{repo}', {
-      owner: github$1.context.repo.owner,
-      repo
-    });
+    try {
+      ({
+        data: {
+          default_branch
+        }
+      } = await octokit.request('GET /repos/{owner}/{repo}', {
+        owner: github$1.context.repo.owner,
+        repo
+      }));
+    } catch (err) {
+      var _err$response, _err$response$data;
+
+      core$1.warning(`❌ failed to detect default branch for ${repo}: ${((_err$response = err.response) == null ? void 0 : (_err$response$data = _err$response.data) == null ? void 0 : _err$response$data.message) || err.message}`);
+      continue main;
+    }
+
     core$1.debug(`${repo}: default branch: ${default_branch}`); // Grab the latest commit
 
-    const {
-      data: [{
-        sha,
-        commit: {
-          tree
-        }
-      }]
-    } = await octokit.request('GET /repos/{owner}/{repo}/commits?per_page=1', {
-      owner: github$1.context.repo.owner,
-      repo
-    });
+    try {
+      ({
+        data: [{
+          sha,
+          commit: {
+            tree
+          }
+        }]
+      } = await octokit.request('GET /repos/{owner}/{repo}/commits?per_page=1', {
+        owner: github$1.context.repo.owner,
+        repo
+      }));
+    } catch (err) {
+      var _err$response2, _err$response2$data;
+
+      core$1.warning(`❌ failed to fetch commit info for ${repo}:${path}: ${((_err$response2 = err.response) == null ? void 0 : (_err$response2$data = _err$response2.data) == null ? void 0 : _err$response2$data.message) || err.message}`);
+      continue main;
+    }
+
     core$1.debug(`${repo}: latest commit: { sha: ${sha}, tree.sha: ${tree.sha} }`); // Make a new tree for the deltas
 
-    const {
-      data: newTree
-    } = await octokit.request('POST /repos/{owner}/{repo}/git/trees', {
-      owner: github$1.context.repo.owner,
-      repo,
-      base_tree: tree.sha,
-      tree: newContent
-    });
+    try {
+      ({
+        data: newTree
+      } = await octokit.request('POST /repos/{owner}/{repo}/git/trees', {
+        owner: github$1.context.repo.owner,
+        repo,
+        base_tree: tree.sha,
+        tree: newContent
+      }));
+    } catch (err) {
+      var _err$response3, _err$response3$data;
+
+      core$1.warning(`❌ failed to create a tree in ${repo}:${tree.sha} ${((_err$response3 = err.response) == null ? void 0 : (_err$response3$data = _err$response3.data) == null ? void 0 : _err$response3$data.message) || err.message}`);
+      continue main;
+    }
+
     core$1.debug(`${repo}: new tree: ${newTree.sha}`);
     core$1.debug(inspect(newTree)); // Make a new commit with the delta tree
 
-    const {
-      data: newCommit
-    } = await octokit.request('POST /repos/{owner}/{repo}/git/commits', {
-      owner: github$1.context.repo.owner,
-      repo,
-      message: `chore(template): sync with ${github$1.context.repo.owner}/${github$1.context.repo.repo}`,
-      tree: newTree.sha,
-      parents: [sha]
-    });
+    try {
+      ({
+        data: newCommit
+      } = await octokit.request('POST /repos/{owner}/{repo}/git/commits', {
+        owner: github$1.context.repo.owner,
+        repo,
+        message: `chore(template): sync with ${github$1.context.repo.owner}/${github$1.context.repo.repo}`,
+        tree: newTree.sha,
+        parents: [sha]
+      }));
+    } catch (err) {
+      var _err$response4, _err$response4$data;
+
+      core$1.warning(`❌ failed to create a new commit in ${repo}: ${((_err$response4 = err.response) == null ? void 0 : (_err$response4$data = _err$response4.data) == null ? void 0 : _err$response4$data.message) || err.message}`);
+      continue main;
+    }
+
     core$1.debug(`${repo}: new commit: ${newCommit.sha}`);
     core$1.debug(inspect(newCommit)); // Set HEAD of default branch to the new commit
 
-    await octokit.request('PATCH /repos/{owner}/{repo}/git/refs/{ref}', {
-      owner: github$1.context.repo.owner,
-      repo,
-      ref: `heads/${default_branch}`,
-      sha: newCommit.sha
-    });
-    core$1.info(`✔ ${repo} is updated`);
+    try {
+      await octokit.request('PATCH /repos/{owner}/{repo}/git/refs/{ref}', {
+        owner: github$1.context.repo.owner,
+        repo,
+        ref: `heads/${default_branch}`,
+        sha: newCommit.sha
+      });
+    } catch (err) {
+      var _err$response5, _err$response5$data;
+
+      core$1.warning(`❌ failed to update brach head in ${repo}: ${((_err$response5 = err.response) == null ? void 0 : (_err$response5$data = _err$response5.data) == null ? void 0 : _err$response5$data.message) || err.message}`);
+      continue main;
+    }
+
+    core$1.info(`✅ ${repo} is updated`);
   }
 }
 
