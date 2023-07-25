@@ -49,7 +49,7 @@ test('remote files as the same', async assert => {
 
   const changedRepositories = await scan(octokit, { repositories, localFiles })
 
-  assert.ok(core.debug.calledWith('✔ foo:/path/file is up to date'))
+  assert.ok(core.debug.calledWith('✅ foo:/path/file is up to date'))
 
   assert.equal(changedRepositories.size, 0)
 })
