@@ -103757,12 +103757,12 @@ process.on('unhandledRejection', errorHandler);
 process.on('uncaughtException', errorHandler); // dry run
 
 if (inputs.dry === 'true') {
-  core$1.info('running in dry-run mode');
+  core$1.info('🟠 running in dry-run mode');
 } // exit early: incompatible workflow
 
 
 if (!allowed.includes(github$1.context.eventName)) {
-  core$1.warning(`action ran on incompatible event "${github$1.context.eventName}", only "${allowed.join('", "')}" are allowed`);
+  core$1.warning(`⚠️ action ran on incompatible event "${github$1.context.eventName}", only "${allowed.join('", "')}" are allowed`);
   process.exit(0);
 } // load config
 
@@ -103777,7 +103777,7 @@ const octokit = github$1.getOctokit(inputs.token); // get dependant repos
 const repositories = await repos(octokit, options); // exit early: no repos to update
 
 if (repositories.length === 0) {
-  core$1.info('no repositories to update');
+  core$1.info('✅ no repositories to update');
   process.exit(0);
 } // load files
 
@@ -103787,10 +103787,10 @@ const localFiles = await files(workspace, options); // scan repos
 const changedRepositories = await scan(octokit, {
   repositories,
   localFiles
-}); // determine which method to run
+});
+core$1.info(`ℹ️ running from "${inputs.event}"`); // determine which method to run
 
 const method = ['pull_request', 'pull_request_target'].includes(inputs.event) ? pull_request : push;
-core$1.info(`running from "${method}"`);
 await method(octokit, {
   changedRepositories,
   localFiles,
