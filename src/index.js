@@ -82,4 +82,6 @@ const changedRepositories = await scan(octokit, { repositories, localFiles })
 // determine which method to run
 const method = (['pull_request', 'pull_request_target'].includes(inputs.event)) ? pull_request : push
 
+core.info(`running from "${method}"`)
+
 await method(octokit, { changedRepositories, localFiles, inputs })
