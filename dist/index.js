@@ -103613,9 +103613,6 @@ async function push (octokit, {
 }
 
 /* eslint-disable camelcase */
-const mediaType = {
-  previews: ['baptiste']
-};
 async function repos (octokit, options) {
   // construct this template repo full name
   const full_name = `${github$1.context.repo.owner}/${github$1.context.repo.repo}`; // determine type
@@ -103627,8 +103624,7 @@ async function repos (octokit, options) {
         type
       }
     }
-  } = await octokit.request('GET /repos/{owner}/{repo}', { ...github$1.context.repo,
-    mediaType
+  } = await octokit.request('GET /repos/{owner}/{repo}', { ...github$1.context.repo
   }); // exit early
 
   if (!is_template) {
@@ -103641,8 +103637,7 @@ async function repos (octokit, options) {
     username: github$1.context.repo.owner,
     org: github$1.context.repo.owner,
     per_page: 100,
-    affiliation: 'owner',
-    mediaType
+    affiliation: 'owner'
   });
   const repositories = all.filter(repo => repo.archived === false); // only include non-archived repos
 
@@ -103758,8 +103753,9 @@ process.on('uncaughtException', errorHandler); // dry run
 
 if (inputs.dry === 'true') {
   core$1.info('🟠 running in dry-run mode');
-} // exit early: incompatible workflow
+}
 
+core$1.info(`ℹ️ running from "${inputs.event}"`); // exit early: incompatible workflow
 
 if (!allowed.includes(github$1.context.eventName)) {
   core$1.warning(`⚠️ action ran on incompatible event "${github$1.context.eventName}", only "${allowed.join('", "')}" are allowed`);
@@ -103787,8 +103783,7 @@ const localFiles = await files(workspace, options); // scan repos
 const changedRepositories = await scan(octokit, {
   repositories,
   localFiles
-});
-core$1.info(`ℹ️ running from "${inputs.event}"`); // determine which method to run
+}); // determine which method to run
 
 const method = ['pull_request', 'pull_request_target'].includes(inputs.event) ? pull_request : push;
 await method(octokit, {
