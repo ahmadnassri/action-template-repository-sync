@@ -103790,6 +103790,7 @@ const changedRepositories = await scan(octokit, {
 }); // determine which method to run
 
 const method = ['pull_request', 'pull_request_target'].includes(inputs.event) ? pull_request : push;
+core$1.info(`running from "${method}"`);
 await method(octokit, {
   changedRepositories,
   localFiles,
