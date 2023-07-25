@@ -38,7 +38,7 @@ export default async function (octokit, { repositories, localFiles }) {
 
       // exit early if content is the same
       if (remoteContent && remoteContent.compare(localContent) === 0) {
-        core.debug(`✔ ${repo}:${path} is up to date`)
+        core.debug(`✅ ${repo}:${path} is up to date`)
         continue
       }
 
