@@ -48,7 +48,7 @@ on:
   pull_request: # run on pull requests to preview changes before applying
 
   workflow_run: # setup this workflow as a dependency of others
-    workflows: [ test, release ] # don't sync template unless tests and other important workflows have passed
+    workflows: [test, release] # don't sync template unless tests and other important workflows have passed
 
 jobs:
   template-sync:
@@ -81,7 +81,7 @@ additional:
   - "!not-this-*" # exclude
 
 files:
-  - ".gitignore"  # include
+  - ".gitignore" # include
   - "!package.json" # exclude
   - "!(package-lock.json|yarn.lock)"
 
@@ -131,18 +131,19 @@ files:
 | input          | required | default                     | description                                  |
 |----------------|----------|-----------------------------|----------------------------------------------|
 | `github-token` | ✔️       | `-`                         | The GitHub token used to call the GitHub API |
-| `config`       | ❌        | `.github/template-sync.yml` | path to config file                          |
-| `dry-run`      | ❌        | `false`                     | toggle info mode (commits wont occur)        |
+| `config`       | ❌       | `.github/template-sync.yml` | path to config file                          |
+| `dry-run`      | ❌       | `false`                     | toggle info mode (commits wont occur)        |
+| `event`        | ❌       | `github.event`              | event object to use                          |
 
 ## :warning: Operational Logic
 
--   The action will only run on the following event types: 'schedule`,`workflow\_dispatch`,`repository\_dispatch`,`pull\_request`,`release`,`workflow\_run`,`push\`.
--   The when run in `pull_request`, the action will post post a comment on the the Pull Request with the diff view of files to be changed.
--   The action will look for files under the `GITHUB_WORKSPACE` environment path
--   The action will read file contents **AT RUNTIME** *(so you can run build steps or modify content before running the action if you so wish)*
--   If no config file is present indicating which files to filter, the action will sync **ALL FILES** in the template repository
--   The action will respect **`.gitignore`** files
--   Files on target repos **WILL BE CREATED** if they do not exist
+- The action will only run on the following event types: 'schedule`,`workflow_dispatch`,`repository_dispatch`,`pull_request`,`release`,`workflow_run`,`push\`.
+- The when run in `pull_request`, the action will post post a comment on the the Pull Request with the diff view of files to be changed.
+- The action will look for files under the `GITHUB_WORKSPACE` environment path
+- The action will read file contents **AT RUNTIME** *(so you can run build steps or modify content before running the action if you so wish)*
+- If no config file is present indicating which files to filter, the action will sync **ALL FILES** in the template repository
+- The action will respect **`.gitignore`** files
+- Files on target repos **WILL BE CREATED** if they do not exist
 
   [Template Repository]: https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-template-repository
   [bug in the GitHub APIs]: https://github.com/github/docs/issues/4894

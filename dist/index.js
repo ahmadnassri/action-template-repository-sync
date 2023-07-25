@@ -87251,24 +87251,11 @@ function isNode$1(node) {
     return false;
 }
 const hasAnchor = (node) => (isScalar$2(node) || isCollection$2(node)) && !!node.anchor;
-class NodeBase {
-    constructor(type) {
-        Object.defineProperty(this, NODE_TYPE, { value: type });
-    }
-    /** Create a copy of this node.  */
-    clone() {
-        const copy = Object.create(Object.getPrototypeOf(this), Object.getOwnPropertyDescriptors(this));
-        if (this.range)
-            copy.range = this.range.slice();
-        return copy;
-    }
-}
 
 var ALIAS_1 = ALIAS;
 var DOC_1 = DOC;
 var MAP_1 = MAP;
 var NODE_TYPE_1 = NODE_TYPE;
-var NodeBase_1 = NodeBase;
 var PAIR_1 = PAIR;
 var SCALAR_1$1 = SCALAR$1;
 var SEQ_1 = SEQ;
@@ -87282,12 +87269,11 @@ var isPair_1 = isPair$1;
 var isScalar_1$1 = isScalar$2;
 var isSeq_1 = isSeq$1;
 
-var Node = {
+var identity = {
 	ALIAS: ALIAS_1,
 	DOC: DOC_1,
 	MAP: MAP_1,
 	NODE_TYPE: NODE_TYPE_1,
-	NodeBase: NodeBase_1,
 	PAIR: PAIR_1,
 	SCALAR: SCALAR_1$1,
 	SEQ: SEQ_1,
@@ -87337,7 +87323,7 @@ const REMOVE$1 = Symbol('remove node');
  */
 function visit$2(node, visitor) {
     const visitor_ = initVisitor(visitor);
-    if (Node.isDocument(node)) {
+    if (identity.isDocument(node)) {
         const cd = visit_(null, node.contents, visitor_, Object.freeze([node]));
         if (cd === REMOVE$1)
             node.contents = null;
@@ -87356,12 +87342,12 @@ visit$2.SKIP = SKIP$1;
 visit$2.REMOVE = REMOVE$1;
 function visit_(key, node, visitor, path) {
     const ctrl = callVisitor(key, node, visitor, path);
-    if (Node.isNode(ctrl) || Node.isPair(ctrl)) {
+    if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
         replaceNode(key, path, ctrl);
         return visit_(key, ctrl, visitor, path);
     }
     if (typeof ctrl !== 'symbol') {
-        if (Node.isCollection(node)) {
+        if (identity.isCollection(node)) {
             path = Object.freeze(path.concat(node));
             for (let i = 0; i < node.items.length; ++i) {
                 const ci = visit_(i, node.items[i], visitor, path);
@@ -87375,7 +87361,7 @@ function visit_(key, node, visitor, path) {
                 }
             }
         }
-        else if (Node.isPair(node)) {
+        else if (identity.isPair(node)) {
             path = Object.freeze(path.concat(node));
             const ck = visit_('key', node.key, visitor, path);
             if (ck === BREAK$1)
@@ -87424,7 +87410,7 @@ function visit_(key, node, visitor, path) {
  */
 async function visitAsync$1(node, visitor) {
     const visitor_ = initVisitor(visitor);
-    if (Node.isDocument(node)) {
+    if (identity.isDocument(node)) {
         const cd = await visitAsync_(null, node.contents, visitor_, Object.freeze([node]));
         if (cd === REMOVE$1)
             node.contents = null;
@@ -87443,12 +87429,12 @@ visitAsync$1.SKIP = SKIP$1;
 visitAsync$1.REMOVE = REMOVE$1;
 async function visitAsync_(key, node, visitor, path) {
     const ctrl = await callVisitor(key, node, visitor, path);
-    if (Node.isNode(ctrl) || Node.isPair(ctrl)) {
+    if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
         replaceNode(key, path, ctrl);
         return visitAsync_(key, ctrl, visitor, path);
     }
     if (typeof ctrl !== 'symbol') {
-        if (Node.isCollection(node)) {
+        if (identity.isCollection(node)) {
             path = Object.freeze(path.concat(node));
             for (let i = 0; i < node.items.length; ++i) {
                 const ci = await visitAsync_(i, node.items[i], visitor, path);
@@ -87462,7 +87448,7 @@ async function visitAsync_(key, node, visitor, path) {
                 }
             }
         }
-        else if (Node.isPair(node)) {
+        else if (identity.isPair(node)) {
             path = Object.freeze(path.concat(node));
             const ck = await visitAsync_('key', node.key, visitor, path);
             if (ck === BREAK$1)
@@ -87500,34 +87486,34 @@ function initVisitor(visitor) {
 function callVisitor(key, node, visitor, path) {
     if (typeof visitor === 'function')
         return visitor(key, node, path);
-    if (Node.isMap(node))
+    if (identity.isMap(node))
         return visitor.Map?.(key, node, path);
-    if (Node.isSeq(node))
+    if (identity.isSeq(node))
         return visitor.Seq?.(key, node, path);
-    if (Node.isPair(node))
+    if (identity.isPair(node))
         return visitor.Pair?.(key, node, path);
-    if (Node.isScalar(node))
+    if (identity.isScalar(node))
         return visitor.Scalar?.(key, node, path);
-    if (Node.isAlias(node))
+    if (identity.isAlias(node))
         return visitor.Alias?.(key, node, path);
     return undefined;
 }
 function replaceNode(key, path, node) {
     const parent = path[path.length - 1];
-    if (Node.isCollection(parent)) {
+    if (identity.isCollection(parent)) {
         parent.items[key] = node;
     }
-    else if (Node.isPair(parent)) {
+    else if (identity.isPair(parent)) {
         if (key === 'key')
             parent.key = node;
         else
             parent.value = node;
     }
-    else if (Node.isDocument(parent)) {
+    else if (identity.isDocument(parent)) {
         parent.contents = node;
     }
     else {
-        const pt = Node.isAlias(parent) ? 'alias' : 'scalar';
+        const pt = identity.isAlias(parent) ? 'alias' : 'scalar';
         throw new Error(`Cannot replace node with ${pt} parent`);
     }
 }
@@ -87683,10 +87669,10 @@ class Directives {
             : [];
         const tagEntries = Object.entries(this.tags);
         let tagNames;
-        if (doc && tagEntries.length > 0 && Node.isNode(doc.contents)) {
+        if (doc && tagEntries.length > 0 && identity.isNode(doc.contents)) {
             const tags = {};
             visit_1$2.visit(doc.contents, (_key, node) => {
-                if (Node.isNode(node) && node.tag)
+                if (identity.isNode(node) && node.tag)
                     tags[node.tag] = true;
             });
             tagNames = Object.keys(tags);
@@ -87765,7 +87751,7 @@ function createNodeAnchors(doc, prefix) {
                 const ref = sourceObjects.get(source);
                 if (typeof ref === 'object' &&
                     ref.anchor &&
-                    (Node.isScalar(ref.node) || Node.isCollection(ref.node))) {
+                    (identity.isScalar(ref.node) || identity.isCollection(ref.node))) {
                     ref.node.anchor = ref.anchor;
                 }
                 else {
@@ -87791,9 +87777,147 @@ var anchors = {
 	findNewAnchor: findNewAnchor_1
 };
 
+/**
+ * Applies the JSON.parse reviver algorithm as defined in the ECMA-262 spec,
+ * in section 24.5.1.1 "Runtime Semantics: InternalizeJSONProperty" of the
+ * 2021 edition: https://tc39.es/ecma262/#sec-json.parse
+ *
+ * Includes extensions for handling Map and Set objects.
+ */
+function applyReviver(reviver, obj, key, val) {
+    if (val && typeof val === 'object') {
+        if (Array.isArray(val)) {
+            for (let i = 0, len = val.length; i < len; ++i) {
+                const v0 = val[i];
+                const v1 = applyReviver(reviver, val, String(i), v0);
+                if (v1 === undefined)
+                    delete val[i];
+                else if (v1 !== v0)
+                    val[i] = v1;
+            }
+        }
+        else if (val instanceof Map) {
+            for (const k of Array.from(val.keys())) {
+                const v0 = val.get(k);
+                const v1 = applyReviver(reviver, val, k, v0);
+                if (v1 === undefined)
+                    val.delete(k);
+                else if (v1 !== v0)
+                    val.set(k, v1);
+            }
+        }
+        else if (val instanceof Set) {
+            for (const v0 of Array.from(val)) {
+                const v1 = applyReviver(reviver, val, v0, v0);
+                if (v1 === undefined)
+                    val.delete(v0);
+                else if (v1 !== v0) {
+                    val.delete(v0);
+                    val.add(v1);
+                }
+            }
+        }
+        else {
+            for (const [k, v0] of Object.entries(val)) {
+                const v1 = applyReviver(reviver, val, k, v0);
+                if (v1 === undefined)
+                    delete val[k];
+                else if (v1 !== v0)
+                    val[k] = v1;
+            }
+        }
+    }
+    return reviver.call(obj, key, val);
+}
+
+var applyReviver_2 = applyReviver;
+
+var applyReviver_1 = {
+	applyReviver: applyReviver_2
+};
+
+/**
+ * Recursively convert any node or its contents to native JavaScript
+ *
+ * @param value - The input value
+ * @param arg - If `value` defines a `toJSON()` method, use this
+ *   as its first argument
+ * @param ctx - Conversion context, originally set in Document#toJS(). If
+ *   `{ keep: true }` is not set, output should be suitable for JSON
+ *   stringification.
+ */
+function toJS(value, arg, ctx) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    if (Array.isArray(value))
+        return value.map((v, i) => toJS(v, String(i), ctx));
+    if (value && typeof value.toJSON === 'function') {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+        if (!ctx || !identity.hasAnchor(value))
+            return value.toJSON(arg, ctx);
+        const data = { aliasCount: 0, count: 1, res: undefined };
+        ctx.anchors.set(value, data);
+        ctx.onCreate = res => {
+            data.res = res;
+            delete ctx.onCreate;
+        };
+        const res = value.toJSON(arg, ctx);
+        if (ctx.onCreate)
+            ctx.onCreate(res);
+        return res;
+    }
+    if (typeof value === 'bigint' && !ctx?.keep)
+        return Number(value);
+    return value;
+}
+
+var toJS_2 = toJS;
+
+var toJS_1 = {
+	toJS: toJS_2
+};
+
+class NodeBase {
+    constructor(type) {
+        Object.defineProperty(this, identity.NODE_TYPE, { value: type });
+    }
+    /** Create a copy of this node.  */
+    clone() {
+        const copy = Object.create(Object.getPrototypeOf(this), Object.getOwnPropertyDescriptors(this));
+        if (this.range)
+            copy.range = this.range.slice();
+        return copy;
+    }
+    /** A plain JavaScript representation of this node. */
+    toJS(doc, { mapAsMap, maxAliasCount, onAnchor, reviver } = {}) {
+        if (!identity.isDocument(doc))
+            throw new TypeError('A document argument is required');
+        const ctx = {
+            anchors: new Map(),
+            doc,
+            keep: true,
+            mapAsMap: mapAsMap === true,
+            mapKeyWarned: false,
+            maxAliasCount: typeof maxAliasCount === 'number' ? maxAliasCount : 100
+        };
+        const res = toJS_1.toJS(this, '', ctx);
+        if (typeof onAnchor === 'function')
+            for (const { count, res } of ctx.anchors.values())
+                onAnchor(res, count);
+        return typeof reviver === 'function'
+            ? applyReviver_1.applyReviver(reviver, { '': res }, '', res)
+            : res;
+    }
+}
+
+var NodeBase_1 = NodeBase;
+
+var Node = {
+	NodeBase: NodeBase_1
+};
+
 class Alias extends Node.NodeBase {
     constructor(source) {
-        super(Node.ALIAS);
+        super(identity.ALIAS);
         this.source = source;
         Object.defineProperty(this, 'tag', {
             set() {
@@ -87826,7 +87950,12 @@ class Alias extends Node.NodeBase {
             const msg = `Unresolved alias (the anchor must be set before the alias): ${this.source}`;
             throw new ReferenceError(msg);
         }
-        const data = anchors.get(source);
+        let data = anchors.get(source);
+        if (!data) {
+            // Resolve anchors for Node.prototype.toJS()
+            toJS_1.toJS(source, null, ctx);
+            data = anchors.get(source);
+        }
         /* istanbul ignore if */
         if (!data || data.res === undefined) {
             const msg = 'This should not happen: Alias anchor was not resolved?';
@@ -87858,12 +87987,12 @@ class Alias extends Node.NodeBase {
     }
 }
 function getAliasCount(doc, node, anchors) {
-    if (Node.isAlias(node)) {
+    if (identity.isAlias(node)) {
         const source = node.resolve(doc);
         const anchor = anchors && source && anchors.get(source);
         return anchor ? anchor.count * anchor.aliasCount : 0;
     }
-    else if (Node.isCollection(node)) {
+    else if (identity.isCollection(node)) {
         let count = 0;
         for (const item of node.items) {
             const c = getAliasCount(doc, item, anchors);
@@ -87872,7 +88001,7 @@ function getAliasCount(doc, node, anchors) {
         }
         return count;
     }
-    else if (Node.isPair(node)) {
+    else if (identity.isPair(node)) {
         const kc = getAliasCount(doc, node.key, anchors);
         const vc = getAliasCount(doc, node.value, anchors);
         return Math.max(kc, vc);
@@ -87886,50 +88015,10 @@ var Alias_1$1 = {
 	Alias: Alias_2
 };
 
-/**
- * Recursively convert any node or its contents to native JavaScript
- *
- * @param value - The input value
- * @param arg - If `value` defines a `toJSON()` method, use this
- *   as its first argument
- * @param ctx - Conversion context, originally set in Document#toJS(). If
- *   `{ keep: true }` is not set, output should be suitable for JSON
- *   stringification.
- */
-function toJS(value, arg, ctx) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    if (Array.isArray(value))
-        return value.map((v, i) => toJS(v, String(i), ctx));
-    if (value && typeof value.toJSON === 'function') {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-        if (!ctx || !Node.hasAnchor(value))
-            return value.toJSON(arg, ctx);
-        const data = { aliasCount: 0, count: 1, res: undefined };
-        ctx.anchors.set(value, data);
-        ctx.onCreate = res => {
-            data.res = res;
-            delete ctx.onCreate;
-        };
-        const res = value.toJSON(arg, ctx);
-        if (ctx.onCreate)
-            ctx.onCreate(res);
-        return res;
-    }
-    if (typeof value === 'bigint' && !ctx?.keep)
-        return Number(value);
-    return value;
-}
-
-var toJS_2 = toJS;
-
-var toJS_1 = {
-	toJS: toJS_2
-};
-
 const isScalarValue = (value) => !value || (typeof value !== 'function' && typeof value !== 'object');
 class Scalar extends Node.NodeBase {
     constructor(value) {
-        super(Node.SCALAR);
+        super(identity.SCALAR);
         this.value = value;
     }
     toJSON(arg, ctx) {
@@ -87965,12 +88054,12 @@ function findTagObject(value, tagName, tags) {
     return tags.find(t => t.identify?.(value) && !t.format);
 }
 function createNode(value, tagName, ctx) {
-    if (Node.isDocument(value))
+    if (identity.isDocument(value))
         value = value.contents;
-    if (Node.isNode(value))
+    if (identity.isNode(value))
         return value;
-    if (Node.isPair(value)) {
-        const map = ctx.schema[Node.MAP].createNode?.(ctx.schema, null, ctx);
+    if (identity.isPair(value)) {
+        const map = ctx.schema[identity.MAP].createNode?.(ctx.schema, null, ctx);
         map.items.push(value);
         return map;
     }
@@ -88014,10 +88103,10 @@ function createNode(value, tagName, ctx) {
         }
         tagObj =
             value instanceof Map
-                ? schema[Node.MAP]
+                ? schema[identity.MAP]
                 : Symbol.iterator in Object(value)
-                    ? schema[Node.SEQ]
-                    : schema[Node.MAP];
+                    ? schema[identity.SEQ]
+                    : schema[identity.MAP];
     }
     if (onTagObj) {
         onTagObj(tagObj);
@@ -88025,9 +88114,13 @@ function createNode(value, tagName, ctx) {
     }
     const node = tagObj?.createNode
         ? tagObj.createNode(ctx.schema, value, ctx)
-        : new Scalar_1$1.Scalar(value);
+        : typeof tagObj?.nodeClass?.from === 'function'
+            ? tagObj.nodeClass.from(ctx.schema, value, ctx)
+            : new Scalar_1$1.Scalar(value);
     if (tagName)
         node.tag = tagName;
+    else if (!tagObj.default)
+        node.tag = tagObj.tag;
     if (ref)
         ref.node = node;
     return node;
@@ -88085,7 +88178,7 @@ class Collection extends Node.NodeBase {
         const copy = Object.create(Object.getPrototypeOf(this), Object.getOwnPropertyDescriptors(this));
         if (schema)
             copy.schema = schema;
-        copy.items = copy.items.map(it => Node.isNode(it) || Node.isPair(it) ? it.clone(schema) : it);
+        copy.items = copy.items.map(it => identity.isNode(it) || identity.isPair(it) ? it.clone(schema) : it);
         if (this.range)
             copy.range = this.range.slice();
         return copy;
@@ -88101,7 +88194,7 @@ class Collection extends Node.NodeBase {
         else {
             const [key, ...rest] = path;
             const node = this.get(key, true);
-            if (Node.isCollection(node))
+            if (identity.isCollection(node))
                 node.addIn(rest, value);
             else if (node === undefined && this.schema)
                 this.set(key, collectionFromPath(this.schema, rest, value));
@@ -88118,7 +88211,7 @@ class Collection extends Node.NodeBase {
         if (rest.length === 0)
             return this.delete(key);
         const node = this.get(key, true);
-        if (Node.isCollection(node))
+        if (identity.isCollection(node))
             return node.deleteIn(rest);
         else
             throw new Error(`Expected YAML collection at ${key}. Remaining path: ${rest}`);
@@ -88132,18 +88225,18 @@ class Collection extends Node.NodeBase {
         const [key, ...rest] = path;
         const node = this.get(key, true);
         if (rest.length === 0)
-            return !keepScalar && Node.isScalar(node) ? node.value : node;
+            return !keepScalar && identity.isScalar(node) ? node.value : node;
         else
-            return Node.isCollection(node) ? node.getIn(rest, keepScalar) : undefined;
+            return identity.isCollection(node) ? node.getIn(rest, keepScalar) : undefined;
     }
     hasAllNullValues(allowScalar) {
         return this.items.every(node => {
-            if (!Node.isPair(node))
+            if (!identity.isPair(node))
                 return false;
             const n = node.value;
             return (n == null ||
                 (allowScalar &&
-                    Node.isScalar(n) &&
+                    identity.isScalar(n) &&
                     n.value == null &&
                     !n.commentBefore &&
                     !n.comment &&
@@ -88158,7 +88251,7 @@ class Collection extends Node.NodeBase {
         if (rest.length === 0)
             return this.has(key);
         const node = this.get(key, true);
-        return Node.isCollection(node) ? node.hasIn(rest) : false;
+        return identity.isCollection(node) ? node.hasIn(rest) : false;
     }
     /**
      * Sets a value in this collection. For `!!set`, `value` needs to be a
@@ -88171,7 +88264,7 @@ class Collection extends Node.NodeBase {
         }
         else {
             const node = this.get(key, true);
-            if (Node.isCollection(node))
+            if (identity.isCollection(node))
                 node.setIn(rest, value);
             else if (node === undefined && this.schema)
                 this.set(key, collectionFromPath(this.schema, rest, value));
@@ -88367,8 +88460,8 @@ var foldFlowLines_1 = {
 	foldFlowLines: foldFlowLines_2
 };
 
-const getFoldOptions = (ctx) => ({
-    indentAtStart: ctx.indentAtStart,
+const getFoldOptions = (ctx, isBlock) => ({
+    indentAtStart: isBlock ? ctx.indent.length : ctx.indentAtStart,
     lineWidth: ctx.options.lineWidth,
     minContentWidth: ctx.options.minContentWidth
 });
@@ -88481,7 +88574,7 @@ function doubleQuotedString(value, ctx) {
     str = start ? str + json.slice(start) : json;
     return implicitKey
         ? str
-        : foldFlowLines_1.foldFlowLines(str, indent, foldFlowLines_1.FOLD_QUOTED, getFoldOptions(ctx));
+        : foldFlowLines_1.foldFlowLines(str, indent, foldFlowLines_1.FOLD_QUOTED, getFoldOptions(ctx, false));
 }
 function singleQuotedString(value, ctx) {
     if (ctx.options.singleQuote === false ||
@@ -88493,7 +88586,7 @@ function singleQuotedString(value, ctx) {
     const res = "'" + value.replace(/'/g, "''").replace(/\n+/g, `$&\n${indent}`) + "'";
     return ctx.implicitKey
         ? res
-        : foldFlowLines_1.foldFlowLines(res, indent, foldFlowLines_1.FOLD_FLOW, getFoldOptions(ctx));
+        : foldFlowLines_1.foldFlowLines(res, indent, foldFlowLines_1.FOLD_FLOW, getFoldOptions(ctx, false));
 }
 function quotedString(value, ctx) {
     const { singleQuote } = ctx.options;
@@ -88511,6 +88604,15 @@ function quotedString(value, ctx) {
             qs = singleQuote ? singleQuotedString : doubleQuotedString;
     }
     return qs(value, ctx);
+}
+// The negative lookbehind avoids a polynomial search,
+// but isn't supported yet on Safari: https://caniuse.com/js-regexp-lookbehind
+let blockEndNewlines;
+try {
+    blockEndNewlines = new RegExp('(^|(?<!\n))\n+(?!\n|$)', 'g');
+}
+catch {
+    blockEndNewlines = /\n+(?!\n|$)/g;
 }
 function blockString({ comment, type, value }, ctx, onComment, onChompKeep) {
     const { blockQuote, commentString, lineWidth } = ctx.options;
@@ -88555,7 +88657,7 @@ function blockString({ comment, type, value }, ctx, onComment, onChompKeep) {
         value = value.slice(0, -end.length);
         if (end[end.length - 1] === '\n')
             end = end.slice(0, -1);
-        end = end.replace(/\n+(?!\n|$)/g, `$&${indent}`);
+        end = end.replace(blockEndNewlines, `$&${indent}`);
     }
     // determine indent indicator from whitespace at value start
     let startWithSpace = false;
@@ -88591,7 +88693,7 @@ function blockString({ comment, type, value }, ctx, onComment, onChompKeep) {
         .replace(/(?:^|\n)([\t ].*)(?:([\n\t ]*)\n(?![\n\t ]))?/g, '$1$2') // more-indented lines aren't folded
         //                ^ more-ind. ^ empty     ^ capture next empty lines only at end of indent
         .replace(/\n+/g, `$&${indent}`);
-    const body = foldFlowLines_1.foldFlowLines(`${start}${value}${end}`, indent, foldFlowLines_1.FOLD_BLOCK, getFoldOptions(ctx));
+    const body = foldFlowLines_1.foldFlowLines(`${start}${value}${end}`, indent, foldFlowLines_1.FOLD_BLOCK, getFoldOptions(ctx, true));
     return `${header}\n${indent}${body}`;
 }
 function plainString(item, ctx, onComment, onChompKeep) {
@@ -88641,7 +88743,7 @@ function plainString(item, ctx, onComment, onChompKeep) {
     }
     return implicitKey
         ? str
-        : foldFlowLines_1.foldFlowLines(str, indent, foldFlowLines_1.FOLD_FLOW, getFoldOptions(ctx));
+        : foldFlowLines_1.foldFlowLines(str, indent, foldFlowLines_1.FOLD_FLOW, getFoldOptions(ctx, false));
 }
 function stringifyString(item, ctx, onComment, onChompKeep) {
     const { implicitKey, inFlow } = ctx;
@@ -88737,7 +88839,7 @@ function getTagObject(tags, item) {
     }
     let tagObj = undefined;
     let obj;
-    if (Node.isScalar(item)) {
+    if (identity.isScalar(item)) {
         obj = item.value;
         const match = tags.filter(t => t.identify?.(obj));
         tagObj =
@@ -88758,7 +88860,7 @@ function stringifyProps(node, tagObj, { anchors: anchors$1, doc }) {
     if (!doc.directives)
         return '';
     const props = [];
-    const anchor = (Node.isScalar(node) || Node.isCollection(node)) && node.anchor;
+    const anchor = (identity.isScalar(node) || identity.isCollection(node)) && node.anchor;
     if (anchor && anchors.anchorIsValid(anchor)) {
         anchors$1.add(anchor);
         props.push(`&${anchor}`);
@@ -88769,9 +88871,9 @@ function stringifyProps(node, tagObj, { anchors: anchors$1, doc }) {
     return props.join(' ');
 }
 function stringify$6(item, ctx, onComment, onChompKeep) {
-    if (Node.isPair(item))
+    if (identity.isPair(item))
         return item.toString(ctx, onComment, onChompKeep);
-    if (Node.isAlias(item)) {
+    if (identity.isAlias(item)) {
         if (ctx.doc.directives)
             return item.toString(ctx);
         if (ctx.resolvedAliases?.has(item)) {
@@ -88786,7 +88888,7 @@ function stringify$6(item, ctx, onComment, onChompKeep) {
         }
     }
     let tagObj = undefined;
-    const node = Node.isNode(item)
+    const node = identity.isNode(item)
         ? item
         : ctx.doc.createNode(item, { onTagObj: o => (tagObj = o) });
     if (!tagObj)
@@ -88796,12 +88898,12 @@ function stringify$6(item, ctx, onComment, onChompKeep) {
         ctx.indentAtStart = (ctx.indentAtStart ?? 0) + props.length + 1;
     const str = typeof tagObj.stringify === 'function'
         ? tagObj.stringify(node, ctx, onComment, onChompKeep)
-        : Node.isScalar(node)
+        : identity.isScalar(node)
             ? stringifyString_1.stringifyString(node, ctx, onComment, onChompKeep)
             : node.toString(ctx, onComment, onChompKeep);
     if (!props)
         return str;
-    return Node.isScalar(node) || str[0] === '{' || str[0] === '['
+    return identity.isScalar(node) || str[0] === '{' || str[0] === '['
         ? `${props} ${str}`
         : `${props}\n${ctx.indent}${str}`;
 }
@@ -88816,12 +88918,12 @@ var stringify_1$2 = {
 
 function stringifyPair({ key, value }, ctx, onComment, onChompKeep) {
     const { allNullValues, doc, indent, indentStep, options: { commentString, indentSeq, simpleKeys } } = ctx;
-    let keyComment = (Node.isNode(key) && key.comment) || null;
+    let keyComment = (identity.isNode(key) && key.comment) || null;
     if (simpleKeys) {
         if (keyComment) {
             throw new Error('With simple keys, key nodes cannot have comments');
         }
-        if (Node.isCollection(key)) {
+        if (identity.isCollection(key)) {
             const msg = 'With simple keys, collection cannot be used as a key value';
             throw new Error(msg);
         }
@@ -88829,8 +88931,8 @@ function stringifyPair({ key, value }, ctx, onComment, onChompKeep) {
     let explicitKey = !simpleKeys &&
         (!key ||
             (keyComment && value == null && !ctx.inFlow) ||
-            Node.isCollection(key) ||
-            (Node.isScalar(key)
+            identity.isCollection(key) ||
+            (identity.isScalar(key)
                 ? key.type === Scalar_1$1.Scalar.BLOCK_FOLDED || key.type === Scalar_1$1.Scalar.BLOCK_LITERAL
                 : typeof key === 'object'));
     ctx = Object.assign({}, ctx, {
@@ -88875,7 +88977,7 @@ function stringifyPair({ key, value }, ctx, onComment, onChompKeep) {
             str += stringifyComment_1.lineComment(str, ctx.indent, commentString(keyComment));
     }
     let vsb, vcb, valueComment;
-    if (Node.isNode(value)) {
+    if (identity.isNode(value)) {
         vsb = !!value.spaceBefore;
         vcb = value.commentBefore;
         valueComment = value.comment;
@@ -88888,14 +88990,14 @@ function stringifyPair({ key, value }, ctx, onComment, onChompKeep) {
             value = doc.createNode(value);
     }
     ctx.implicitKey = false;
-    if (!explicitKey && !keyComment && Node.isScalar(value))
+    if (!explicitKey && !keyComment && identity.isScalar(value))
         ctx.indentAtStart = str.length + 1;
     chompKeep = false;
     if (!indentSeq &&
         indentStep.length >= 2 &&
         !ctx.inFlow &&
         !explicitKey &&
-        Node.isSeq(value) &&
+        identity.isSeq(value) &&
         !value.flow &&
         !value.tag &&
         !value.anchor) {
@@ -88919,7 +89021,7 @@ function stringifyPair({ key, value }, ctx, onComment, onChompKeep) {
             ws += `\n${ctx.indent}`;
         }
     }
-    else if (!explicitKey && Node.isCollection(value)) {
+    else if (!explicitKey && identity.isCollection(value)) {
         const vs0 = valueStr[0];
         const nl0 = valueStr.indexOf('\n');
         const hasNewline = nl0 !== -1;
@@ -88988,8 +89090,8 @@ var log = {
 const MERGE_KEY = '<<';
 function addPairToJSMap(ctx, map, { key, value }) {
     if (ctx?.doc.schema.merge && isMergeKey(key)) {
-        value = Node.isAlias(value) ? value.resolve(ctx.doc) : value;
-        if (Node.isSeq(value))
+        value = identity.isAlias(value) ? value.resolve(ctx.doc) : value;
+        if (identity.isSeq(value))
             for (const it of value.items)
                 mergeToJSMap(ctx, map, it);
         else if (Array.isArray(value))
@@ -89023,7 +89125,7 @@ function addPairToJSMap(ctx, map, { key, value }) {
     return map;
 }
 const isMergeKey = (key) => key === MERGE_KEY ||
-    (Node.isScalar(key) &&
+    (identity.isScalar(key) &&
         key.value === MERGE_KEY &&
         (!key.type || key.type === Scalar_1$1.Scalar.PLAIN));
 // If the value associated with a merge key is a single mapping node, each of
@@ -89034,8 +89136,8 @@ const isMergeKey = (key) => key === MERGE_KEY ||
 // Keys in mapping nodes earlier in the sequence override keys specified in
 // later mapping nodes. -- http://yaml.org/type/merge.html
 function mergeToJSMap(ctx, map, value) {
-    const source = ctx && Node.isAlias(value) ? value.resolve(ctx.doc) : value;
-    if (!Node.isMap(source))
+    const source = ctx && identity.isAlias(value) ? value.resolve(ctx.doc) : value;
+    if (!identity.isMap(source))
         throw new Error('Merge sources must be maps or map aliases');
     const srcMap = source.toJSON(null, ctx, Map);
     for (const [key, value] of srcMap) {
@@ -89062,7 +89164,7 @@ function stringifyKey(key, jsKey, ctx) {
         return '';
     if (typeof jsKey !== 'object')
         return String(jsKey);
-    if (Node.isNode(key) && ctx && ctx.doc) {
+    if (identity.isNode(key) && ctx && ctx.doc) {
         const strCtx = stringify_1$2.createStringifyContext(ctx.doc, {});
         strCtx.anchors = new Set();
         for (const node of ctx.anchors.keys())
@@ -89095,15 +89197,15 @@ function createPair(key, value, ctx) {
 }
 class Pair {
     constructor(key, value = null) {
-        Object.defineProperty(this, Node.NODE_TYPE, { value: Node.PAIR });
+        Object.defineProperty(this, identity.NODE_TYPE, { value: identity.PAIR });
         this.key = key;
         this.value = value;
     }
     clone(schema) {
         let { key, value } = this;
-        if (Node.isNode(key))
+        if (identity.isNode(key))
             key = key.clone(schema);
-        if (Node.isNode(value))
+        if (identity.isNode(value))
             value = value.clone(schema);
         return new Pair(key, value);
     }
@@ -89139,15 +89241,15 @@ function stringifyBlockCollection({ comment, items }, ctx, { blockItemPrefix, fl
     for (let i = 0; i < items.length; ++i) {
         const item = items[i];
         let comment = null;
-        if (Node.isNode(item)) {
+        if (identity.isNode(item)) {
             if (!chompKeep && item.spaceBefore)
                 lines.push('');
             addCommentBefore(ctx, lines, item.commentBefore, chompKeep);
             if (item.comment)
                 comment = item.comment;
         }
-        else if (Node.isPair(item)) {
-            const ik = Node.isNode(item.key) ? item.key : null;
+        else if (identity.isPair(item)) {
+            const ik = identity.isNode(item.key) ? item.key : null;
             if (ik) {
                 if (!chompKeep && ik.spaceBefore)
                     lines.push('');
@@ -89196,15 +89298,15 @@ function stringifyFlowCollection({ comment, items }, ctx, { flowChars, itemInden
     for (let i = 0; i < items.length; ++i) {
         const item = items[i];
         let comment = null;
-        if (Node.isNode(item)) {
+        if (identity.isNode(item)) {
             if (item.spaceBefore)
                 lines.push('');
             addCommentBefore(ctx, lines, item.commentBefore, false);
             if (item.comment)
                 comment = item.comment;
         }
-        else if (Node.isPair(item)) {
-            const ik = Node.isNode(item.key) ? item.key : null;
+        else if (identity.isPair(item)) {
+            const ik = identity.isNode(item.key) ? item.key : null;
             if (ik) {
                 if (ik.spaceBefore)
                     lines.push('');
@@ -89212,7 +89314,7 @@ function stringifyFlowCollection({ comment, items }, ctx, { flowChars, itemInden
                 if (ik.comment)
                     reqNewline = true;
             }
-            const iv = Node.isNode(item.value) ? item.value : null;
+            const iv = identity.isNode(item.value) ? item.value : null;
             if (iv) {
                 if (iv.comment)
                     comment = iv.comment;
@@ -89256,7 +89358,7 @@ function stringifyFlowCollection({ comment, items }, ctx, { flowChars, itemInden
         }
     }
     if (comment) {
-        str += stringifyComment_1.lineComment(str, commentString(comment), indent);
+        str += stringifyComment_1.lineComment(str, indent, commentString(comment));
         if (onComment)
             onComment();
     }
@@ -89278,12 +89380,12 @@ var stringifyCollection_1 = {
 };
 
 function findPair(items, key) {
-    const k = Node.isScalar(key) ? key.value : key;
+    const k = identity.isScalar(key) ? key.value : key;
     for (const it of items) {
-        if (Node.isPair(it)) {
+        if (identity.isPair(it)) {
             if (it.key === key || it.key === k)
                 return it;
-            if (Node.isScalar(it.key) && it.key.value === k)
+            if (identity.isScalar(it.key) && it.key.value === k)
                 return it;
         }
     }
@@ -89294,8 +89396,36 @@ class YAMLMap extends Collection_1.Collection {
         return 'tag:yaml.org,2002:map';
     }
     constructor(schema) {
-        super(Node.MAP, schema);
+        super(identity.MAP, schema);
         this.items = [];
+    }
+    /**
+     * A generic collection parsing method that can be extended
+     * to other node classes that inherit from YAMLMap
+     */
+    static from(schema, obj, ctx) {
+        const { keepUndefined, replacer } = ctx;
+        const map = new this(schema);
+        const add = (key, value) => {
+            if (typeof replacer === 'function')
+                value = replacer.call(obj, key, value);
+            else if (Array.isArray(replacer) && !replacer.includes(key))
+                return;
+            if (value !== undefined || keepUndefined)
+                map.items.push(Pair_1$1.createPair(key, value, ctx));
+        };
+        if (obj instanceof Map) {
+            for (const [key, value] of obj)
+                add(key, value);
+        }
+        else if (obj && typeof obj === 'object') {
+            for (const key of Object.keys(obj))
+                add(key, obj[key]);
+        }
+        if (typeof schema.sortMapEntries === 'function') {
+            map.items.sort(schema.sortMapEntries);
+        }
+        return map;
     }
     /**
      * Adds a value to the collection.
@@ -89305,7 +89435,7 @@ class YAMLMap extends Collection_1.Collection {
      */
     add(pair, overwrite) {
         let _pair;
-        if (Node.isPair(pair))
+        if (identity.isPair(pair))
             _pair = pair;
         else if (!pair || typeof pair !== 'object' || !('key' in pair)) {
             // In TypeScript, this never happens.
@@ -89319,7 +89449,7 @@ class YAMLMap extends Collection_1.Collection {
             if (!overwrite)
                 throw new Error(`Key ${_pair.key} already set`);
             // For scalars, keep the old node & its comments and anchors
-            if (Node.isScalar(prev.value) && Scalar_1$1.isScalarValue(_pair.value))
+            if (identity.isScalar(prev.value) && Scalar_1$1.isScalarValue(_pair.value))
                 prev.value.value = _pair.value;
             else
                 prev.value = _pair.value;
@@ -89345,7 +89475,7 @@ class YAMLMap extends Collection_1.Collection {
     get(key, keepScalar) {
         const it = findPair(this.items, key);
         const node = it?.value;
-        return (!keepScalar && Node.isScalar(node) ? node.value : node) ?? undefined;
+        return (!keepScalar && identity.isScalar(node) ? node.value : node) ?? undefined;
     }
     has(key) {
         return !!findPair(this.items, key);
@@ -89370,7 +89500,7 @@ class YAMLMap extends Collection_1.Collection {
         if (!ctx)
             return JSON.stringify(this);
         for (const item of this.items) {
-            if (!Node.isPair(item))
+            if (!identity.isPair(item))
                 throw new Error(`Map items must all be pairs; found ${JSON.stringify(item)} instead`);
         }
         if (!ctx.allNullValues && this.hasAllNullValues(false))
@@ -89393,41 +89523,17 @@ var YAMLMap_1$1 = {
 	findPair: findPair_1
 };
 
-function createMap(schema, obj, ctx) {
-    const { keepUndefined, replacer } = ctx;
-    const map = new YAMLMap_1$1.YAMLMap(schema);
-    const add = (key, value) => {
-        if (typeof replacer === 'function')
-            value = replacer.call(obj, key, value);
-        else if (Array.isArray(replacer) && !replacer.includes(key))
-            return;
-        if (value !== undefined || keepUndefined)
-            map.items.push(Pair_1$1.createPair(key, value, ctx));
-    };
-    if (obj instanceof Map) {
-        for (const [key, value] of obj)
-            add(key, value);
-    }
-    else if (obj && typeof obj === 'object') {
-        for (const key of Object.keys(obj))
-            add(key, obj[key]);
-    }
-    if (typeof schema.sortMapEntries === 'function') {
-        map.items.sort(schema.sortMapEntries);
-    }
-    return map;
-}
 const map = {
     collection: 'map',
-    createNode: createMap,
     default: true,
     nodeClass: YAMLMap_1$1.YAMLMap,
     tag: 'tag:yaml.org,2002:map',
     resolve(map, onError) {
-        if (!Node.isMap(map))
+        if (!identity.isMap(map))
             onError('Expected a mapping for this tag');
         return map;
-    }
+    },
+    createNode: (schema, obj, ctx) => YAMLMap_1$1.YAMLMap.from(schema, obj, ctx)
 };
 
 var map_2 = map;
@@ -89441,7 +89547,7 @@ class YAMLSeq extends Collection_1.Collection {
         return 'tag:yaml.org,2002:seq';
     }
     constructor(schema) {
-        super(Node.SEQ, schema);
+        super(identity.SEQ, schema);
         this.items = [];
     }
     add(value) {
@@ -89467,7 +89573,7 @@ class YAMLSeq extends Collection_1.Collection {
         if (typeof idx !== 'number')
             return undefined;
         const it = this.items[idx];
-        return !keepScalar && Node.isScalar(it) ? it.value : it;
+        return !keepScalar && identity.isScalar(it) ? it.value : it;
     }
     /**
      * Checks if the collection includes a value with the key `key`.
@@ -89491,7 +89597,7 @@ class YAMLSeq extends Collection_1.Collection {
         if (typeof idx !== 'number')
             throw new Error(`Expected a valid index, not ${key}.`);
         const prev = this.items[idx];
-        if (Node.isScalar(prev) && Scalar_1$1.isScalarValue(value))
+        if (identity.isScalar(prev) && Scalar_1$1.isScalarValue(value))
             prev.value = value;
         else
             this.items[idx] = value;
@@ -89516,9 +89622,24 @@ class YAMLSeq extends Collection_1.Collection {
             onComment
         });
     }
+    static from(schema, obj, ctx) {
+        const { replacer } = ctx;
+        const seq = new this(schema);
+        if (obj && Symbol.iterator in Object(obj)) {
+            let i = 0;
+            for (let it of obj) {
+                if (typeof replacer === 'function') {
+                    const key = obj instanceof Set ? it : String(i++);
+                    it = replacer.call(obj, key, it);
+                }
+                seq.items.push(createNode_1.createNode(it, undefined, ctx));
+            }
+        }
+        return seq;
+    }
 }
 function asItemIndex(key) {
-    let idx = Node.isScalar(key) ? key.value : key;
+    let idx = identity.isScalar(key) ? key.value : key;
     if (idx && typeof idx === 'string')
         idx = Number(idx);
     return typeof idx === 'number' && Number.isInteger(idx) && idx >= 0
@@ -89532,32 +89653,17 @@ var YAMLSeq_1$1 = {
 	YAMLSeq: YAMLSeq_2
 };
 
-function createSeq(schema, obj, ctx) {
-    const { replacer } = ctx;
-    const seq = new YAMLSeq_1$1.YAMLSeq(schema);
-    if (obj && Symbol.iterator in Object(obj)) {
-        let i = 0;
-        for (let it of obj) {
-            if (typeof replacer === 'function') {
-                const key = obj instanceof Set ? it : String(i++);
-                it = replacer.call(obj, key, it);
-            }
-            seq.items.push(createNode_1.createNode(it, undefined, ctx));
-        }
-    }
-    return seq;
-}
 const seq = {
     collection: 'seq',
-    createNode: createSeq,
     default: true,
     nodeClass: YAMLSeq_1$1.YAMLSeq,
     tag: 'tag:yaml.org,2002:seq',
     resolve(seq, onError) {
-        if (!Node.isSeq(seq))
+        if (!identity.isSeq(seq))
             onError('Expected a sequence for this tag');
         return seq;
-    }
+    },
+    createNode: (schema, obj, ctx) => YAMLSeq_1$1.YAMLSeq.from(schema, obj, ctx)
 };
 
 var seq_2 = seq;
@@ -89898,12 +90004,12 @@ var binary_1 = {
 };
 
 function resolvePairs(seq, onError) {
-    if (Node.isSeq(seq)) {
+    if (identity.isSeq(seq)) {
         for (let i = 0; i < seq.items.length; ++i) {
             let item = seq.items[i];
-            if (Node.isPair(item))
+            if (identity.isPair(item))
                 continue;
-            else if (Node.isMap(item)) {
+            else if (identity.isMap(item)) {
                 if (item.items.length > 1)
                     onError('Each pair must have its own sequence indicator');
                 const pair = item.items[0] || new Pair_1$1.Pair(new Scalar_1$1.Scalar(null));
@@ -89919,7 +90025,7 @@ function resolvePairs(seq, onError) {
                 }
                 item = pair;
             }
-            seq.items[i] = Node.isPair(item) ? item : new Pair_1$1.Pair(item);
+            seq.items[i] = identity.isPair(item) ? item : new Pair_1$1.Pair(item);
         }
     }
     else
@@ -90000,7 +90106,7 @@ class YAMLOMap extends YAMLSeq_1$1.YAMLSeq {
             ctx.onCreate(map);
         for (const pair of this.items) {
             let key, value;
-            if (Node.isPair(pair)) {
+            if (identity.isPair(pair)) {
                 key = toJS_1.toJS(pair.key, '', ctx);
                 value = toJS_1.toJS(pair.value, key, ctx);
             }
@@ -90012,6 +90118,12 @@ class YAMLOMap extends YAMLSeq_1$1.YAMLSeq {
             map.set(key, value);
         }
         return map;
+    }
+    static from(schema, iterable, ctx) {
+        const pairs$1 = pairs_1.createPairs(schema, iterable, ctx);
+        const omap = new this();
+        omap.items = pairs$1.items;
+        return omap;
     }
 }
 YAMLOMap.tag = 'tag:yaml.org,2002:omap';
@@ -90025,7 +90137,7 @@ const omap = {
         const pairs$1 = pairs_1.resolvePairs(seq, onError);
         const seenKeys = [];
         for (const { key } of pairs$1.items) {
-            if (Node.isScalar(key)) {
+            if (identity.isScalar(key)) {
                 if (seenKeys.includes(key.value)) {
                     onError(`Ordered maps must not include duplicate keys: ${key.value}`);
                 }
@@ -90036,12 +90148,7 @@ const omap = {
         }
         return Object.assign(new YAMLOMap(), pairs$1);
     },
-    createNode(schema, iterable, ctx) {
-        const pairs$1 = pairs_1.createPairs(schema, iterable, ctx);
-        const omap = new YAMLOMap();
-        omap.items = pairs$1.items;
-        return omap;
-    }
+    createNode: (schema, iterable, ctx) => YAMLOMap.from(schema, iterable, ctx)
 };
 
 var YAMLOMap_1 = YAMLOMap;
@@ -90222,7 +90329,7 @@ class YAMLSet extends YAMLMap_1$1.YAMLMap {
     }
     add(key) {
         let pair;
-        if (Node.isPair(key))
+        if (identity.isPair(key))
             pair = key;
         else if (key &&
             typeof key === 'object' &&
@@ -90242,8 +90349,8 @@ class YAMLSet extends YAMLMap_1$1.YAMLMap {
      */
     get(key, keepPair) {
         const pair = YAMLMap_1$1.findPair(this.items, key);
-        return !keepPair && Node.isPair(pair)
-            ? Node.isScalar(pair.key)
+        return !keepPair && identity.isPair(pair)
+            ? identity.isScalar(pair.key)
                 ? pair.key.value
                 : pair.key
             : pair;
@@ -90270,6 +90377,17 @@ class YAMLSet extends YAMLMap_1$1.YAMLMap {
         else
             throw new Error('Set items must all have null values');
     }
+    static from(schema, iterable, ctx) {
+        const { replacer } = ctx;
+        const set = new this(schema);
+        if (iterable && Symbol.iterator in Object(iterable))
+            for (let value of iterable) {
+                if (typeof replacer === 'function')
+                    value = replacer.call(iterable, value, value);
+                set.items.push(Pair_1$1.createPair(value, null, ctx));
+            }
+        return set;
+    }
 }
 YAMLSet.tag = 'tag:yaml.org,2002:set';
 const set = {
@@ -90278,8 +90396,9 @@ const set = {
     nodeClass: YAMLSet,
     default: false,
     tag: 'tag:yaml.org,2002:set',
+    createNode: (schema, iterable, ctx) => YAMLSet.from(schema, iterable, ctx),
     resolve(map, onError) {
-        if (Node.isMap(map)) {
+        if (identity.isMap(map)) {
             if (map.hasAllNullValues(true))
                 return Object.assign(new YAMLSet(), map);
             else
@@ -90288,17 +90407,6 @@ const set = {
         else
             onError('Expected a mapping for this tag');
         return map;
-    },
-    createNode(schema, iterable, ctx) {
-        const { replacer } = ctx;
-        const set = new YAMLSet(schema);
-        if (iterable && Symbol.iterator in Object(iterable))
-            for (let value of iterable) {
-                if (typeof replacer === 'function')
-                    value = replacer.call(iterable, value, value);
-                set.items.push(Pair_1$1.createPair(value, null, ctx));
-            }
-        return set;
     }
 };
 
@@ -90353,7 +90461,7 @@ function stringifySexagesimal(node) {
     }
     return (sign +
         parts
-            .map(n => (n < 10 ? '0' + String(n) : String(n)))
+            .map(n => String(n).padStart(2, '0'))
             .join(':')
             .replace(/000000\d*$/, '') // % 60 may introduce error
     );
@@ -90534,9 +90642,9 @@ class Schema {
         this.knownTags = resolveKnownTags ? tags.coreKnownTags : {};
         this.tags = tags.getTags(customTags, this.name);
         this.toStringOptions = toStringDefaults ?? null;
-        Object.defineProperty(this, Node.MAP, { value: map_1.map });
-        Object.defineProperty(this, Node.SCALAR, { value: string_1.string });
-        Object.defineProperty(this, Node.SEQ, { value: seq_1.seq });
+        Object.defineProperty(this, identity.MAP, { value: map_1.map });
+        Object.defineProperty(this, identity.SCALAR, { value: string_1.string });
+        Object.defineProperty(this, identity.SEQ, { value: seq_1.seq });
         // Used by createMap()
         this.sortMapEntries =
             typeof sortMapEntries === 'function'
@@ -90583,7 +90691,7 @@ function stringifyDocument(doc, options) {
     let chompKeep = false;
     let contentComment = null;
     if (doc.contents) {
-        if (Node.isNode(doc.contents)) {
+        if (identity.isNode(doc.contents)) {
             if (doc.contents.spaceBefore && hasDirectives)
                 lines.push('');
             if (doc.contents.commentBefore) {
@@ -90644,65 +90752,6 @@ var stringifyDocument_1 = {
 	stringifyDocument: stringifyDocument_2
 };
 
-/**
- * Applies the JSON.parse reviver algorithm as defined in the ECMA-262 spec,
- * in section 24.5.1.1 "Runtime Semantics: InternalizeJSONProperty" of the
- * 2021 edition: https://tc39.es/ecma262/#sec-json.parse
- *
- * Includes extensions for handling Map and Set objects.
- */
-function applyReviver(reviver, obj, key, val) {
-    if (val && typeof val === 'object') {
-        if (Array.isArray(val)) {
-            for (let i = 0, len = val.length; i < len; ++i) {
-                const v0 = val[i];
-                const v1 = applyReviver(reviver, val, String(i), v0);
-                if (v1 === undefined)
-                    delete val[i];
-                else if (v1 !== v0)
-                    val[i] = v1;
-            }
-        }
-        else if (val instanceof Map) {
-            for (const k of Array.from(val.keys())) {
-                const v0 = val.get(k);
-                const v1 = applyReviver(reviver, val, k, v0);
-                if (v1 === undefined)
-                    val.delete(k);
-                else if (v1 !== v0)
-                    val.set(k, v1);
-            }
-        }
-        else if (val instanceof Set) {
-            for (const v0 of Array.from(val)) {
-                const v1 = applyReviver(reviver, val, v0, v0);
-                if (v1 === undefined)
-                    val.delete(v0);
-                else if (v1 !== v0) {
-                    val.delete(v0);
-                    val.add(v1);
-                }
-            }
-        }
-        else {
-            for (const [k, v0] of Object.entries(val)) {
-                const v1 = applyReviver(reviver, val, k, v0);
-                if (v1 === undefined)
-                    delete val[k];
-                else if (v1 !== v0)
-                    val[k] = v1;
-            }
-        }
-    }
-    return reviver.call(obj, key, val);
-}
-
-var applyReviver_2 = applyReviver;
-
-var applyReviver_1 = {
-	applyReviver: applyReviver_2
-};
-
 class Document {
     constructor(value, replacer, options) {
         /** A comment before this Document */
@@ -90713,7 +90762,7 @@ class Document {
         this.errors = [];
         /** Warnings encountered during parsing. */
         this.warnings = [];
-        Object.defineProperty(this, Node.NODE_TYPE, { value: Node.DOC });
+        Object.defineProperty(this, identity.NODE_TYPE, { value: identity.DOC });
         let _replacer = null;
         if (typeof replacer === 'function' || Array.isArray(replacer)) {
             _replacer = replacer;
@@ -90741,11 +90790,9 @@ class Document {
         else
             this.directives = new directives.Directives({ version });
         this.setSchema(version, options);
-        if (value === undefined)
-            this.contents = null;
-        else {
-            this.contents = this.createNode(value, _replacer, options);
-        }
+        // @ts-expect-error We can't really know that this matches Contents.
+        this.contents =
+            value === undefined ? null : this.createNode(value, _replacer, options);
     }
     /**
      * Create a deep copy of this Document and its contents.
@@ -90754,7 +90801,7 @@ class Document {
      */
     clone() {
         const copy = Object.create(Document.prototype, {
-            [Node.NODE_TYPE]: { value: Node.DOC }
+            [identity.NODE_TYPE]: { value: identity.DOC }
         });
         copy.commentBefore = this.commentBefore;
         copy.comment = this.comment;
@@ -90764,7 +90811,8 @@ class Document {
         if (this.directives)
             copy.directives = this.directives.clone();
         copy.schema = this.schema.clone();
-        copy.contents = Node.isNode(this.contents)
+        // @ts-expect-error We can't really know that this matches Contents.
+        copy.contents = identity.isNode(this.contents)
             ? this.contents.clone(copy.schema)
             : this.contents;
         if (this.range)
@@ -90830,7 +90878,7 @@ class Document {
             sourceObjects
         };
         const node = createNode_1.createNode(value, tag, ctx);
-        if (flow && Node.isCollection(node))
+        if (flow && identity.isCollection(node))
             node.flow = true;
         setAnchors();
         return node;
@@ -90859,6 +90907,7 @@ class Document {
         if (Collection_1.isEmptyPath(path)) {
             if (this.contents == null)
                 return false;
+            // @ts-expect-error Presumed impossible if Strict extends false
             this.contents = null;
             return true;
         }
@@ -90872,7 +90921,7 @@ class Document {
      * `true` (collections are always returned intact).
      */
     get(key, keepScalar) {
-        return Node.isCollection(this.contents)
+        return identity.isCollection(this.contents)
             ? this.contents.get(key, keepScalar)
             : undefined;
     }
@@ -90883,10 +90932,10 @@ class Document {
      */
     getIn(path, keepScalar) {
         if (Collection_1.isEmptyPath(path))
-            return !keepScalar && Node.isScalar(this.contents)
+            return !keepScalar && identity.isScalar(this.contents)
                 ? this.contents.value
                 : this.contents;
-        return Node.isCollection(this.contents)
+        return identity.isCollection(this.contents)
             ? this.contents.getIn(path, keepScalar)
             : undefined;
     }
@@ -90894,7 +90943,7 @@ class Document {
      * Checks if the document includes a value with the key `key`.
      */
     has(key) {
-        return Node.isCollection(this.contents) ? this.contents.has(key) : false;
+        return identity.isCollection(this.contents) ? this.contents.has(key) : false;
     }
     /**
      * Checks if the document includes a value at `path`.
@@ -90902,7 +90951,7 @@ class Document {
     hasIn(path) {
         if (Collection_1.isEmptyPath(path))
             return this.contents !== undefined;
-        return Node.isCollection(this.contents) ? this.contents.hasIn(path) : false;
+        return identity.isCollection(this.contents) ? this.contents.hasIn(path) : false;
     }
     /**
      * Sets a value in this document. For `!!set`, `value` needs to be a
@@ -90910,6 +90959,7 @@ class Document {
      */
     set(key, value) {
         if (this.contents == null) {
+            // @ts-expect-error We can't really know that this matches Contents.
             this.contents = Collection_1.collectionFromPath(this.schema, [key], value);
         }
         else if (assertCollection(this.contents)) {
@@ -90921,9 +90971,12 @@ class Document {
      * boolean to add/remove the item from the set.
      */
     setIn(path, value) {
-        if (Collection_1.isEmptyPath(path))
+        if (Collection_1.isEmptyPath(path)) {
+            // @ts-expect-error We can't really know that this matches Contents.
             this.contents = value;
+        }
         else if (this.contents == null) {
+            // @ts-expect-error We can't really know that this matches Contents.
             this.contents = Collection_1.collectionFromPath(this.schema, Array.from(path), value);
         }
         else if (assertCollection(this.contents)) {
@@ -90983,8 +91036,7 @@ class Document {
             keep: !json,
             mapAsMap: mapAsMap === true,
             mapKeyWarned: false,
-            maxAliasCount: typeof maxAliasCount === 'number' ? maxAliasCount : 100,
-            stringify: stringify_1$2.stringify
+            maxAliasCount: typeof maxAliasCount === 'number' ? maxAliasCount : 100
         };
         const res = toJS_1.toJS(this.contents, jsonArg ?? '', ctx);
         if (typeof onAnchor === 'function')
@@ -91016,7 +91068,7 @@ class Document {
     }
 }
 function assertCollection(contents) {
-    if (Node.isCollection(contents))
+    if (identity.isCollection(contents))
         return true;
     throw new Error('Expected a YAML collection as document contents');
 }
@@ -91076,7 +91128,7 @@ const prettifyError = (src, lc) => (error) => {
         let count = 1;
         const end = error.linePos[1];
         if (end && end.line === line && end.col > col) {
-            count = Math.min(end.col - col, 80 - ci);
+            count = Math.max(1, Math.min(end.col - col, 80 - ci));
         }
         const pointer = ' '.repeat(ci) + '^'.repeat(count);
         error.message += `:\n\n${lineStr}\n${pointer}\n`;
@@ -91298,8 +91350,8 @@ function mapIncludes(ctx, items, search) {
     const isEqual = typeof uniqueKeys === 'function'
         ? uniqueKeys
         : (a, b) => a === b ||
-            (Node.isScalar(a) &&
-                Node.isScalar(b) &&
+            (identity.isScalar(a) &&
+                identity.isScalar(b) &&
                 a.value === b.value &&
                 !(a.value === '<<' && ctx.schema.merge));
     return items.some(pair => isEqual(pair.key, search));
@@ -91312,8 +91364,9 @@ var utilMapIncludes = {
 };
 
 const startColMsg = 'All mapping items must start at the same column';
-function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError) {
-    const map = new YAMLMap_1$1.YAMLMap(ctx.schema);
+function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError, tag) {
+    const NodeClass = tag?.nodeClass ?? YAMLMap_1$1.YAMLMap;
+    const map = new NodeClass(ctx.schema);
     if (ctx.atRoot)
         ctx.atRoot = false;
     let offset = bm.offset;
@@ -91419,8 +91472,9 @@ var resolveBlockMap_1 = {
 	resolveBlockMap: resolveBlockMap_2
 };
 
-function resolveBlockSeq({ composeNode, composeEmptyNode }, ctx, bs, onError) {
-    const seq = new YAMLSeq_1$1.YAMLSeq(ctx.schema);
+function resolveBlockSeq({ composeNode, composeEmptyNode }, ctx, bs, onError, tag) {
+    const NodeClass = tag?.nodeClass ?? YAMLSeq_1$1.YAMLSeq;
+    const seq = new NodeClass(ctx.schema);
     if (ctx.atRoot)
         ctx.atRoot = false;
     let offset = bs.offset;
@@ -91509,12 +91563,11 @@ var resolveEnd_1 = {
 
 const blockMsg = 'Block collections are not allowed within flow collections';
 const isBlock = (token) => token && (token.type === 'block-map' || token.type === 'block-seq');
-function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onError) {
+function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onError, tag) {
     const isMap = fc.start.source === '{';
     const fcName = isMap ? 'flow map' : 'flow sequence';
-    const coll = isMap
-        ? new YAMLMap_1$1.YAMLMap(ctx.schema)
-        : new YAMLSeq_1$1.YAMLSeq(ctx.schema);
+    const NodeClass = (tag?.nodeClass ?? (isMap ? YAMLMap_1$1.YAMLMap : YAMLSeq_1$1.YAMLSeq));
+    const coll = new NodeClass(ctx.schema);
     coll.flow = true;
     const atRoot = ctx.atRoot;
     if (atRoot)
@@ -91573,7 +91626,7 @@ function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onErr
                 }
                 if (prevItemComment) {
                     let prev = coll.items[coll.items.length - 1];
-                    if (Node.isPair(prev))
+                    if (identity.isPair(prev))
                         prev = prev.value ?? prev.key;
                     if (prev.comment)
                         prev.comment += '\n' + prevItemComment;
@@ -91703,35 +91756,45 @@ var resolveFlowCollection_1 = {
 	resolveFlowCollection: resolveFlowCollection_2
 };
 
-function composeCollection(CN, ctx, token, tagToken, onError) {
-    let coll;
-    switch (token.type) {
-        case 'block-map': {
-            coll = resolveBlockMap_1.resolveBlockMap(CN, ctx, token, onError);
-            break;
-        }
-        case 'block-seq': {
-            coll = resolveBlockSeq_1.resolveBlockSeq(CN, ctx, token, onError);
-            break;
-        }
-        case 'flow-collection': {
-            coll = resolveFlowCollection_1.resolveFlowCollection(CN, ctx, token, onError);
-            break;
-        }
-    }
-    if (!tagToken)
-        return coll;
-    const tagName = ctx.directives.tagName(tagToken.source, msg => onError(tagToken, 'TAG_RESOLVE_FAILED', msg));
-    if (!tagName)
-        return coll;
-    // Cast needed due to: https://github.com/Microsoft/TypeScript/issues/3841
+function resolveCollection(CN, ctx, token, onError, tagName, tag) {
+    const coll = token.type === 'block-map'
+        ? resolveBlockMap_1.resolveBlockMap(CN, ctx, token, onError, tag)
+        : token.type === 'block-seq'
+            ? resolveBlockSeq_1.resolveBlockSeq(CN, ctx, token, onError, tag)
+            : resolveFlowCollection_1.resolveFlowCollection(CN, ctx, token, onError, tag);
     const Coll = coll.constructor;
+    // If we got a tagName matching the class, or the tag name is '!',
+    // then use the tagName from the node class used to create it.
     if (tagName === '!' || tagName === Coll.tagName) {
         coll.tag = Coll.tagName;
         return coll;
     }
-    const expType = Node.isMap(coll) ? 'map' : 'seq';
-    let tag = ctx.schema.tags.find(t => t.collection === expType && t.tag === tagName);
+    if (tagName)
+        coll.tag = tagName;
+    return coll;
+}
+function composeCollection(CN, ctx, token, tagToken, onError) {
+    const tagName = !tagToken
+        ? null
+        : ctx.directives.tagName(tagToken.source, msg => onError(tagToken, 'TAG_RESOLVE_FAILED', msg));
+    const expType = token.type === 'block-map'
+        ? 'map'
+        : token.type === 'block-seq'
+            ? 'seq'
+            : token.start.source === '{'
+                ? 'map'
+                : 'seq';
+    // shortcut: check if it's a generic YAMLMap or YAMLSeq
+    // before jumping into the custom tag logic.
+    if (!tagToken ||
+        !tagName ||
+        tagName === '!' ||
+        (tagName === YAMLMap_1$1.YAMLMap.tagName && expType === 'map') ||
+        (tagName === YAMLSeq_1$1.YAMLSeq.tagName && expType === 'seq') ||
+        !expType) {
+        return resolveCollection(CN, ctx, token, onError, tagName);
+    }
+    let tag = ctx.schema.tags.find(t => t.tag === tagName && t.collection === expType);
     if (!tag) {
         const kt = ctx.schema.knownTags[tagName];
         if (kt && kt.collection === expType) {
@@ -91739,13 +91802,18 @@ function composeCollection(CN, ctx, token, tagToken, onError) {
             tag = kt;
         }
         else {
-            onError(tagToken, 'TAG_RESOLVE_FAILED', `Unresolved tag: ${tagName}`, true);
-            coll.tag = tagName;
-            return coll;
+            if (kt?.collection) {
+                onError(tagToken, 'BAD_COLLECTION_TYPE', `${kt.tag} used for ${expType} collection, but expects ${kt.collection}`, true);
+            }
+            else {
+                onError(tagToken, 'TAG_RESOLVE_FAILED', `Unresolved tag: ${tagName}`, true);
+            }
+            return resolveCollection(CN, ctx, token, onError, tagName);
         }
     }
-    const res = tag.resolve(coll, msg => onError(tagToken, 'TAG_RESOLVE_FAILED', msg), ctx.options);
-    const node = Node.isNode(res)
+    const coll = resolveCollection(CN, ctx, token, onError, tagName, tag);
+    const res = tag.resolve?.(coll, msg => onError(tagToken, 'TAG_RESOLVE_FAILED', msg), ctx.options) ?? coll;
+    const node = identity.isNode(res)
         ? res
         : new Scalar_1$1.Scalar(res);
     node.range = coll.range;
@@ -92194,11 +92262,11 @@ function composeScalar(ctx, token, tagToken, onError) {
         ? findScalarTagByName(ctx.schema, value, tagName, tagToken, onError)
         : token.type === 'scalar'
             ? findScalarTagByTest(ctx, value, token, onError)
-            : ctx.schema[Node.SCALAR];
+            : ctx.schema[identity.SCALAR];
     let scalar;
     try {
         const res = tag.resolve(value, msg => onError(tagToken ?? token, 'TAG_RESOLVE_FAILED', msg), ctx.options);
-        scalar = Node.isScalar(res) ? res : new Scalar_1$1.Scalar(res);
+        scalar = identity.isScalar(res) ? res : new Scalar_1$1.Scalar(res);
     }
     catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
@@ -92219,7 +92287,7 @@ function composeScalar(ctx, token, tagToken, onError) {
 }
 function findScalarTagByName(schema, value, tagName, tagToken, onError) {
     if (tagName === '!')
-        return schema[Node.SCALAR]; // non-specific tag
+        return schema[identity.SCALAR]; // non-specific tag
     const matchWithTest = [];
     for (const tag of schema.tags) {
         if (!tag.collection && tag.tag === tagName) {
@@ -92240,13 +92308,13 @@ function findScalarTagByName(schema, value, tagName, tagToken, onError) {
         return kt;
     }
     onError(tagToken, 'TAG_RESOLVE_FAILED', `Unresolved tag: ${tagName}`, tagName !== 'tag:yaml.org,2002:str');
-    return schema[Node.SCALAR];
+    return schema[identity.SCALAR];
 }
 function findScalarTagByTest({ directives, schema }, value, token, onError) {
-    const tag = schema.tags.find(tag => tag.default && tag.test?.test(value)) || schema[Node.SCALAR];
+    const tag = schema.tags.find(tag => tag.default && tag.test?.test(value)) || schema[identity.SCALAR];
     if (schema.compat) {
         const compat = schema.compat.find(tag => tag.default && tag.test?.test(value)) ??
-            schema[Node.SCALAR];
+            schema[identity.SCALAR];
         if (tag.tag !== compat.tag) {
             const ts = directives.tagString(tag.tag);
             const cs = directives.tagString(compat.tag);
@@ -92411,6 +92479,7 @@ function composeDoc(options, directives, { offset, start, value, end }, onError)
             !props.hasNewline)
             onError(props.end, 'MISSING_CHAR', 'Block collection cannot start on same line with directives-end marker');
     }
+    // @ts-expect-error If Contents is set, let's trust the user
     doc.contents = value
         ? composeNode_1.composeNode(ctx, value, props, onError)
         : composeNode_1.composeEmptyNode(ctx, props.end, start, null, props, onError);
@@ -92504,9 +92573,9 @@ class Composer$1 {
             else if (afterEmptyLine || doc.directives.docStart || !dc) {
                 doc.commentBefore = comment;
             }
-            else if (Node.isCollection(dc) && !dc.flow && dc.items.length > 0) {
+            else if (identity.isCollection(dc) && !dc.flow && dc.items.length > 0) {
                 let it = dc.items[0];
-                if (Node.isPair(it))
+                if (identity.isPair(it))
                     it = it.key;
                 const cb = it.commentBefore;
                 it.commentBefore = cb ? `${comment}\n${cb}` : comment;
@@ -94966,14 +95035,14 @@ var YAMLError = errors.YAMLError;
 var YAMLParseError = errors.YAMLParseError;
 var YAMLWarning = errors.YAMLWarning;
 var Alias_1 = Alias_1$1.Alias;
-var isAlias = Node.isAlias;
-var isCollection = Node.isCollection;
-var isDocument = Node.isDocument;
-var isMap = Node.isMap;
-var isNode = Node.isNode;
-var isPair = Node.isPair;
-var isScalar = Node.isScalar;
-var isSeq = Node.isSeq;
+var isAlias = identity.isAlias;
+var isCollection = identity.isCollection;
+var isDocument = identity.isDocument;
+var isMap = identity.isMap;
+var isNode = identity.isNode;
+var isPair = identity.isPair;
+var isScalar = identity.isScalar;
+var isSeq = identity.isSeq;
 var Pair_1 = Pair_1$1.Pair;
 var Scalar_1 = Scalar_1$1.Scalar;
 var YAMLMap_1 = YAMLMap_1$1.YAMLMap;
@@ -95253,10 +95322,29 @@ exports.createDirentFromStats = createDirentFromStats;
 
 var path_1 = createCommonjsModule(function (module, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.removeLeadingDotSegment = exports.escape = exports.makeAbsolute = exports.unixify = void 0;
+exports.convertPosixPathToPattern = exports.convertWindowsPathToPattern = exports.convertPathToPattern = exports.escapePosixPath = exports.escapeWindowsPath = exports.escape = exports.removeLeadingDotSegment = exports.makeAbsolute = exports.unixify = void 0;
 
+
+const IS_WINDOWS_PLATFORM = require$$0.platform() === 'win32';
 const LEADING_DOT_SEGMENT_CHARACTERS_COUNT = 2; // ./ or .\\
-const UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([()*?[\]{|}]|^!|[!+@](?=\())/g;
+/**
+ * All non-escaped special characters.
+ * Posix: ()*?[\]{|}, !+@ before (, ! at the beginning, \\ before non-special characters.
+ * Windows: (){}, !+@ before (, ! at the beginning.
+ */
+const POSIX_UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
+const WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([(){}]|^!|[!+@](?=\())/g;
+/**
+ * The device path (\\.\ or \\?\).
+ * https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#dos-device-paths
+ */
+const DOS_DEVICE_PATH_RE = /^\\\\([.?])/;
+/**
+ * All backslashes except those escaping special characters.
+ * Windows: !()+@{}
+ * https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions
+ */
+const WINDOWS_BACKSLASHES_RE = /\\(?![!()+@{}])/g;
 /**
  * Designed to work only with simple paths: `dir\\file`.
  */
@@ -95268,10 +95356,6 @@ function makeAbsolute(cwd, filepath) {
     return path$1.resolve(cwd, filepath);
 }
 exports.makeAbsolute = makeAbsolute;
-function escape(pattern) {
-    return pattern.replace(UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
-}
-exports.escape = escape;
 function removeLeadingDotSegment(entry) {
     // We do not use `startsWith` because this is 10x slower than current implementation for some cases.
     // eslint-disable-next-line @typescript-eslint/prefer-string-starts-ends-with
@@ -95284,6 +95368,26 @@ function removeLeadingDotSegment(entry) {
     return entry;
 }
 exports.removeLeadingDotSegment = removeLeadingDotSegment;
+exports.escape = IS_WINDOWS_PLATFORM ? escapeWindowsPath : escapePosixPath;
+function escapeWindowsPath(pattern) {
+    return pattern.replace(WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
+}
+exports.escapeWindowsPath = escapeWindowsPath;
+function escapePosixPath(pattern) {
+    return pattern.replace(POSIX_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
+}
+exports.escapePosixPath = escapePosixPath;
+exports.convertPathToPattern = IS_WINDOWS_PLATFORM ? convertWindowsPathToPattern : convertPosixPathToPattern;
+function convertWindowsPathToPattern(filepath) {
+    return escapeWindowsPath(filepath)
+        .replace(DOS_DEVICE_PATH_RE, '//$1')
+        .replace(WINDOWS_BACKSLASHES_RE, '/');
+}
+exports.convertWindowsPathToPattern = convertWindowsPathToPattern;
+function convertPosixPathToPattern(filepath) {
+    return escapePosixPath(filepath);
+}
+exports.convertPosixPathToPattern = convertPosixPathToPattern;
 });
 
 /*!
@@ -99419,7 +99523,7 @@ var micromatch_1 = micromatch;
 
 var pattern = createCommonjsModule(function (module, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.matchAny = exports.convertPatternsToRe = exports.makeRe = exports.getPatternParts = exports.expandBraceExpansion = exports.expandPatternsWithBraceExpansion = exports.isAffectDepthOfReadingPattern = exports.endsWithSlashGlobStar = exports.hasGlobStar = exports.getBaseDirectory = exports.isPatternRelatedToParentDirectory = exports.getPatternsOutsideCurrentDirectory = exports.getPatternsInsideCurrentDirectory = exports.getPositivePatterns = exports.getNegativePatterns = exports.isPositivePattern = exports.isNegativePattern = exports.convertToNegativePattern = exports.convertToPositivePattern = exports.isDynamicPattern = exports.isStaticPattern = void 0;
+exports.removeDuplicateSlashes = exports.matchAny = exports.convertPatternsToRe = exports.makeRe = exports.getPatternParts = exports.expandBraceExpansion = exports.expandPatternsWithBraceExpansion = exports.isAffectDepthOfReadingPattern = exports.endsWithSlashGlobStar = exports.hasGlobStar = exports.getBaseDirectory = exports.isPatternRelatedToParentDirectory = exports.getPatternsOutsideCurrentDirectory = exports.getPatternsInsideCurrentDirectory = exports.getPositivePatterns = exports.getNegativePatterns = exports.isPositivePattern = exports.isNegativePattern = exports.convertToNegativePattern = exports.convertToPositivePattern = exports.isDynamicPattern = exports.isStaticPattern = void 0;
 
 
 
@@ -99430,6 +99534,11 @@ const REGEX_CHARACTER_CLASS_SYMBOLS_RE = /\[[^[]*]/;
 const REGEX_GROUP_SYMBOLS_RE = /(?:^|[^!*+?@])\([^(]*\|[^|]*\)/;
 const GLOB_EXTENSION_SYMBOLS_RE = /[!*+?@]\([^(]*\)/;
 const BRACE_EXPANSION_SEPARATORS_RE = /,|\.\./;
+/**
+ * Matches a sequence of two or more consecutive slashes, excluding the first two slashes at the beginning of the string.
+ * The latter is due to the presence of the device path at the beginning of the UNC path.
+ */
+const DOUBLE_SLASH_RE = /(?!^)\/{2,}/g;
 function isStaticPattern(pattern, options = {}) {
     return !isDynamicPattern(pattern, options);
 }
@@ -99548,10 +99657,16 @@ function expandPatternsWithBraceExpansion(patterns) {
 }
 exports.expandPatternsWithBraceExpansion = expandPatternsWithBraceExpansion;
 function expandBraceExpansion(pattern) {
-    return micromatch_1.braces(pattern, {
-        expand: true,
-        nodupes: true
-    });
+    const patterns = micromatch_1.braces(pattern, { expand: true, nodupes: true });
+    /**
+     * Sort the patterns by length so that the same depth patterns are processed side by side.
+     * `a/{b,}/{c,}/*` – `['a///*', 'a/b//*', 'a//c/*', 'a/b/c/*']`
+     */
+    patterns.sort((a, b) => a.length - b.length);
+    /**
+     * Micromatch can return an empty string in the case of patterns like `{a,}`.
+     */
+    return patterns.filter((pattern) => pattern !== '');
 }
 exports.expandBraceExpansion = expandBraceExpansion;
 function getPatternParts(pattern, options) {
@@ -99586,6 +99701,14 @@ function matchAny(entry, patternsRe) {
     return patternsRe.some((patternRe) => patternRe.test(entry));
 }
 exports.matchAny = matchAny;
+/**
+ * This package only works with forward slashes as a path separator.
+ * Because of this, we cannot use the standard `path.normalize` method, because on Windows platform it will use of backslashes.
+ */
+function removeDuplicateSlashes(pattern) {
+    return pattern.replace(DOUBLE_SLASH_RE, '/');
+}
+exports.removeDuplicateSlashes = removeDuplicateSlashes;
 });
 
 var stream$3 = createCommonjsModule(function (module, exports) {
@@ -99643,9 +99766,11 @@ var tasks = createCommonjsModule(function (module, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.convertPatternGroupToTask = exports.convertPatternGroupsToTasks = exports.groupPatternsByBaseDirectory = exports.getNegativePatternsAsPositive = exports.getPositivePatterns = exports.convertPatternsToTasks = exports.generate = void 0;
 
-function generate(patterns, settings) {
+function generate(input, settings) {
+    const patterns = processPatterns(input, settings);
+    const ignore = processPatterns(settings.ignore, settings);
     const positivePatterns = getPositivePatterns(patterns);
-    const negativePatterns = getNegativePatternsAsPositive(patterns, settings.ignore);
+    const negativePatterns = getNegativePatternsAsPositive(patterns, ignore);
     const staticPatterns = positivePatterns.filter((pattern) => utils$1.pattern.isStaticPattern(pattern, settings));
     const dynamicPatterns = positivePatterns.filter((pattern) => utils$1.pattern.isDynamicPattern(pattern, settings));
     const staticTasks = convertPatternsToTasks(staticPatterns, negativePatterns, /* dynamic */ false);
@@ -99653,6 +99778,34 @@ function generate(patterns, settings) {
     return staticTasks.concat(dynamicTasks);
 }
 exports.generate = generate;
+function processPatterns(input, settings) {
+    let patterns = input;
+    /**
+     * The original pattern like `{,*,**,a/*}` can lead to problems checking the depth when matching entry
+     * and some problems with the micromatch package (see fast-glob issues: #365, #394).
+     *
+     * To solve this problem, we expand all patterns containing brace expansion. This can lead to a slight slowdown
+     * in matching in the case of a large set of patterns after expansion.
+     */
+    if (settings.braceExpansion) {
+        patterns = utils$1.pattern.expandPatternsWithBraceExpansion(patterns);
+    }
+    /**
+     * If the `baseNameMatch` option is enabled, we must add globstar to patterns, so that they can be used
+     * at any nesting level.
+     *
+     * We do this here, because otherwise we have to complicate the filtering logic. For example, we need to change
+     * the pattern in the filter before creating a regular expression. There is no need to change the patterns
+     * in the application. Only on the input.
+     */
+    if (settings.baseNameMatch) {
+        patterns = patterns.map((pattern) => pattern.includes('/') ? pattern : `**/${pattern}`);
+    }
+    /**
+     * This method also removes duplicate slashes that may have been in the pattern or formed as a result of expansion.
+     */
+    return patterns.map((pattern) => utils$1.pattern.removeDuplicateSlashes(pattern));
+}
 /**
  * Returns tasks grouped by basic pattern directories.
  *
@@ -99721,30 +99874,7 @@ function convertPatternGroupToTask(base, positive, negative, dynamic) {
 exports.convertPatternGroupToTask = convertPatternGroupToTask;
 });
 
-var patterns = createCommonjsModule(function (module, exports) {
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.removeDuplicateSlashes = exports.transform = void 0;
-/**
- * Matches a sequence of two or more consecutive slashes, excluding the first two slashes at the beginning of the string.
- * The latter is due to the presence of the device path at the beginning of the UNC path.
- * @todo rewrite to negative lookbehind with the next major release.
- */
-const DOUBLE_SLASH_RE = /(?!^)\/{2,}/g;
-function transform(patterns) {
-    return patterns.map((pattern) => removeDuplicateSlashes(pattern));
-}
-exports.transform = transform;
-/**
- * This package only works with forward slashes as a path separator.
- * Because of this, we cannot use the standard `path.normalize` method, because on Windows platform it will use of backslashes.
- */
-function removeDuplicateSlashes(pattern) {
-    return pattern.replace(DOUBLE_SLASH_RE, '/');
-}
-exports.removeDuplicateSlashes = removeDuplicateSlashes;
-});
-
-var async$4 = createCommonjsModule(function (module, exports) {
+var async$5 = createCommonjsModule(function (module, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.read = void 0;
 function read(path, settings, callback) {
@@ -99838,10 +99968,10 @@ class Settings$2 {
         return option !== null && option !== void 0 ? option : value;
     }
 }
-var _default$l = Settings$2;
+var _default$m = Settings$2;
 
 var settings$3 = /*#__PURE__*/Object.defineProperty({
-	default: _default$l
+	default: _default$m
 }, '__esModule', {value: true});
 
 var out$3 = createCommonjsModule(function (module, exports) {
@@ -99853,10 +99983,10 @@ exports.statSync = exports.stat = exports.Settings = void 0;
 exports.Settings = settings$3.default;
 function stat(path, optionsOrSettingsOrCallback, callback) {
     if (typeof optionsOrSettingsOrCallback === 'function') {
-        async$4.read(path, getSettings(), optionsOrSettingsOrCallback);
+        async$5.read(path, getSettings(), optionsOrSettingsOrCallback);
         return;
     }
-    async$4.read(path, getSettings(optionsOrSettingsOrCallback), callback);
+    async$5.read(path, getSettings(optionsOrSettingsOrCallback), callback);
 }
 exports.stat = stat;
 function statSync(path, optionsOrSettings) {
@@ -99998,7 +100128,7 @@ function joinPathSegments(a, b, separator) {
 exports.joinPathSegments = joinPathSegments;
 });
 
-var async$3 = createCommonjsModule(function (module, exports) {
+var async$4 = createCommonjsModule(function (module, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.readdir = exports.readdirWithFileTypes = exports.read = void 0;
 
@@ -100199,10 +100329,10 @@ class Settings$1 {
         return option !== null && option !== void 0 ? option : value;
     }
 }
-var _default$k = Settings$1;
+var _default$l = Settings$1;
 
 var settings$2 = /*#__PURE__*/Object.defineProperty({
-	default: _default$k
+	default: _default$l
 }, '__esModule', {value: true});
 
 var out$2 = createCommonjsModule(function (module, exports) {
@@ -100214,10 +100344,10 @@ exports.Settings = exports.scandirSync = exports.scandir = void 0;
 exports.Settings = settings$2.default;
 function scandir(path, optionsOrSettingsOrCallback, callback) {
     if (typeof optionsOrSettingsOrCallback === 'function') {
-        async$3.read(path, getSettings(), optionsOrSettingsOrCallback);
+        async$4.read(path, getSettings(), optionsOrSettingsOrCallback);
         return;
     }
-    async$3.read(path, getSettings(optionsOrSettingsOrCallback), callback);
+    async$4.read(path, getSettings(optionsOrSettingsOrCallback), callback);
 }
 exports.scandir = scandir;
 function scandirSync(path, optionsOrSettings) {
@@ -100531,6 +100661,12 @@ function queueAsPromised (context, worker, concurrency) {
   }
 
   function drained () {
+    if (queue.idle()) {
+      return new Promise(function (resolve) {
+        resolve();
+      })
+    }
+
     var previousDrain = queue.drain;
 
     var p = new Promise(function (resolve) {
@@ -100588,10 +100724,10 @@ class Reader$1 {
         this._root = common.replacePathSegmentSeparator(_root, _settings.pathSegmentSeparator);
     }
 }
-var _default$j = Reader$1;
+var _default$k = Reader$1;
 
 var reader$1 = /*#__PURE__*/Object.defineProperty({
-	default: _default$j
+	default: _default$k
 }, '__esModule', {value: true});
 
 class AsyncReader extends reader$1.default {
@@ -100683,17 +100819,17 @@ class AsyncReader extends reader$1.default {
         this._emitter.emit('entry', entry);
     }
 }
-var _default$i = AsyncReader;
+var _default$j = AsyncReader;
 
-var async$2 = /*#__PURE__*/Object.defineProperty({
-	default: _default$i
+var async$3 = /*#__PURE__*/Object.defineProperty({
+	default: _default$j
 }, '__esModule', {value: true});
 
 class AsyncProvider {
     constructor(_root, _settings) {
         this._root = _root;
         this._settings = _settings;
-        this._reader = new async$2.default(this._root, this._settings);
+        this._reader = new async$3.default(this._root, this._settings);
         this._storage = [];
     }
     read(callback) {
@@ -100709,7 +100845,7 @@ class AsyncProvider {
         this._reader.read();
     }
 }
-var _default$h = AsyncProvider;
+var _default$i = AsyncProvider;
 function callFailureCallback(callback, error) {
     callback(error);
 }
@@ -100717,15 +100853,15 @@ function callSuccessCallback(callback, entries) {
     callback(null, entries);
 }
 
-var async$1 = /*#__PURE__*/Object.defineProperty({
-	default: _default$h
+var async$2 = /*#__PURE__*/Object.defineProperty({
+	default: _default$i
 }, '__esModule', {value: true});
 
 class StreamProvider {
     constructor(_root, _settings) {
         this._root = _root;
         this._settings = _settings;
-        this._reader = new async$2.default(this._root, this._settings);
+        this._reader = new async$3.default(this._root, this._settings);
         this._stream = new Stream.Readable({
             objectMode: true,
             read: () => { },
@@ -100750,10 +100886,10 @@ class StreamProvider {
         return this._stream;
     }
 }
-var _default$g = StreamProvider;
+var _default$h = StreamProvider;
 
 var stream$2 = /*#__PURE__*/Object.defineProperty({
-	default: _default$g
+	default: _default$h
 }, '__esModule', {value: true});
 
 class SyncReader extends reader$1.default {
@@ -100809,10 +100945,10 @@ class SyncReader extends reader$1.default {
         this._storage.push(entry);
     }
 }
-var _default$f = SyncReader;
+var _default$g = SyncReader;
 
 var sync$4 = /*#__PURE__*/Object.defineProperty({
-	default: _default$f
+	default: _default$g
 }, '__esModule', {value: true});
 
 class SyncProvider {
@@ -100825,10 +100961,10 @@ class SyncProvider {
         return this._reader.read();
     }
 }
-var _default$e = SyncProvider;
+var _default$f = SyncProvider;
 
 var sync$3 = /*#__PURE__*/Object.defineProperty({
-	default: _default$e
+	default: _default$f
 }, '__esModule', {value: true});
 
 class Settings {
@@ -100852,10 +100988,10 @@ class Settings {
         return option !== null && option !== void 0 ? option : value;
     }
 }
-var _default$d = Settings;
+var _default$e = Settings;
 
 var settings$1 = /*#__PURE__*/Object.defineProperty({
-	default: _default$d
+	default: _default$e
 }, '__esModule', {value: true});
 
 var out$1 = createCommonjsModule(function (module, exports) {
@@ -100868,10 +101004,10 @@ exports.Settings = exports.walkStream = exports.walkSync = exports.walk = void 0
 exports.Settings = settings$1.default;
 function walk(directory, optionsOrSettingsOrCallback, callback) {
     if (typeof optionsOrSettingsOrCallback === 'function') {
-        new async$1.default(directory, getSettings()).read(optionsOrSettingsOrCallback);
+        new async$2.default(directory, getSettings()).read(optionsOrSettingsOrCallback);
         return;
     }
-    new async$1.default(directory, getSettings(optionsOrSettingsOrCallback)).read(callback);
+    new async$2.default(directory, getSettings(optionsOrSettingsOrCallback)).read(callback);
 }
 exports.walk = walk;
 function walkSync(directory, optionsOrSettings) {
@@ -100921,10 +101057,10 @@ class Reader {
         return !utils$1.errno.isEnoentCodeError(error) && !this._settings.suppressErrors;
     }
 }
-var _default$c = Reader;
+var _default$d = Reader;
 
 var reader = /*#__PURE__*/Object.defineProperty({
-	default: _default$c
+	default: _default$d
 }, '__esModule', {value: true});
 
 class ReaderStream extends reader.default {
@@ -100975,9 +101111,44 @@ class ReaderStream extends reader.default {
         });
     }
 }
-var _default$b = ReaderStream;
+var _default$c = ReaderStream;
 
 var stream$1 = /*#__PURE__*/Object.defineProperty({
+	default: _default$c
+}, '__esModule', {value: true});
+
+class ReaderAsync extends reader.default {
+    constructor() {
+        super(...arguments);
+        this._walkAsync = out$1.walk;
+        this._readerStream = new stream$1.default(this._settings);
+    }
+    dynamic(root, options) {
+        return new Promise((resolve, reject) => {
+            this._walkAsync(root, options, (error, entries) => {
+                if (error === null) {
+                    resolve(entries);
+                }
+                else {
+                    reject(error);
+                }
+            });
+        });
+    }
+    async static(patterns, options) {
+        const entries = [];
+        const stream = this._readerStream.static(patterns, options);
+        // After #235, replace it with an asynchronous iterator.
+        return new Promise((resolve, reject) => {
+            stream.once('error', reject);
+            stream.on('data', (entry) => entries.push(entry));
+            stream.once('end', () => resolve(entries));
+        });
+    }
+}
+var _default$b = ReaderAsync;
+
+var async$1 = /*#__PURE__*/Object.defineProperty({
 	default: _default$b
 }, '__esModule', {value: true});
 
@@ -100990,12 +101161,7 @@ class Matcher {
         this._fillStorage();
     }
     _fillStorage() {
-        /**
-         * The original pattern may include `{,*,**,a/*}`, which will lead to problems with matching (unresolved level).
-         * So, before expand patterns with brace expansion into separated patterns.
-         */
-        const patterns = utils$1.pattern.expandPatternsWithBraceExpansion(this._patterns);
-        for (const pattern of patterns) {
+        for (const pattern of this._patterns) {
             const segments = this._getPatternSegments(pattern);
             const sections = this._splitSegmentsIntoSections(segments);
             this._storage.push({
@@ -101144,31 +101310,32 @@ class EntryFilter {
     }
     getFilter(positive, negative) {
         const positiveRe = utils$1.pattern.convertPatternsToRe(positive, this._micromatchOptions);
-        const negativeRe = utils$1.pattern.convertPatternsToRe(negative, this._micromatchOptions);
+        const negativeRe = utils$1.pattern.convertPatternsToRe(negative, Object.assign(Object.assign({}, this._micromatchOptions), { dot: true }));
         return (entry) => this._filter(entry, positiveRe, negativeRe);
     }
     _filter(entry, positiveRe, negativeRe) {
-        if (this._settings.unique && this._isDuplicateEntry(entry)) {
+        const filepath = utils$1.path.removeLeadingDotSegment(entry.path);
+        if (this._settings.unique && this._isDuplicateEntry(filepath)) {
             return false;
         }
         if (this._onlyFileFilter(entry) || this._onlyDirectoryFilter(entry)) {
             return false;
         }
-        if (this._isSkippedByAbsoluteNegativePatterns(entry.path, negativeRe)) {
+        if (this._isSkippedByAbsoluteNegativePatterns(filepath, negativeRe)) {
             return false;
         }
-        const filepath = this._settings.baseNameMatch ? entry.name : entry.path;
-        const isMatched = this._isMatchToPatterns(filepath, positiveRe) && !this._isMatchToPatterns(entry.path, negativeRe);
+        const isDirectory = entry.dirent.isDirectory();
+        const isMatched = this._isMatchToPatterns(filepath, positiveRe, isDirectory) && !this._isMatchToPatterns(filepath, negativeRe, isDirectory);
         if (this._settings.unique && isMatched) {
-            this._createIndexRecord(entry);
+            this._createIndexRecord(filepath);
         }
         return isMatched;
     }
-    _isDuplicateEntry(entry) {
-        return this.index.has(entry.path);
+    _isDuplicateEntry(filepath) {
+        return this.index.has(filepath);
     }
-    _createIndexRecord(entry) {
-        this.index.set(entry.path, undefined);
+    _createIndexRecord(filepath) {
+        this.index.set(filepath, undefined);
     }
     _onlyFileFilter(entry) {
         return this._settings.onlyFiles && !entry.dirent.isFile();
@@ -101183,13 +101350,15 @@ class EntryFilter {
         const fullpath = utils$1.path.makeAbsolute(this._settings.cwd, entryPath);
         return utils$1.pattern.matchAny(fullpath, patternsRe);
     }
-    /**
-     * First, just trying to apply patterns to the path.
-     * Second, trying to apply patterns to the path with final slash.
-     */
-    _isMatchToPatterns(entryPath, patternsRe) {
-        const filepath = utils$1.path.removeLeadingDotSegment(entryPath);
-        return utils$1.pattern.matchAny(filepath, patternsRe) || utils$1.pattern.matchAny(filepath + '/', patternsRe);
+    _isMatchToPatterns(filepath, patternsRe, isDirectory) {
+        // Trying to match files and directories by patterns.
+        const isMatched = utils$1.pattern.matchAny(filepath, patternsRe);
+        // A pattern with a trailling slash can be used for directory matching.
+        // To apply such pattern, we need to add a tralling slash to the path.
+        if (!isMatched && isDirectory) {
+            return utils$1.pattern.matchAny(filepath + '/', patternsRe);
+        }
+        return isMatched;
     }
 }
 var _default$7 = EntryFilter;
@@ -101292,18 +101461,13 @@ var provider = /*#__PURE__*/Object.defineProperty({
 class ProviderAsync extends provider.default {
     constructor() {
         super(...arguments);
-        this._reader = new stream$1.default(this._settings);
+        this._reader = new async$1.default(this._settings);
     }
-    read(task) {
+    async read(task) {
         const root = this._getRootDirectory(task);
         const options = this._getReaderOptions(task);
-        const entries = [];
-        return new Promise((resolve, reject) => {
-            const stream = this.api(root, task, options);
-            stream.once('error', reject);
-            stream.on('data', (entry) => entries.push(options.transform(entry)));
-            stream.once('end', () => resolve(entries));
-        });
+        const entries = await this.api(root, task, options);
+        return entries.map((entry) => options.transform(entry));
     }
     api(root, task, options) {
         if (task.dynamic) {
@@ -101484,6 +101648,10 @@ async function FastGlob(source, options) {
 // https://github.com/typescript-eslint/typescript-eslint/issues/60
 // eslint-disable-next-line no-redeclare
 (function (FastGlob) {
+    FastGlob.glob = FastGlob;
+    FastGlob.globSync = sync;
+    FastGlob.globStream = stream$1;
+    FastGlob.async = FastGlob;
     function sync(source, options) {
         assertPatternsInput$1(source);
         const works = getWorks(source, sync$1.default, options);
@@ -101503,9 +101671,9 @@ async function FastGlob(source, options) {
     FastGlob.stream = stream$1;
     function generateTasks(source, options) {
         assertPatternsInput$1(source);
-        const patterns$1 = patterns.transform([].concat(source));
+        const patterns = [].concat(source);
         const settings$1 = new settings.default(options);
-        return tasks.generate(patterns$1, settings$1);
+        return tasks.generate(patterns, settings$1);
     }
     FastGlob.generateTasks = generateTasks;
     function isDynamicPattern(source, options) {
@@ -101519,11 +101687,40 @@ async function FastGlob(source, options) {
         return utils$1.path.escape(source);
     }
     FastGlob.escapePath = escapePath;
+    function convertPathToPattern(source) {
+        assertPatternsInput$1(source);
+        return utils$1.path.convertPathToPattern(source);
+    }
+    FastGlob.convertPathToPattern = convertPathToPattern;
+    (function (posix) {
+        function escapePath(source) {
+            assertPatternsInput$1(source);
+            return utils$1.path.escapePosixPath(source);
+        }
+        posix.escapePath = escapePath;
+        function convertPathToPattern(source) {
+            assertPatternsInput$1(source);
+            return utils$1.path.convertPosixPathToPattern(source);
+        }
+        posix.convertPathToPattern = convertPathToPattern;
+    })(FastGlob.posix || (FastGlob.posix = {}));
+    (function (win32) {
+        function escapePath(source) {
+            assertPatternsInput$1(source);
+            return utils$1.path.escapeWindowsPath(source);
+        }
+        win32.escapePath = escapePath;
+        function convertPathToPattern(source) {
+            assertPatternsInput$1(source);
+            return utils$1.path.convertWindowsPathToPattern(source);
+        }
+        win32.convertPathToPattern = convertPathToPattern;
+    })(FastGlob.win32 || (FastGlob.win32 = {}));
 })(FastGlob || (FastGlob = {}));
 function getWorks(source, _Provider, options) {
-    const patterns$1 = patterns.transform([].concat(source));
+    const patterns = [].concat(source);
     const settings$1 = new settings.default(options);
-    const tasks$1 = tasks.generate(patterns$1, settings$1);
+    const tasks$1 = tasks.generate(patterns, settings$1);
     const provider = new _Provider(settings$1);
     return tasks$1.map(provider.read, provider);
 }
@@ -101672,6 +101869,7 @@ const EMPTY = '';
 const SPACE = ' ';
 const ESCAPE = '\\';
 const REGEX_TEST_BLANK_LINE = /^\s+$/;
+const REGEX_INVALID_TRAILING_BACKSLASH = /(?:[^\\]|^)\\$/;
 const REGEX_REPLACE_LEADING_EXCAPED_EXCLAMATION = /^\\!/;
 const REGEX_REPLACE_LEADING_EXCAPED_HASH = /^\\#/;
 const REGEX_SPLITALL_CRLF = /\r?\n/g;
@@ -101683,10 +101881,14 @@ const REGEX_SPLITALL_CRLF = /\r?\n/g;
 const REGEX_TEST_INVALID_PATH = /^\.*\/|^\.+$/;
 
 const SLASH = '/';
-const KEY_IGNORE = typeof Symbol !== 'undefined'
-  ? Symbol.for('node-ignore')
-  /* istanbul ignore next */
-  : 'node-ignore';
+
+// Do not use ternary expression here, since "istanbul ignore next" is buggy
+let TMP_KEY_IGNORE = 'node-ignore';
+/* istanbul ignore else */
+if (typeof Symbol !== 'undefined') {
+  TMP_KEY_IGNORE = Symbol.for('node-ignore');
+}
+const KEY_IGNORE = TMP_KEY_IGNORE;
 
 const define = (object, key, value) =>
   Object.defineProperty(object, key, {value});
@@ -101853,18 +102055,27 @@ const REPLACERS = [
       : '\\/.+'
   ],
 
-  // intermediate wildcards
+  // normal intermediate wildcards
   [
     // Never replace escaped '*'
     // ignore rule '\*' will match the path '*'
 
     // 'abc.*/' -> go
-    // 'abc.*'  -> skip this rule
-    /(^|[^\\]+)\\\*(?=.+)/g,
+    // 'abc.*'  -> skip this rule,
+    //    coz trailing single wildcard will be handed by [trailing wildcard]
+    /(^|[^\\]+)(\\\*)+(?=.+)/g,
 
     // '*.js' matches '.js'
     // '*.js' doesn't match 'abc'
-    (_, p1) => `${p1}[^\\/]*`
+    (_, p1, p2) => {
+      // 1.
+      // > An asterisk "*" matches anything except a slash.
+      // 2.
+      // > Other consecutive asterisks are considered regular asterisks
+      // > and will match according to the previous rules.
+      const unescaped = p2.replace(/\\\*/g, '[^\\/]*');
+      return p1 + unescaped
+    }
   ],
 
   [
@@ -101975,6 +102186,7 @@ const isString = subject => typeof subject === 'string';
 const checkPattern = pattern => pattern
   && isString(pattern)
   && !REGEX_TEST_BLANK_LINE.test(pattern)
+  && !REGEX_INVALID_TRAILING_BACKSLASH.test(pattern)
 
   // > A line starting with # serves as a comment.
   && pattern.indexOf('#') !== 0;
@@ -102240,7 +102452,7 @@ var ignore = factory;
 
 // Windows
 // --------------------------------------------------------------
-/* istanbul ignore if  */
+/* istanbul ignore if */
 if (
   // Detect `process` so that it can run in browsers.
   typeof process !== 'undefined'
@@ -102332,12 +102544,14 @@ const getIsIgnoredPredicate = (files, cwd) => {
 
 const normalizeOptions$1 = (options = {}) => ({
 	cwd: toPath(options.cwd) || process$1.cwd(),
+	suppressErrors: Boolean(options.suppressErrors),
+	deep: typeof options.deep === 'number' ? options.deep : Number.POSITIVE_INFINITY,
 });
 
 const isIgnoredByIgnoreFiles = async (patterns, options) => {
-	const {cwd} = normalizeOptions$1(options);
+	const {cwd, suppressErrors, deep} = normalizeOptions$1(options);
 
-	const paths = await out(patterns, {cwd, ...ignoreFilesGlobOptions});
+	const paths = await out(patterns, {cwd, suppressErrors, deep, ...ignoreFilesGlobOptions});
 
 	const files = await Promise.all(
 		paths.map(async filePath => ({
@@ -102380,9 +102594,11 @@ const checkCwdOption = options => {
 
 const normalizeOptions = (options = {}) => {
 	options = {
-		ignore: [],
-		expandDirectories: true,
 		...options,
+		ignore: options.ignore || [],
+		expandDirectories: options.expandDirectories === undefined
+			? true
+			: options.expandDirectories,
 		cwd: toPath(options.cwd),
 	};
 
@@ -102407,7 +102623,7 @@ const getIgnoreFilesPatterns = options => {
 const getFilter = async options => {
 	const ignoreFilesPatterns = getIgnoreFilesPatterns(options);
 	return createFilterFunction(
-		ignoreFilesPatterns.length > 0 && await isIgnoredByIgnoreFiles(ignoreFilesPatterns, {cwd: options.cwd}),
+		ignoreFilesPatterns.length > 0 && await isIgnoredByIgnoreFiles(ignoreFilesPatterns, options),
 	);
 };
 
@@ -103522,6 +103738,9 @@ const inputs = {
   config: core$1.getInput('config', {
     required: false
   }),
+  event: core$1.getInput('event', {
+    required: false
+  }),
   dry: core$1.getInput('dry-run', {
     required: false
   })
@@ -103570,7 +103789,7 @@ const changedRepositories = await scan(octokit, {
   localFiles
 }); // determine which method to run
 
-const method = ['pull_request', 'pull_request_target'].includes(github$1.context.eventName) ? pull_request : push;
+const method = inputs.event || ['pull_request', 'pull_request_target'].includes(github$1.context.eventName) ? pull_request : push;
 await method(octokit, {
   changedRepositories,
   localFiles,

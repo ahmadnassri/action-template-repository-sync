@@ -40,7 +40,7 @@ on:
   pull_request: # run on pull requests to preview changes before applying
 
   workflow_run: # setup this workflow as a dependency of others
-    workflows: [ test, release ] # don't sync template unless tests and other important workflows have passed
+    workflows: [test, release] # don't sync template unless tests and other important workflows have passed
 
 jobs:
   template-sync:
@@ -73,7 +73,7 @@ additional:
   - "!not-this-*" # exclude
 
 files:
-  - ".gitignore"  # include
+  - ".gitignore" # include
   - "!package.json" # exclude
   - "!(package-lock.json|yarn.lock)"
 
@@ -123,8 +123,9 @@ files:
 | input          | required | default                     | description                                  |
 | -------------- | -------- | --------------------------- | -------------------------------------------- |
 | `github-token` | ✔️       | `-`                         | The GitHub token used to call the GitHub API |
-| `config`       | ❌        | `.github/template-sync.yml` | path to config file                          |
-| `dry-run`      | ❌        | `false`                     | toggle info mode (commits wont occur)        |
+| `config`       | ❌       | `.github/template-sync.yml` | path to config file                          |
+| `dry-run`      | ❌       | `false`                     | toggle info mode (commits wont occur)        |
+| `event`        | ❌       | `github.event`              | event object to use                          |
 
 ## :warning: Operational Logic
 
