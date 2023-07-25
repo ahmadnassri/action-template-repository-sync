@@ -103733,9 +103733,6 @@ const inputs = {
   config: core$1.getInput('config', {
     required: false
   }),
-  event: core$1.getInput('event', {
-    required: false
-  }),
   dry: core$1.getInput('dry-run', {
     required: false
   })
@@ -103755,7 +103752,7 @@ if (inputs.dry === 'true') {
   core$1.info('🟠 running in dry-run mode');
 }
 
-core$1.info(`ℹ️ running from "${inputs.event}"`); // exit early: incompatible workflow
+core$1.info(`ℹ️ running from "${github$1.context.eventName}"`); // exit early: incompatible workflow
 
 if (!allowed.includes(github$1.context.eventName)) {
   core$1.warning(`⚠️ action ran on incompatible event "${github$1.context.eventName}", only "${allowed.join('", "')}" are allowed`);
@@ -103785,7 +103782,7 @@ const changedRepositories = await scan(octokit, {
   localFiles
 }); // determine which method to run
 
-const method = ['pull_request', 'pull_request_target'].includes(inputs.event) ? pull_request : push;
+const method = ['pull_request', 'pull_request_target'].includes(github$1.context.eventName) ? pull_request : push;
 await method(octokit, {
   changedRepositories,
   localFiles,
