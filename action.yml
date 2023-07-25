@@ -15,11 +15,6 @@ inputs:
     default: .github/template-sync.yml
     required: false
 
-  event:
-    description: Event that triggered the action (e.g. push, pull_request) used when workflow is called with "workflow_call"
-    default: ${{ github.event_name == 'workflow_call' && 'push' || github.event_name }}
-    required: false
-
   dry-run:
     description: dry-run mode
     default: "false"

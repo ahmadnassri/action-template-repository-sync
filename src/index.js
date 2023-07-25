@@ -32,7 +32,6 @@ const allowed = [
 const inputs = {
   token: core.getInput('github-token', { required: true }),
   config: core.getInput('config', { required: false }),
-  event: core.getInput('event', { required: false }),
   dry: core.getInput('dry-run', { required: false })
 }
 
@@ -52,7 +51,7 @@ if (inputs.dry === 'true') {
   core.info('🟠 running in dry-run mode')
 }
 
-core.info(`ℹ️ running from "${inputs.event}"`)
+core.info(`ℹ️ running from "${github.context.eventName}"`)
 
 // exit early: incompatible workflow
 if (!allowed.includes(github.context.eventName)) {
@@ -82,6 +81,6 @@ const localFiles = await files(workspace, options)
 const changedRepositories = await scan(octokit, { repositories, localFiles })
 
 // determine which method to run
-const method = (['pull_request', 'pull_request_target'].includes(inputs.event)) ? pull_request : push
+const method = (['pull_request', 'pull_request_target'].includes(github.context.eventName)) ? pull_request : push
 
 await method(octokit, { changedRepositories, localFiles, inputs })

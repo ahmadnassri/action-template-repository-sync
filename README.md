@@ -128,12 +128,11 @@ files:
 
 ### Inputs
 
-| input          | required | default                     | description                                                                                                |
-|----------------|----------|-----------------------------|------------------------------------------------------------------------------------------------------------|
-| `github-token` | ✔️       | `-`                         | The GitHub token used to call the GitHub API                                                               |
-| `config`       | ❌       | `.github/template-sync.yml` | path to config file                                                                                        |
-| `dry-run`      | ❌       | `false`                     | toggle info mode (commits wont occur)                                                                      |
-| `event`        | ❌       | `github.event`              | override github event name *(e.g. push, pull_request)* useful when workflow is called with `workflow_call` |
+| input          | required | default                     | description                                  |
+|----------------|----------|-----------------------------|----------------------------------------------|
+| `github-token` | ✔️       | `-`                         | The GitHub token used to call the GitHub API |
+| `config`       | ❌       | `.github/template-sync.yml` | path to config file                          |
+| `dry-run`      | ❌       | `false`                     | toggle info mode (commits wont occur)        |
 
 ## :warning: Operational Logic
 
