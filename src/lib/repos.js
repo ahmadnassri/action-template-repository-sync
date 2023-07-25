@@ -8,11 +8,6 @@ import core from '@actions/core'
 import github from '@actions/github'
 import micromatch from 'micromatch'
 
-const mediaType = {
-  previews: [
-    'baptiste'
-  ]
-}
 
 export default async function (octokit, options) {
   // construct this template repo full name
@@ -20,8 +15,7 @@ export default async function (octokit, options) {
 
   // determine type
   const { data: { is_template, owner: { type } } } = await octokit.request('GET /repos/{owner}/{repo}', {
-    ...github.context.repo,
-    mediaType
+    ...github.context.repo
   })
 
   // exit early
@@ -36,8 +30,7 @@ export default async function (octokit, options) {
     username: github.context.repo.owner,
     org: github.context.repo.owner,
     per_page: 100,
-    affiliation: 'owner',
-    mediaType
+    affiliation: 'owner'
   })
 
   const repositories = all.filter(repo => repo.archived === false) // only include non-archived repos

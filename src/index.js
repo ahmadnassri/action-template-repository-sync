@@ -52,6 +52,8 @@ if (inputs.dry === 'true') {
   core.info('🟠 running in dry-run mode')
 }
 
+core.info(`ℹ️ running from "${inputs.event}"`)
+
 // exit early: incompatible workflow
 if (!allowed.includes(github.context.eventName)) {
   core.warning(`⚠️ action ran on incompatible event "${github.context.eventName}", only "${allowed.join('", "')}" are allowed`)
@@ -78,8 +80,6 @@ const localFiles = await files(workspace, options)
 
 // scan repos
 const changedRepositories = await scan(octokit, { repositories, localFiles })
-
-core.info(`ℹ️ running from "${inputs.event}"`)
 
 // determine which method to run
 const method = (['pull_request', 'pull_request_target'].includes(inputs.event)) ? pull_request : push
