@@ -79,7 +79,7 @@ const localFiles = await files(workspace, options)
 // scan repos
 const changedRepositories = await scan(octokit, { repositories, localFiles })
 
-core.info(`ℹ️ running from "${inputs.event)}"`)
+core.info(`ℹ️ running from "${inputs.event}"`)
 
 // determine which method to run
 const method = (['pull_request', 'pull_request_target'].includes(inputs.event)) ? pull_request : push
