@@ -17,7 +17,7 @@ inputs:
 
   event:
     description: Event that triggered the action (e.g. push, pull_request) used when workflow is called with "workflow_call"
-    default: ${{ github.event_name == 'workflow_call' && "push" || github.event_name }}
+    default: ${{ github.event_name == 'workflow_call' && 'push' || github.event_name }}
     required: false
 
   dry-run:

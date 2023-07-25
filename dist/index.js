@@ -103789,7 +103789,7 @@ const changedRepositories = await scan(octokit, {
   localFiles
 }); // determine which method to run
 
-const method = inputs.event || ['pull_request', 'pull_request_target'].includes(github$1.context.eventName) ? pull_request : push;
+const method = ['pull_request', 'pull_request_target'].includes(inputs.event) ? pull_request : push;
 await method(octokit, {
   changedRepositories,
   localFiles,
