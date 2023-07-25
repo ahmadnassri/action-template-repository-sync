@@ -103707,7 +103707,7 @@ async function scan (octokit, {
 
 
       if (remoteContent && remoteContent.compare(localContent) === 0) {
-        core$1.debug(`✔ ${repo}:${path} is up to date`);
+        core$1.debug(`✅ ${repo}:${path} is up to date`);
         continue;
       }
 
