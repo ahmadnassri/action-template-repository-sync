@@ -20,6 +20,11 @@ inputs:
     default: "false"
     required: false
 
+  skip-ci:
+    description: If `true`, then the commit will not trigger CI pipelines.
+    default: "false"
+    required: false
+
 runs:
   using: node16
   main: dist/index.js
