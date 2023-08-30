@@ -88699,7 +88699,7 @@ function blockString({ comment, type, value }, ctx, onComment, onChompKeep) {
 function plainString(item, ctx, onComment, onChompKeep) {
     const { type, value } = item;
     const { actualString, implicitKey, indent, indentStep, inFlow } = ctx;
-    if ((implicitKey && /[\n[\]{},]/.test(value)) ||
+    if ((implicitKey && value.includes('\n')) ||
         (inFlow && /[[\]{},]/.test(value))) {
         return quotedString(value, ctx);
     }
@@ -89072,6 +89072,8 @@ function debug(logLevel, ...messages) {
 }
 function warn(logLevel, warning) {
     if (logLevel === 'debug' || logLevel === 'warn') {
+        // https://github.com/typescript-eslint/typescript-eslint/issues/7478
+        // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
         if (typeof process !== 'undefined' && process.emitWarning)
             process.emitWarning(warning);
         else
@@ -89164,7 +89166,7 @@ function stringifyKey(key, jsKey, ctx) {
         return '';
     if (typeof jsKey !== 'object')
         return String(jsKey);
-    if (identity.isNode(key) && ctx && ctx.doc) {
+    if (identity.isNode(key) && ctx?.doc) {
         const strCtx = stringify_1$2.createStringifyContext(ctx.doc, {});
         strCtx.anchors = new Set();
         for (const node of ctx.anchors.keys())
@@ -89321,7 +89323,7 @@ function stringifyFlowCollection({ comment, items }, ctx, { flowChars, itemInden
                 if (iv.commentBefore)
                     reqNewline = true;
             }
-            else if (item.value == null && ik && ik.comment) {
+            else if (item.value == null && ik?.comment) {
                 comment = ik.comment;
             }
         }
@@ -90056,8 +90058,9 @@ function createPairs(schema, iterable, ctx) {
                     key = keys[0];
                     value = it[key];
                 }
-                else
-                    throw new TypeError(`Expected { key: value } tuple: ${it}`);
+                else {
+                    throw new TypeError(`Expected tuple with one key, not ${keys.length} keys`);
+                }
             }
             else {
                 key = it;
@@ -103572,7 +103575,13 @@ async function push (octokit, {
     }
 
     core$1.debug(`${repo}: new tree: ${newTree.sha}`);
-    core$1.debug(inspect(newTree)); // Make a new commit with the delta tree
+    core$1.debug(inspect(newTree));
+    let commitMessage = `chore(template): sync with ${github$1.context.repo.owner}/${github$1.context.repo.repo}`;
+
+    if (inputs.skipCi === 'true') {
+      commitMessage += ` [skip ci]`;
+    } // Make a new commit with the delta tree
+
 
     try {
       ({
@@ -103580,7 +103589,7 @@ async function push (octokit, {
       } = await octokit.request('POST /repos/{owner}/{repo}/git/commits', {
         owner: github$1.context.repo.owner,
         repo,
-        message: `chore(template): sync with ${github$1.context.repo.owner}/${github$1.context.repo.repo}`,
+        message: commitMessage,
         tree: newTree.sha,
         parents: [sha]
       }));
@@ -103734,6 +103743,9 @@ const inputs = {
     required: false
   }),
   dry: core$1.getInput('dry-run', {
+    required: false
+  }),
+  skipCi: core$1.getInput('skip-ci', {
     required: false
   })
 }; // error handler
