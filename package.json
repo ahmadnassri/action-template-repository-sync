@@ -30,7 +30,7 @@
     "@actions/github": "^5.1.1",
     "diff": "^5.1.0",
     "globby": "^13.2.2",
-    "micromatch": "^4.0.5",
+    "micromatch": "^4.0.6",
     "yaml": "^2.3.4"
   },
   "devDependencies": {
