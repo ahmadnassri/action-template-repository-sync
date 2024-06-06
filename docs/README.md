@@ -136,7 +136,7 @@ files:
 
 ## :warning: Operational Logic
 
-- The action will only run on the following event types: 'schedule`,`workflow_dispatch`,`repository_dispatch`,`pull_request`,`release`,`workflow_run`,`push`.
+- The action will only run on the following event types: `schedule`,`workflow_dispatch`,`repository_dispatch`,`pull_request`,`release`,`workflow_run`,`push`.
 - The when run in `pull_request`, the action will post post a comment on the the Pull Request with the diff view of files to be changed.
 - The action will look for files under the `GITHUB_WORKSPACE` environment path
 - The action will read file contents **AT RUNTIME** _(so you can run build steps or modify content before running the action if you so wish)_
