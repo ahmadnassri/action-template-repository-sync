@@ -6,6 +6,7 @@ import { inspect } from 'util'
 // packages
 import core from '@actions/core'
 import github from '@actions/github'
+import { Octokit } from 'octokit'
 
 // modules
 import config from './lib/config.js'
@@ -64,7 +65,7 @@ if (!allowed.includes(github.context.eventName)) {
 const options = config({ workspace, path: inputs.config })
 
 // init octokit
-const octokit = github.getOctokit(null, { auth: inputs.token })
+const octokit = new Octokit({ auth: inputs.token })
 
 // get dependant repos
 const repositories = await repos(octokit, options)
