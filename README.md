@@ -19,7 +19,11 @@ However, after you "use" the template for first time, the two repositories will 
 
 This action will **automatically** detect all repositories within your account *(user or org)* that has been "initialized" from the template repository *(referred to as "dependents" in this doc)*
 
-> :fire: **NOTE** There is currently a [bug in the GitHub APIs][] preventing this action from automatically detecting dependent repositories, until this is tis resolved, please use `additional` property in the config file to manually include repositories you want to sync
+> [!NOTE]
+> There is currently a [bug in the GitHub APIs][] preventing this action from automatically detecting dependent repositories, until this is tis resolved, please use `additional` property in the config file to manually include repositories you want to sync
+
+> [!IMPORTANT]
+> MUST USE [Fine-grained Personal Access Token][], for whatever reason, Classic tokens stopped working with the "contents" scope, which is required for this action to work
 
 ###### `.github/workflows/template-sync.yml`
 
@@ -67,7 +71,8 @@ jobs:
 
 </details>
 
-> :warning: **HIGHLY RECOMMEND** to set `dry-run: true` for the first time you use this action, inspect the output to confirm if the affected repositories list is what you wanted to commit files to
+> [!WARNING]
+> **HIGHLY RECOMMEND** to set `dry-run: true` for the first time you use this action, inspect the output to confirm if the affected repositories list is what you wanted to commit files to
 
 ###### `.github/template-sync.yml`
 
@@ -123,8 +128,11 @@ files:
 
 #### Pattern syntax
 
-> :warning: Always use forward-slashes in glob expressions and backslashes for escaping characters.
-> :book: This package uses a [`micromatch`][] as a library for pattern matching.
+> [!WARNING]
+> Always use forward-slashes in glob expressions and backslashes for escaping characters.
+
+> [!TIP]
+> This package uses a [`micromatch`][] as a library for pattern matching.
 
 ### Inputs
 
@@ -146,6 +154,7 @@ files:
 
   [Template Repository]: https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-template-repository
   [bug in the GitHub APIs]: https://github.com/github/docs/issues/4894
+  [Fine-grained Personal Access Token]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#fine-grained-personal-access-tokens
   [`micromatch`]: https://github.com/micromatch/micromatch
 
 ----
