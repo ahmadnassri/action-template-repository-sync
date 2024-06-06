@@ -64,7 +64,7 @@ if (!allowed.includes(github.context.eventName)) {
 const options = config({ workspace, path: inputs.config })
 
 // init octokit
-const octokit = github.getOctokit(inputs.token)
+const octokit = github.getOctokit(null, { auth: inputs.token })
 
 // get dependant repos
 const repositories = await repos(octokit, options)
