@@ -11,9 +11,6 @@ However, after you "use" the template for first time, the two repositories will 
 
 This action will **automatically** detect all repositories within your account _(user or org)_ that has been "initialized" from the template repository _(referred to as "dependents" in this doc)_
 
-> [!NOTE]
-> There is currently a [bug in the GitHub APIs](https://github.com/github/docs/issues/4894) preventing this action from automatically detecting dependent repositories, until this is tis resolved, please use `additional` property in the config file to manually include repositories you want to sync
-
 > [!IMPORTANT]
 > MUST USE [Fine-grained Personal Access Token][tokens], for whatever reason, Classic tokens stopped working with the "contents" scope, which is required for this action to work
 
