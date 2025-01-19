@@ -1,10 +1,11 @@
 import sinon from 'sinon'
-import { inspect } from 'util'
-import { test, afterEach } from 'tap'
+import { test } from 'tap'
 
 // packages
 import core from '@actions/core'
 import github from '@actions/github'
+
+import report from '../src/lib/report.js'
 
 // override context
 github.context = { repo: { owner: 'ahmad' } }
@@ -13,15 +14,13 @@ github.context = { repo: { owner: 'ahmad' } }
 sinon.stub(core, 'debug')
 sinon.stub(core, 'warning')
 
-import report from '../src/lib/report.js'
-
 test('generats report', async assert => {
   assert.plan(2)
 
   const changedRepositories = new Map([
     ['repo', new Map([
       ['/path/to/file.1', Buffer.from('remoteContent\n')],
-      ['/path/to/file.2', Buffer.from('remoteContent\n')],
+      ['/path/to/file.2', Buffer.from('remoteContent\n')]
     ])]
   ])
 

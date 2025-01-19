@@ -8,7 +8,7 @@ import github from '@actions/github'
 export default async function (octokit, { changedRepositories, localFiles, inputs }) {
   const newContent = []
 
-  main: for (const [repo, remoteFiles] of changedRepositories.entries()) {
+  for (const [repo, remoteFiles] of changedRepositories.entries()) {
     for (const path of remoteFiles.keys()) {
       // add file to update tree
       newContent.push({
@@ -21,7 +21,7 @@ export default async function (octokit, { changedRepositories, localFiles, input
     }
 
     // dry run
-    if (inputs.dry === 'true') continue main
+    if (inputs.dry === 'true') continue
 
     let default_branch, sha, tree, newTree, newCommit
 
@@ -33,7 +33,7 @@ export default async function (octokit, { changedRepositories, localFiles, input
       }))
     } catch (err) {
       core.warning(`❌ failed to detect default branch for ${repo}: ${err.response?.data?.message || err.message}`)
-      continue main
+      continue
     }
 
     core.debug(`${repo}: default branch: ${default_branch}`)
@@ -45,8 +45,8 @@ export default async function (octokit, { changedRepositories, localFiles, input
         repo
       }))
     } catch (err) {
-      core.warning(`❌ failed to fetch commit info for ${repo}:${path}: ${err.response?.data?.message || err.message}`)
-      continue main
+      core.warning(`❌ failed to fetch commit info for ${repo}: ${err.response?.data?.message || err.message}`)
+      continue
     }
 
     core.debug(`${repo}: latest commit: { sha: ${sha}, tree.sha: ${tree.sha} }`)
@@ -54,14 +54,14 @@ export default async function (octokit, { changedRepositories, localFiles, input
     // Make a new tree for the deltas
     try {
       ({ data: newTree } = await octokit.request('POST /repos/{owner}/{repo}/git/trees', {
-          owner: github.context.repo.owner,
-          repo,
-          base_tree: tree.sha,
-          tree: newContent
+        owner: github.context.repo.owner,
+        repo,
+        base_tree: tree.sha,
+        tree: newContent
       }))
     } catch (err) {
       core.warning(`❌ failed to create a tree in ${repo}:${tree.sha} ${err.response?.data?.message || err.message}`)
-      continue main
+      continue
     }
 
     core.debug(`${repo}: new tree: ${newTree.sha}`)
@@ -69,7 +69,7 @@ export default async function (octokit, { changedRepositories, localFiles, input
 
     let commitMessage = `chore(template): sync with ${github.context.repo.owner}/${github.context.repo.repo}`
     if (inputs.skipCi === 'true') {
-      commitMessage += ` [skip ci]`
+      commitMessage += ' [skip ci]'
     }
 
     // Make a new commit with the delta tree
@@ -83,7 +83,7 @@ export default async function (octokit, { changedRepositories, localFiles, input
       }))
     } catch (err) {
       core.warning(`❌ failed to create a new commit in ${repo}: ${err.response?.data?.message || err.message}`)
-      continue main
+      continue
     }
 
     core.debug(`${repo}: new commit: ${newCommit.sha}`)
@@ -99,7 +99,7 @@ export default async function (octokit, { changedRepositories, localFiles, input
       })
     } catch (err) {
       core.warning(`❌ failed to update brach head in ${repo}: ${err.response?.data?.message || err.message}`)
-      continue main
+      continue
     }
 
     core.info(`✅ ${repo} is updated`)
