@@ -8,7 +8,6 @@ import core from '@actions/core'
 import github from '@actions/github'
 import micromatch from 'micromatch'
 
-
 export default async function (octokit, options) {
   // construct this template repo full name
   const full_name = `${github.context.repo.owner}/${github.context.repo.repo}`
@@ -37,9 +36,21 @@ export default async function (octokit, options) {
 
   core.debug(`repo owner type is "${type}" with ${repositories.length} repositories`)
 
+  // we need to fetch `/repos/{owner}/{repo}` in order to get the `template_repository` object
+
+  for (const repo of repositories) {
+    const { data: { template_repository } } = await octokit.request('GET /repos/{owner}/{repo}', {
+      owner: github.context.repo.owner,
+      repo: repo.name
+    })
+
+    // add to our array
+    repo.template_repository = template_repository?.full_name
+  }
+
   // find all repos that mark this template as their source
   let dependents = repositories
-    .filter(repo => repo.template_repository && repo.template_repository.full_name === full_name)
+    .filter(repo => repo.template_repository && repo.template_repository === full_name)
     .map(repo => repo.name)
 
   // run filter
