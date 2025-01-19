@@ -1,8 +1,8 @@
 import nodeUtil, { inspect } from 'util';
 import require$$0 from 'os';
+import require$$0$1 from 'crypto';
 import fs$2, { existsSync, readFileSync } from 'fs';
-import crypto$3 from 'crypto';
-import path$1, { join } from 'path';
+import path, { join } from 'path';
 import http from 'http';
 import https from 'https';
 import net from 'net';
@@ -10,14 +10,14 @@ import tls$1 from 'tls';
 import EE from 'events';
 import assert from 'assert';
 import stream$6 from 'stream';
-import require$$0$1 from 'buffer';
+import require$$0$2 from 'buffer';
 import require$$4 from 'querystring';
 import require$$11 from 'stream/web';
 import diagnosticsChannel from 'diagnostics_channel';
-import require$$0$3 from 'node:stream';
+import require$$0$4 from 'node:stream';
 import require$$1 from 'node:util';
-import require$$0$2 from 'node:events';
-import require$$0$4 from 'worker_threads';
+import require$$0$3 from 'node:events';
+import require$$0$5 from 'worker_threads';
 import require$$2 from 'perf_hooks';
 import require$$4$1 from 'util/types';
 import require$$3 from 'http2';
@@ -25,14 +25,14 @@ import require$$2$1 from 'async_hooks';
 import require$$1$1 from 'console';
 import require$$1$2 from 'url';
 import zlib from 'zlib';
-import require$$6 from 'string_decoder';
-import { createPrivateKey, subtle, createHmac, timingSafeEqual } from 'node:crypto';
-import os from 'node:os';
-import { Buffer as Buffer$1 } from 'node:buffer';
+import string_decoder_1 from 'string_decoder';
+import require$$2$2 from 'child_process';
+import timers_1 from 'timers';
+import node_process from 'node:process';
+import node_buffer from 'node:buffer';
 import { readFile } from 'fs/promises';
 import fs$3 from 'node:fs';
-import path$2 from 'node:path';
-import process$1 from 'node:process';
+import path$1 from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -91,7 +91,11 @@ exports.toCommandProperties = toCommandProperties;
 var command = createCommonjsModule(function (module, exports) {
 var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -104,7 +108,7 @@ var __setModuleDefault = (commonjsGlobal && commonjsGlobal.__setModuleDefault) |
 var __importStar = (commonjsGlobal && commonjsGlobal.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -166,13 +170,13 @@ class Command {
     }
 }
 function escapeData(s) {
-    return utils$7.toCommandValue(s)
+    return (0, utils$7.toCommandValue)(s)
         .replace(/%/g, '%25')
         .replace(/\r/g, '%0D')
         .replace(/\n/g, '%0A');
 }
 function escapeProperty(s) {
-    return utils$7.toCommandValue(s)
+    return (0, utils$7.toCommandValue)(s)
         .replace(/%/g, '%25')
         .replace(/\r/g, '%0D')
         .replace(/\n/g, '%0A')
@@ -182,311 +186,15 @@ function escapeProperty(s) {
 
 });
 
-const rnds8Pool = new Uint8Array(256); // # of random values to pre-allocate
-
-let poolPtr = rnds8Pool.length;
-function rng() {
-  if (poolPtr > rnds8Pool.length - 16) {
-    crypto$3.randomFillSync(rnds8Pool);
-    poolPtr = 0;
-  }
-
-  return rnds8Pool.slice(poolPtr, poolPtr += 16);
-}
-
-var REGEX$1 = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i;
-
-function validate(uuid) {
-  return typeof uuid === 'string' && REGEX$1.test(uuid);
-}
-
-/**
- * Convert array of 16 byte values to UUID string format of the form:
- * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
- */
-
-const byteToHex = [];
-
-for (let i = 0; i < 256; ++i) {
-  byteToHex.push((i + 0x100).toString(16).substr(1));
-}
-
-function stringify$a(arr, offset = 0) {
-  // Note: Be careful editing this code!  It's been tuned for performance
-  // and works in ways you may not expect. See https://github.com/uuidjs/uuid/pull/434
-  const uuid = (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + '-' + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + '-' + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + '-' + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + '-' + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase(); // Consistency check for valid UUID.  If this throws, it's likely due to one
-  // of the following:
-  // - One or more input array values don't map to a hex octet (leading to
-  // "undefined" in the uuid)
-  // - Invalid input values for the RFC `version` or `variant` fields
-
-  if (!validate(uuid)) {
-    throw TypeError('Stringified UUID is invalid');
-  }
-
-  return uuid;
-}
-
-//
-// Inspired by https://github.com/LiosK/UUID.js
-// and http://docs.python.org/library/uuid.html
-
-let _nodeId;
-
-let _clockseq; // Previous uuid creation time
-
-
-let _lastMSecs = 0;
-let _lastNSecs = 0; // See https://github.com/uuidjs/uuid for API details
-
-function v1(options, buf, offset) {
-  let i = buf && offset || 0;
-  const b = buf || new Array(16);
-  options = options || {};
-  let node = options.node || _nodeId;
-  let clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq; // node and clockseq need to be initialized to random values if they're not
-  // specified.  We do this lazily to minimize issues related to insufficient
-  // system entropy.  See #189
-
-  if (node == null || clockseq == null) {
-    const seedBytes = options.random || (options.rng || rng)();
-
-    if (node == null) {
-      // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
-      node = _nodeId = [seedBytes[0] | 0x01, seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
-    }
-
-    if (clockseq == null) {
-      // Per 4.2.2, randomize (14 bit) clockseq
-      clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 0x3fff;
-    }
-  } // UUID timestamps are 100 nano-second units since the Gregorian epoch,
-  // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
-  // time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
-  // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
-
-
-  let msecs = options.msecs !== undefined ? options.msecs : Date.now(); // Per 4.2.1.2, use count of uuid's generated during the current clock
-  // cycle to simulate higher resolution clock
-
-  let nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1; // Time since last uuid creation (in msecs)
-
-  const dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 10000; // Per 4.2.1.2, Bump clockseq on clock regression
-
-  if (dt < 0 && options.clockseq === undefined) {
-    clockseq = clockseq + 1 & 0x3fff;
-  } // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
-  // time interval
-
-
-  if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
-    nsecs = 0;
-  } // Per 4.2.1.2 Throw error if too many uuids are requested
-
-
-  if (nsecs >= 10000) {
-    throw new Error("uuid.v1(): Can't create more than 10M uuids/sec");
-  }
-
-  _lastMSecs = msecs;
-  _lastNSecs = nsecs;
-  _clockseq = clockseq; // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
-
-  msecs += 12219292800000; // `time_low`
-
-  const tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
-  b[i++] = tl >>> 24 & 0xff;
-  b[i++] = tl >>> 16 & 0xff;
-  b[i++] = tl >>> 8 & 0xff;
-  b[i++] = tl & 0xff; // `time_mid`
-
-  const tmh = msecs / 0x100000000 * 10000 & 0xfffffff;
-  b[i++] = tmh >>> 8 & 0xff;
-  b[i++] = tmh & 0xff; // `time_high_and_version`
-
-  b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
-
-  b[i++] = tmh >>> 16 & 0xff; // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
-
-  b[i++] = clockseq >>> 8 | 0x80; // `clock_seq_low`
-
-  b[i++] = clockseq & 0xff; // `node`
-
-  for (let n = 0; n < 6; ++n) {
-    b[i + n] = node[n];
-  }
-
-  return buf || stringify$a(b);
-}
-
-function parse$e(uuid) {
-  if (!validate(uuid)) {
-    throw TypeError('Invalid UUID');
-  }
-
-  let v;
-  const arr = new Uint8Array(16); // Parse ########-....-....-....-............
-
-  arr[0] = (v = parseInt(uuid.slice(0, 8), 16)) >>> 24;
-  arr[1] = v >>> 16 & 0xff;
-  arr[2] = v >>> 8 & 0xff;
-  arr[3] = v & 0xff; // Parse ........-####-....-....-............
-
-  arr[4] = (v = parseInt(uuid.slice(9, 13), 16)) >>> 8;
-  arr[5] = v & 0xff; // Parse ........-....-####-....-............
-
-  arr[6] = (v = parseInt(uuid.slice(14, 18), 16)) >>> 8;
-  arr[7] = v & 0xff; // Parse ........-....-....-####-............
-
-  arr[8] = (v = parseInt(uuid.slice(19, 23), 16)) >>> 8;
-  arr[9] = v & 0xff; // Parse ........-....-....-....-############
-  // (Use "/" to avoid 32-bit truncation when bit-shifting high-order bytes)
-
-  arr[10] = (v = parseInt(uuid.slice(24, 36), 16)) / 0x10000000000 & 0xff;
-  arr[11] = v / 0x100000000 & 0xff;
-  arr[12] = v >>> 24 & 0xff;
-  arr[13] = v >>> 16 & 0xff;
-  arr[14] = v >>> 8 & 0xff;
-  arr[15] = v & 0xff;
-  return arr;
-}
-
-function stringToBytes(str) {
-  str = unescape(encodeURIComponent(str)); // UTF8 escape
-
-  const bytes = [];
-
-  for (let i = 0; i < str.length; ++i) {
-    bytes.push(str.charCodeAt(i));
-  }
-
-  return bytes;
-}
-
-const DNS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
-const URL$2 = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
-function v35 (name, version, hashfunc) {
-  function generateUUID(value, namespace, buf, offset) {
-    if (typeof value === 'string') {
-      value = stringToBytes(value);
-    }
-
-    if (typeof namespace === 'string') {
-      namespace = parse$e(namespace);
-    }
-
-    if (namespace.length !== 16) {
-      throw TypeError('Namespace must be array-like (16 iterable integer values, 0-255)');
-    } // Compute hash of namespace and value, Per 4.3
-    // Future: Use spread syntax when supported on all platforms, e.g. `bytes =
-    // hashfunc([...namespace, ... value])`
-
-
-    let bytes = new Uint8Array(16 + value.length);
-    bytes.set(namespace);
-    bytes.set(value, namespace.length);
-    bytes = hashfunc(bytes);
-    bytes[6] = bytes[6] & 0x0f | version;
-    bytes[8] = bytes[8] & 0x3f | 0x80;
-
-    if (buf) {
-      offset = offset || 0;
-
-      for (let i = 0; i < 16; ++i) {
-        buf[offset + i] = bytes[i];
-      }
-
-      return buf;
-    }
-
-    return stringify$a(bytes);
-  } // Function#name is not settable on some platforms (#270)
-
-
-  try {
-    generateUUID.name = name; // eslint-disable-next-line no-empty
-  } catch (err) {} // For CommonJS default export support
-
-
-  generateUUID.DNS = DNS;
-  generateUUID.URL = URL$2;
-  return generateUUID;
-}
-
-function md5(bytes) {
-  if (Array.isArray(bytes)) {
-    bytes = Buffer.from(bytes);
-  } else if (typeof bytes === 'string') {
-    bytes = Buffer.from(bytes, 'utf8');
-  }
-
-  return crypto$3.createHash('md5').update(bytes).digest();
-}
-
-const v3 = v35('v3', 0x30, md5);
-var v3$1 = v3;
-
-function v4(options, buf, offset) {
-  options = options || {};
-  const rnds = options.random || (options.rng || rng)(); // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
-
-  rnds[6] = rnds[6] & 0x0f | 0x40;
-  rnds[8] = rnds[8] & 0x3f | 0x80; // Copy bytes to buffer, if provided
-
-  if (buf) {
-    offset = offset || 0;
-
-    for (let i = 0; i < 16; ++i) {
-      buf[offset + i] = rnds[i];
-    }
-
-    return buf;
-  }
-
-  return stringify$a(rnds);
-}
-
-function sha1(bytes) {
-  if (Array.isArray(bytes)) {
-    bytes = Buffer.from(bytes);
-  } else if (typeof bytes === 'string') {
-    bytes = Buffer.from(bytes, 'utf8');
-  }
-
-  return crypto$3.createHash('sha1').update(bytes).digest();
-}
-
-const v5 = v35('v5', 0x50, sha1);
-var v5$1 = v5;
-
-var nil = '00000000-0000-0000-0000-000000000000';
-
-function version(uuid) {
-  if (!validate(uuid)) {
-    throw TypeError('Invalid UUID');
-  }
-
-  return parseInt(uuid.substr(14, 1), 16);
-}
-
-var esmNode = {
-	__proto__: null,
-	v1: v1,
-	v3: v3$1,
-	v4: v4,
-	v5: v5$1,
-	NIL: nil,
-	version: version,
-	validate: validate,
-	stringify: stringify$a,
-	parse: parse$e
-};
-
 var fileCommand = createCommonjsModule(function (module, exports) {
 // For internal use, subject to change.
 var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -499,7 +207,7 @@ var __setModuleDefault = (commonjsGlobal && commonjsGlobal.__setModuleDefault) |
 var __importStar = (commonjsGlobal && commonjsGlobal.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -507,9 +215,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.prepareKeyValueMessage = exports.issueFileCommand = void 0;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
+const crypto = __importStar(require$$0$1);
 const fs = __importStar(fs$2);
 const os = __importStar(require$$0);
-
 
 function issueFileCommand(command, message) {
     const filePath = process.env[`GITHUB_${command}`];
@@ -519,14 +227,14 @@ function issueFileCommand(command, message) {
     if (!fs.existsSync(filePath)) {
         throw new Error(`Missing file at path: ${filePath}`);
     }
-    fs.appendFileSync(filePath, `${utils$7.toCommandValue(message)}${os.EOL}`, {
+    fs.appendFileSync(filePath, `${(0, utils$7.toCommandValue)(message)}${os.EOL}`, {
         encoding: 'utf8'
     });
 }
 exports.issueFileCommand = issueFileCommand;
 function prepareKeyValueMessage(key, value) {
-    const delimiter = `ghadelimiter_${esmNode.v4()}`;
-    const convertedValue = utils$7.toCommandValue(value);
+    const delimiter = `ghadelimiter_${crypto.randomUUID()}`;
+    const convertedValue = (0, utils$7.toCommandValue)(value);
     // These should realistically never happen, but just in case someone finds a
     // way to exploit uuid generation let's not allow keys or values that contain
     // the delimiter.
@@ -1305,7 +1013,7 @@ const { IncomingMessage } = http;
 
 
 const { InvalidArgumentError: InvalidArgumentError$k } = errors$1;
-const { Blob: Blob$5 } = require$$0$1;
+const { Blob: Blob$5 } = require$$0$2;
 
 const { stringify: stringify$9 } = require$$4;
 const { headerNameLowerCasedRecord } = constants$7;
@@ -1942,7 +1650,7 @@ var timers = {
  * Based heavily on the Streaming Boyer-Moore-Horspool C++ implementation
  * by Hongli Lai at: https://github.com/FooBarWidget/boyer-moore-horspool
  */
-const EventEmitter$1 = require$$0$2.EventEmitter;
+const EventEmitter$1 = require$$0$3.EventEmitter;
 const inherits$5 = require$$1.inherits;
 
 function SBMH (needle) {
@@ -2144,7 +1852,7 @@ SBMH.prototype._sbmh_memcmp = function (data, pos, len) {
 var sbmh = SBMH;
 
 const inherits$4 = require$$1.inherits;
-const ReadableStream$4 = require$$0$3.Readable;
+const ReadableStream$4 = require$$0$4.Readable;
 
 function PartStream (opts) {
   ReadableStream$4.call(this, opts);
@@ -2170,7 +1878,7 @@ var getLimit = function getLimit (limits, name, defaultLimit) {
   return limits[name]
 };
 
-const EventEmitter = require$$0$2.EventEmitter;
+const EventEmitter = require$$0$3.EventEmitter;
 const inherits$3 = require$$1.inherits;
 
 
@@ -2269,7 +1977,7 @@ HeaderParser.prototype._parseHeader = function () {
 
 var HeaderParser_1 = HeaderParser;
 
-const WritableStream$1 = require$$0$3.Writable;
+const WritableStream$1 = require$$0$4.Writable;
 const inherits$2 = require$$1.inherits;
 
 
@@ -2810,7 +2518,7 @@ var basename = function basename (path) {
 //  * support limits.fieldNameSize
 //     -- this will require modifications to utils.parseParams
 
-const { Readable: Readable$3 } = require$$0$3;
+const { Readable: Readable$3 } = require$$0$4;
 const { inherits: inherits$1 } = require$$1;
 
 
@@ -3346,7 +3054,7 @@ UrlEncoded.prototype.end = function () {
 
 var urlencoded = UrlEncoded;
 
-const WritableStream = require$$0$3.Writable;
+const WritableStream = require$$0$4.Writable;
 const { inherits } = require$$1;
 
 
@@ -3433,7 +3141,7 @@ main.default = _default$n;
 main.Busboy = Busboy_1;
 main.Dicer = Dicer_1;
 
-const { MessageChannel, receiveMessageOnPort } = require$$0$4;
+const { MessageChannel, receiveMessageOnPort } = require$$0$5;
 
 const corsSafeListedMethods = ['GET', 'HEAD', 'POST'];
 const corsSafeListedMethodsSet$1 = new Set(corsSafeListedMethods);
@@ -3636,7 +3344,7 @@ let supportedHashes = [];
 let crypto$2;
 
 try {
-  crypto$2 = crypto$3;
+  crypto$2 = require$$0$1;
   const possibleRelevantHashes = ['sha256', 'sha384', 'sha512'];
   supportedHashes = crypto$2.getHashes().filter((hash) => possibleRelevantHashes.includes(hash));
 /* c8 ignore next 3 */
@@ -5418,7 +5126,7 @@ var webidl_1 = {
   webidl: webidl$e
 };
 
-const { atob: atob$1 } = require$$0$1;
+const { atob: atob$1 } = require$$0$2;
 const { isomorphicDecode } = util$5;
 
 const encoder$1 = new TextEncoder();
@@ -6045,7 +5753,7 @@ var dataURL = {
   serializeAMimeType: serializeAMimeType$4
 };
 
-const { Blob: Blob$4, File: NativeFile$2 } = require$$0$1;
+const { Blob: Blob$4, File: NativeFile$2 } = require$$0$2;
 const { types: types$3 } = nodeUtil;
 const { kState: kState$9 } = symbols$3;
 const { isBlobLike: isBlobLike$5 } = util$5;
@@ -6392,7 +6100,7 @@ const { isBlobLike: isBlobLike$4, toUSVString: toUSVString$2, makeIterator: make
 const { kState: kState$8 } = symbols$3;
 const { File: UndiciFile$1, FileLike, isFileLike } = file;
 const { webidl: webidl$c } = webidl_1;
-const { Blob: Blob$3, File: NativeFile$1 } = require$$0$1;
+const { Blob: Blob$3, File: NativeFile$1 } = require$$0$2;
 
 /** @type {globalThis['File']} */
 const File$1 = NativeFile$1 ?? UndiciFile$1;
@@ -6664,7 +6372,7 @@ const { FormData: FormData$1 } = formdata;
 const { kState: kState$7 } = symbols$3;
 const { webidl: webidl$b } = webidl_1;
 const { DOMException: DOMException$5, structuredClone } = constants$6;
-const { Blob: Blob$2, File: NativeFile } = require$$0$1;
+const { Blob: Blob$2, File: NativeFile } = require$$0$2;
 const { kBodyUsed: kBodyUsed$1 } = symbols$4;
 
 const { isErrored: isErrored$1 } = util$6;
@@ -7750,7 +7458,7 @@ function processHeader (request, key, val, skipAppend = false) {
   }
 }
 
-var request$c = Request$3;
+var request$4 = Request$3;
 
 class Dispatcher extends EE {
   dispatch () {
@@ -9013,8 +8721,8 @@ class Client extends dispatcherBase {
     const origin = opts.origin || this[kUrl$3].origin;
 
     const request = this[kHTTPConnVersion] === 'h2'
-      ? request$c[kHTTP2BuildRequest](origin, opts, handler)
-      : request$c[kHTTP1BuildRequest](origin, opts, handler);
+      ? request$4[kHTTP2BuildRequest](origin, opts, handler)
+      : request$4[kHTTP1BuildRequest](origin, opts, handler);
 
     this[kQueue$1].push(request);
     if (this[kResuming]) ; else if (util$6.bodyLength(request.body) == null && util$6.isIterable(request.body)) {
@@ -9049,7 +8757,7 @@ class Client extends dispatcherBase {
       const requests = this[kQueue$1].splice(this[kPendingIdx]);
       for (let i = 0; i < requests.length; i++) {
         const request = requests[i];
-        errorRequest$1(this, request, err);
+        errorRequest(this, request, err);
       }
 
       const callback = () => {
@@ -9113,14 +8821,14 @@ function onHTTP2GoAway (code) {
     const requests = client[kQueue$1].splice(client[kRunningIdx]);
     for (let i = 0; i < requests.length; i++) {
       const request = requests[i];
-      errorRequest$1(this, request, err);
+      errorRequest(this, request, err);
     }
   } else if (client[kRunning$3] > 0) {
     // Fail head of pipeline.
     const request = client[kQueue$1][client[kRunningIdx]];
     client[kQueue$1][client[kRunningIdx]++] = null;
 
-    errorRequest$1(client, request, err);
+    errorRequest(client, request, err);
   }
 
   client[kPendingIdx] = client[kRunningIdx];
@@ -9750,7 +9458,7 @@ function onError (client, err) {
     const requests = client[kQueue$1].splice(client[kRunningIdx]);
     for (let i = 0; i < requests.length; i++) {
       const request = requests[i];
-      errorRequest$1(client, request, err);
+      errorRequest(client, request, err);
     }
     assert(client[kSize$4] === 0);
   }
@@ -9794,14 +9502,14 @@ function onSocketClose$1 () {
     const requests = client[kQueue$1].splice(client[kRunningIdx]);
     for (let i = 0; i < requests.length; i++) {
       const request = requests[i];
-      errorRequest$1(client, request, err);
+      errorRequest(client, request, err);
     }
   } else if (client[kRunning$3] > 0 && err.code !== 'UND_ERR_INFO') {
     // Fail head of pipeline.
     const request = client[kQueue$1][client[kRunningIdx]];
     client[kQueue$1][client[kRunningIdx]++] = null;
 
-    errorRequest$1(client, request, err);
+    errorRequest(client, request, err);
   }
 
   client[kPendingIdx] = client[kRunningIdx];
@@ -9966,7 +9674,7 @@ async function connect$2 (client) {
       assert(client[kRunning$3] === 0);
       while (client[kPending$2] > 0 && client[kQueue$1][client[kPendingIdx]].servername === client[kServerName]) {
         const request = client[kQueue$1][client[kPendingIdx]++];
-        errorRequest$1(client, request, err);
+        errorRequest(client, request, err);
       }
     } else {
       onError(client, err);
@@ -10178,7 +9886,7 @@ function write (client, request) {
   // A user agent may send a Content-Length header with 0 value, this should be allowed.
   if (shouldSendContentLength(method) && contentLength > 0 && request.contentLength !== null && request.contentLength !== contentLength) {
     if (client[kStrictContentLength]) {
-      errorRequest$1(client, request, new RequestContentLengthMismatchError());
+      errorRequest(client, request, new RequestContentLengthMismatchError());
       return false
     }
 
@@ -10193,12 +9901,12 @@ function write (client, request) {
         return
       }
 
-      errorRequest$1(client, request, err || new RequestAbortedError$8());
+      errorRequest(client, request, err || new RequestAbortedError$8());
 
       util$6.destroy(socket, new InformationalError('aborted'));
     });
   } catch (err) {
-    errorRequest$1(client, request, err);
+    errorRequest(client, request, err);
   }
 
   if (request.aborted) {
@@ -10298,11 +10006,11 @@ function writeH2 (client, session, request) {
   const { body, method, path, host, upgrade, expectContinue, signal, headers: reqHeaders } = request;
 
   let headers;
-  if (typeof reqHeaders === 'string') headers = request$c[kHTTP2CopyHeaders](reqHeaders.trim());
+  if (typeof reqHeaders === 'string') headers = request$4[kHTTP2CopyHeaders](reqHeaders.trim());
   else headers = reqHeaders;
 
   if (upgrade) {
-    errorRequest$1(client, request, new Error('Upgrade not supported for H2'));
+    errorRequest(client, request, new Error('Upgrade not supported for H2'));
     return false
   }
 
@@ -10313,10 +10021,10 @@ function writeH2 (client, session, request) {
         return
       }
 
-      errorRequest$1(client, request, err || new RequestAbortedError$8());
+      errorRequest(client, request, err || new RequestAbortedError$8());
     });
   } catch (err) {
-    errorRequest$1(client, request, err);
+    errorRequest(client, request, err);
   }
 
   if (request.aborted) {
@@ -10402,7 +10110,7 @@ function writeH2 (client, session, request) {
   // A user agent may send a Content-Length header with 0 value, this should be allowed.
   if (shouldSendContentLength(method) && contentLength > 0 && request.contentLength != null && request.contentLength !== contentLength) {
     if (client[kStrictContentLength]) {
-      errorRequest$1(client, request, new RequestContentLengthMismatchError());
+      errorRequest(client, request, new RequestContentLengthMismatchError());
       return false
     }
 
@@ -10468,7 +10176,7 @@ function writeH2 (client, session, request) {
 
   stream.once('frameError', (type, code) => {
     const err = new InformationalError(`HTTP/2: "frameError" received - type ${type}, code ${code}`);
-    errorRequest$1(client, request, err);
+    errorRequest(client, request, err);
 
     if (client[kHTTP2Session] && !client[kHTTP2Session].destroyed && !this.closed && !this.destroyed) {
       h2State.streams -= 1;
@@ -10923,7 +10631,7 @@ class AsyncWriter {
   }
 }
 
-function errorRequest$1 (client, request, err) {
+function errorRequest (client, request, err) {
   try {
     request.onError(err);
     assert(request.aborted);
@@ -11765,7 +11473,7 @@ const kBody = Symbol('kBody');
 const kAbort = Symbol('abort');
 const kContentType = Symbol('kContentType');
 
-const noop$6 = () => {};
+const noop$2 = () => {};
 
 var readable = class BodyReadable extends Readable$2 {
   constructor ({
@@ -11924,7 +11632,7 @@ var readable = class BodyReadable extends Readable$2 {
         ? util$6.addAbortListener(signal, () => {
           this.destroy();
         })
-        : noop$6;
+        : noop$2;
 
       this
         .on('close', function () {
@@ -11935,7 +11643,7 @@ var readable = class BodyReadable extends Readable$2 {
             resolve(null);
           }
         })
-        .on('error', noop$6)
+        .on('error', noop$2)
         .on('data', function (chunk) {
           limit -= chunk.length;
           if (limit <= 0) {
@@ -12035,7 +11743,7 @@ function consumeEnd (consume) {
       resolve(dst.buffer);
     } else if (type === 'blob') {
       if (!Blob$1) {
-        Blob$1 = require$$0$1.Blob;
+        Blob$1 = require$$0$2.Blob;
       }
       resolve(new Blob$1(body, { type: stream[kContentType] }));
     }
@@ -12326,10 +12034,10 @@ class RequestHandler extends AsyncResource$4 {
   }
 }
 
-function request$b (opts, callback) {
+function request$3 (opts, callback) {
   if (callback === undefined) {
     return new Promise((resolve, reject) => {
-      request$b.call(this, opts, (err, data) => {
+      request$3.call(this, opts, (err, data) => {
         return err ? reject(err) : resolve(data)
       });
     })
@@ -12346,7 +12054,7 @@ function request$b (opts, callback) {
   }
 }
 
-var apiRequest = request$b;
+var apiRequest = request$3;
 var RequestHandler_1 = RequestHandler;
 apiRequest.RequestHandler = RequestHandler_1;
 
@@ -13024,14 +12732,14 @@ function connect$1 (opts, callback) {
 
 var apiConnect = connect$1;
 
-var request$a = apiRequest;
+var request$2 = apiRequest;
 var stream$4 = apiStream;
 var pipeline$1 = apiPipeline;
 var upgrade = apiUpgrade;
 var connect = apiConnect;
 
 var api = {
-	request: request$a,
+	request: request$2,
 	stream: stream$4,
 	pipeline: pipeline$1,
 	upgrade: upgrade,
@@ -13191,7 +12899,7 @@ function matchKey (mockDispatch, { path, method, body, headers }) {
   return pathMatch && methodMatch && bodyMatch && headersMatch
 }
 
-function getResponseData$a (data) {
+function getResponseData$2 (data) {
   if (Buffer.isBuffer(data)) {
     return data
   } else if (typeof data === 'object') {
@@ -13346,7 +13054,7 @@ function mockDispatch (opts, handler) {
       return
     }
 
-    const responseData = getResponseData$a(body);
+    const responseData = getResponseData$2(body);
     const responseHeaders = generateKeyValues(headers);
     const responseTrailers = generateKeyValues(trailers);
 
@@ -13410,7 +13118,7 @@ function buildMockOptions$1 (opts) {
 }
 
 var mockUtils = {
-  getResponseData: getResponseData$a,
+  getResponseData: getResponseData$2,
   getMockDispatch,
   addMockDispatch: addMockDispatch$1,
   deleteMockDispatch,
@@ -13426,7 +13134,7 @@ var mockUtils = {
   getHeaderByName
 };
 
-const { getResponseData: getResponseData$9, buildKey, addMockDispatch } = mockUtils;
+const { getResponseData: getResponseData$1, buildKey, addMockDispatch } = mockUtils;
 const {
   kDispatches: kDispatches$3,
   kDispatchKey,
@@ -13517,7 +13225,7 @@ class MockInterceptor$2 {
   }
 
   createMockScopeDispatchData (statusCode, data, responseOptions = {}) {
-    const responseData = getResponseData$9(data);
+    const responseData = getResponseData$1(data);
     const contentLength = this[kContentLength] ? { 'content-length': responseData.length } : {};
     const headers = { ...this[kDefaultHeaders], ...contentLength, ...responseOptions.headers };
     const trailers = { ...this[kDefaultTrailers], ...responseOptions.trailers };
@@ -16669,7 +16377,7 @@ webidl$8.converters.RequestInit = webidl$8.dictionaryConverter([
   }
 ]);
 
-var request$9 = { Request: Request$2, makeRequest: makeRequest$2 };
+var request$1 = { Request: Request$2, makeRequest: makeRequest$2 };
 
 const {
   Response: Response$1,
@@ -16679,7 +16387,7 @@ const {
   makeResponse
 } = response;
 const { Headers: Headers$2 } = headers;
-const { Request: Request$1, makeRequest: makeRequest$1 } = request$9;
+const { Request: Request$1, makeRequest: makeRequest$1 } = request$1;
 
 const {
   bytesMatch,
@@ -17450,7 +17158,7 @@ function schemeFetch (fetchParams) {
     }
     case 'blob:': {
       if (!resolveObjectURL) {
-        resolveObjectURL = require$$0$1.resolveObjectURL;
+        resolveObjectURL = require$$0$2.resolveObjectURL;
       }
 
       // 1. Let blobURLEntry be request’s current URL’s blob URL entry.
@@ -19105,8 +18813,8 @@ const { getEncoding } = encoding;
 const { DOMException: DOMException$2 } = constants$6;
 const { serializeAMimeType, parseMIMEType } = dataURL;
 const { types: types$1 } = nodeUtil;
-const { StringDecoder } = require$$6;
-const { btoa: btoa$1 } = require$$0$1;
+const { StringDecoder } = string_decoder_1;
+const { btoa: btoa$1 } = require$$0$2;
 
 /** @type {PropertyDescriptor} */
 const staticPropertyDescriptors$3 = {
@@ -19884,7 +19592,7 @@ const { kEnumerableProperty: kEnumerableProperty$3, isDisturbed } = util$6;
 const { kHeadersList: kHeadersList$2 } = symbols$4;
 const { webidl: webidl$4 } = webidl_1;
 const { Response, cloneResponse } = response;
-const { Request } = request$9;
+const { Request } = request$1;
 const { kState, kHeaders, kGuard, kRealm } = symbols$3;
 const { fetching: fetching$1 } = fetch_1;
 const { urlIsHttpHttpsScheme, createDeferredPromise, readAllBytes } = util$5;
@@ -21469,12 +21177,12 @@ function parseUnparsedAttributes (unparsedAttributes, cookieAttributeList = {}) 
   return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList)
 }
 
-var parse$d = {
+var parse$5 = {
   parseSetCookie: parseSetCookie$1,
   parseUnparsedAttributes
 };
 
-const { parseSetCookie } = parse$d;
+const { parseSetCookie } = parse$5;
 const { stringify: stringify$7, getHeadersList } = util$1;
 const { webidl: webidl$2 } = webidl_1;
 const { Headers: Headers$1 } = headers;
@@ -21720,7 +21428,7 @@ var symbols = {
 
 const { webidl: webidl$1 } = webidl_1;
 const { kEnumerableProperty: kEnumerableProperty$1 } = util$6;
-const { MessagePort } = require$$0$4;
+const { MessagePort } = require$$0$5;
 
 /**
  * @see https://html.spec.whatwg.org/multipage/comms.html#messageevent
@@ -22228,7 +21936,7 @@ const {
 } = symbols;
 const { fireEvent: fireEvent$1, failWebsocketConnection: failWebsocketConnection$2 } = util;
 const { CloseEvent } = events;
-const { makeRequest } = request$9;
+const { makeRequest } = request$1;
 const { fetching } = fetch_1;
 const { Headers } = headers;
 const { getGlobalDispatcher: getGlobalDispatcher$1 } = global$1;
@@ -22242,7 +21950,7 @@ channels$1.socketError = diagnosticsChannel.channel('undici:websocket:socket_err
 /** @type {import('crypto')} */
 let crypto$1;
 try {
-  crypto$1 = crypto$3;
+  crypto$1 = require$$0$1;
 } catch {
 
 }
@@ -22513,7 +22221,7 @@ const { maxUnsigned16Bit } = constants$3;
 /** @type {import('crypto')} */
 let crypto;
 try {
-  crypto = crypto$3;
+  crypto = require$$0$1;
 } catch {
 
 }
@@ -23679,7 +23387,7 @@ if (util$6.nodeMajor > 16 || (util$6.nodeMajor === 16 && util$6.nodeMinor >= 8))
   };
   module.exports.Headers = headers.Headers;
   module.exports.Response = response.Response;
-  module.exports.Request = request$9.Request;
+  module.exports.Request = request$1.Request;
   module.exports.FormData = formdata.FormData;
   module.exports.File = file.File;
   module.exports.FileReader = filereader.FileReader;
@@ -24383,7 +24091,7 @@ const lowercaseKeys = (obj) => Object.keys(obj).reduce((c, k) => ((c[k.toLowerCa
 
 });
 
-var auth$9 = createCommonjsModule(function (module, exports) {
+var auth$1 = createCommonjsModule(function (module, exports) {
 var __awaiter = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -24489,7 +24197,7 @@ class OidcClient {
             allowRetries: allowRetry,
             maxRetries: maxRetry
         };
-        return new lib.HttpClient('actions/oidc-client', [new auth$9.BearerCredentialHandler(OidcClient.getRequestToken())], requestOptions);
+        return new lib.HttpClient('actions/oidc-client', [new auth$1.BearerCredentialHandler(OidcClient.getRequestToken())], requestOptions);
     }
     static getRequestToken() {
         const token = process.env['ACTIONS_ID_TOKEN_REQUEST_TOKEN'];
@@ -24532,9 +24240,9 @@ class OidcClient {
                     const encodedAudience = encodeURIComponent(audience);
                     id_token_url = `${id_token_url}&audience=${encodedAudience}`;
                 }
-                core_1.debug(`ID token url is ${id_token_url}`);
+                (0, core_1.debug)(`ID token url is ${id_token_url}`);
                 const id_token = yield OidcClient.getCall(id_token_url);
-                core_1.setSecret(id_token);
+                (0, core_1.setSecret)(id_token);
                 return id_token;
             }
             catch (error) {
@@ -24835,7 +24543,11 @@ exports.summary = _summary;
 var pathUtils = createCommonjsModule(function (module, exports) {
 var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -24848,13 +24560,13 @@ var __setModuleDefault = (commonjsGlobal && commonjsGlobal.__setModuleDefault) |
 var __importStar = (commonjsGlobal && commonjsGlobal.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toPlatformPath = exports.toWin32Path = exports.toPosixPath = void 0;
-const path = __importStar(path$1);
+const path$1 = __importStar(path);
 /**
  * toPosixPath converts the given path to the posix form. On Windows, \\ will be
  * replaced with /.
@@ -24886,13 +24598,198 @@ exports.toWin32Path = toWin32Path;
  * @return string The platform-specific path.
  */
 function toPlatformPath(pth) {
-    return pth.replace(/[/\\]/g, path.sep);
+    return pth.replace(/[/\\]/g, path$1.sep);
 }
 exports.toPlatformPath = toPlatformPath;
 
 });
 
-var core = createCommonjsModule(function (module, exports) {
+var ioUtil = createCommonjsModule(function (module, exports) {
+var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (commonjsGlobal && commonjsGlobal.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (commonjsGlobal && commonjsGlobal.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var _a;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getCmdPath = exports.tryGetExecutablePath = exports.isRooted = exports.isDirectory = exports.exists = exports.READONLY = exports.UV_FS_O_EXLOCK = exports.IS_WINDOWS = exports.unlink = exports.symlink = exports.stat = exports.rmdir = exports.rm = exports.rename = exports.readlink = exports.readdir = exports.open = exports.mkdir = exports.lstat = exports.copyFile = exports.chmod = void 0;
+const fs = __importStar(fs$2);
+const path$1 = __importStar(path);
+_a = fs.promises
+// export const {open} = 'fs'
+, exports.chmod = _a.chmod, exports.copyFile = _a.copyFile, exports.lstat = _a.lstat, exports.mkdir = _a.mkdir, exports.open = _a.open, exports.readdir = _a.readdir, exports.readlink = _a.readlink, exports.rename = _a.rename, exports.rm = _a.rm, exports.rmdir = _a.rmdir, exports.stat = _a.stat, exports.symlink = _a.symlink, exports.unlink = _a.unlink;
+// export const {open} = 'fs'
+exports.IS_WINDOWS = process.platform === 'win32';
+// See https://github.com/nodejs/node/blob/d0153aee367422d0858105abec186da4dff0a0c5/deps/uv/include/uv/win.h#L691
+exports.UV_FS_O_EXLOCK = 0x10000000;
+exports.READONLY = fs.constants.O_RDONLY;
+function exists(fsPath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield exports.stat(fsPath);
+        }
+        catch (err) {
+            if (err.code === 'ENOENT') {
+                return false;
+            }
+            throw err;
+        }
+        return true;
+    });
+}
+exports.exists = exists;
+function isDirectory(fsPath, useStat = false) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const stats = useStat ? yield exports.stat(fsPath) : yield exports.lstat(fsPath);
+        return stats.isDirectory();
+    });
+}
+exports.isDirectory = isDirectory;
+/**
+ * On OSX/Linux, true if path starts with '/'. On Windows, true for paths like:
+ * \, \hello, \\hello\share, C:, and C:\hello (and corresponding alternate separator cases).
+ */
+function isRooted(p) {
+    p = normalizeSeparators(p);
+    if (!p) {
+        throw new Error('isRooted() parameter "p" cannot be empty');
+    }
+    if (exports.IS_WINDOWS) {
+        return (p.startsWith('\\') || /^[A-Z]:/i.test(p) // e.g. \ or \hello or \\hello
+        ); // e.g. C: or C:\hello
+    }
+    return p.startsWith('/');
+}
+exports.isRooted = isRooted;
+/**
+ * Best effort attempt to determine whether a file exists and is executable.
+ * @param filePath    file path to check
+ * @param extensions  additional file extensions to try
+ * @return if file exists and is executable, returns the file path. otherwise empty string.
+ */
+function tryGetExecutablePath(filePath, extensions) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let stats = undefined;
+        try {
+            // test file exists
+            stats = yield exports.stat(filePath);
+        }
+        catch (err) {
+            if (err.code !== 'ENOENT') {
+                // eslint-disable-next-line no-console
+                console.log(`Unexpected error attempting to determine if executable file exists '${filePath}': ${err}`);
+            }
+        }
+        if (stats && stats.isFile()) {
+            if (exports.IS_WINDOWS) {
+                // on Windows, test for valid extension
+                const upperExt = path$1.extname(filePath).toUpperCase();
+                if (extensions.some(validExt => validExt.toUpperCase() === upperExt)) {
+                    return filePath;
+                }
+            }
+            else {
+                if (isUnixExecutable(stats)) {
+                    return filePath;
+                }
+            }
+        }
+        // try each extension
+        const originalFilePath = filePath;
+        for (const extension of extensions) {
+            filePath = originalFilePath + extension;
+            stats = undefined;
+            try {
+                stats = yield exports.stat(filePath);
+            }
+            catch (err) {
+                if (err.code !== 'ENOENT') {
+                    // eslint-disable-next-line no-console
+                    console.log(`Unexpected error attempting to determine if executable file exists '${filePath}': ${err}`);
+                }
+            }
+            if (stats && stats.isFile()) {
+                if (exports.IS_WINDOWS) {
+                    // preserve the case of the actual file (since an extension was appended)
+                    try {
+                        const directory = path$1.dirname(filePath);
+                        const upperName = path$1.basename(filePath).toUpperCase();
+                        for (const actualName of yield exports.readdir(directory)) {
+                            if (upperName === actualName.toUpperCase()) {
+                                filePath = path$1.join(directory, actualName);
+                                break;
+                            }
+                        }
+                    }
+                    catch (err) {
+                        // eslint-disable-next-line no-console
+                        console.log(`Unexpected error attempting to determine the actual case of the file '${filePath}': ${err}`);
+                    }
+                    return filePath;
+                }
+                else {
+                    if (isUnixExecutable(stats)) {
+                        return filePath;
+                    }
+                }
+            }
+        }
+        return '';
+    });
+}
+exports.tryGetExecutablePath = tryGetExecutablePath;
+function normalizeSeparators(p) {
+    p = p || '';
+    if (exports.IS_WINDOWS) {
+        // convert slashes on Windows
+        p = p.replace(/\//g, '\\');
+        // remove redundant slashes
+        return p.replace(/\\\\+/g, '\\');
+    }
+    // remove redundant slashes
+    return p.replace(/\/\/+/g, '/');
+}
+// on Mac/Linux, test the execute bit
+//     R   W  X  R  W X R W X
+//   256 128 64 32 16 8 4 2 1
+function isUnixExecutable(stats) {
+    return ((stats.mode & 1) > 0 ||
+        ((stats.mode & 8) > 0 && stats.gid === process.getgid()) ||
+        ((stats.mode & 64) > 0 && stats.uid === process.getuid()));
+}
+// Get the path of cmd.exe in windows
+function getCmdPath() {
+    var _a;
+    return (_a = process.env['COMSPEC']) !== null && _a !== void 0 ? _a : `cmd.exe`;
+}
+exports.getCmdPath = getCmdPath;
+
+});
+
+var io = createCommonjsModule(function (module, exports) {
 var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
@@ -24922,12 +24819,1138 @@ var __awaiter = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisAr
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getIDToken = exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.notice = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
+exports.findInPath = exports.which = exports.mkdirP = exports.rmRF = exports.mv = exports.cp = void 0;
+
+const path$1 = __importStar(path);
+const ioUtil$1 = __importStar(ioUtil);
+/**
+ * Copies a file or folder.
+ * Based off of shelljs - https://github.com/shelljs/shelljs/blob/9237f66c52e5daa40458f94f9565e18e8132f5a6/src/cp.js
+ *
+ * @param     source    source path
+ * @param     dest      destination path
+ * @param     options   optional. See CopyOptions.
+ */
+function cp(source, dest, options = {}) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { force, recursive, copySourceDirectory } = readCopyOptions(options);
+        const destStat = (yield ioUtil$1.exists(dest)) ? yield ioUtil$1.stat(dest) : null;
+        // Dest is an existing file, but not forcing
+        if (destStat && destStat.isFile() && !force) {
+            return;
+        }
+        // If dest is an existing directory, should copy inside.
+        const newDest = destStat && destStat.isDirectory() && copySourceDirectory
+            ? path$1.join(dest, path$1.basename(source))
+            : dest;
+        if (!(yield ioUtil$1.exists(source))) {
+            throw new Error(`no such file or directory: ${source}`);
+        }
+        const sourceStat = yield ioUtil$1.stat(source);
+        if (sourceStat.isDirectory()) {
+            if (!recursive) {
+                throw new Error(`Failed to copy. ${source} is a directory, but tried to copy without recursive flag.`);
+            }
+            else {
+                yield cpDirRecursive(source, newDest, 0, force);
+            }
+        }
+        else {
+            if (path$1.relative(source, newDest) === '') {
+                // a file cannot be copied to itself
+                throw new Error(`'${newDest}' and '${source}' are the same file`);
+            }
+            yield copyFile(source, newDest, force);
+        }
+    });
+}
+exports.cp = cp;
+/**
+ * Moves a path.
+ *
+ * @param     source    source path
+ * @param     dest      destination path
+ * @param     options   optional. See MoveOptions.
+ */
+function mv(source, dest, options = {}) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (yield ioUtil$1.exists(dest)) {
+            let destExists = true;
+            if (yield ioUtil$1.isDirectory(dest)) {
+                // If dest is directory copy src into dest
+                dest = path$1.join(dest, path$1.basename(source));
+                destExists = yield ioUtil$1.exists(dest);
+            }
+            if (destExists) {
+                if (options.force == null || options.force) {
+                    yield rmRF(dest);
+                }
+                else {
+                    throw new Error('Destination already exists');
+                }
+            }
+        }
+        yield mkdirP(path$1.dirname(dest));
+        yield ioUtil$1.rename(source, dest);
+    });
+}
+exports.mv = mv;
+/**
+ * Remove a path recursively with force
+ *
+ * @param inputPath path to remove
+ */
+function rmRF(inputPath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (ioUtil$1.IS_WINDOWS) {
+            // Check for invalid characters
+            // https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
+            if (/[*"<>|]/.test(inputPath)) {
+                throw new Error('File path must not contain `*`, `"`, `<`, `>` or `|` on Windows');
+            }
+        }
+        try {
+            // note if path does not exist, error is silent
+            yield ioUtil$1.rm(inputPath, {
+                force: true,
+                maxRetries: 3,
+                recursive: true,
+                retryDelay: 300
+            });
+        }
+        catch (err) {
+            throw new Error(`File was unable to be removed ${err}`);
+        }
+    });
+}
+exports.rmRF = rmRF;
+/**
+ * Make a directory.  Creates the full path with folders in between
+ * Will throw if it fails
+ *
+ * @param   fsPath        path to create
+ * @returns Promise<void>
+ */
+function mkdirP(fsPath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        assert.ok(fsPath, 'a path argument must be provided');
+        yield ioUtil$1.mkdir(fsPath, { recursive: true });
+    });
+}
+exports.mkdirP = mkdirP;
+/**
+ * Returns path of a tool had the tool actually been invoked.  Resolves via paths.
+ * If you check and the tool does not exist, it will throw.
+ *
+ * @param     tool              name of the tool
+ * @param     check             whether to check if tool exists
+ * @returns   Promise<string>   path to tool
+ */
+function which(tool, check) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!tool) {
+            throw new Error("parameter 'tool' is required");
+        }
+        // recursive when check=true
+        if (check) {
+            const result = yield which(tool, false);
+            if (!result) {
+                if (ioUtil$1.IS_WINDOWS) {
+                    throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also verify the file has a valid extension for an executable file.`);
+                }
+                else {
+                    throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also check the file mode to verify the file is executable.`);
+                }
+            }
+            return result;
+        }
+        const matches = yield findInPath(tool);
+        if (matches && matches.length > 0) {
+            return matches[0];
+        }
+        return '';
+    });
+}
+exports.which = which;
+/**
+ * Returns a list of all occurrences of the given tool on the system path.
+ *
+ * @returns   Promise<string[]>  the paths of the tool
+ */
+function findInPath(tool) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!tool) {
+            throw new Error("parameter 'tool' is required");
+        }
+        // build the list of extensions to try
+        const extensions = [];
+        if (ioUtil$1.IS_WINDOWS && process.env['PATHEXT']) {
+            for (const extension of process.env['PATHEXT'].split(path$1.delimiter)) {
+                if (extension) {
+                    extensions.push(extension);
+                }
+            }
+        }
+        // if it's rooted, return it if exists. otherwise return empty.
+        if (ioUtil$1.isRooted(tool)) {
+            const filePath = yield ioUtil$1.tryGetExecutablePath(tool, extensions);
+            if (filePath) {
+                return [filePath];
+            }
+            return [];
+        }
+        // if any path separators, return empty
+        if (tool.includes(path$1.sep)) {
+            return [];
+        }
+        // build the list of directories
+        //
+        // Note, technically "where" checks the current directory on Windows. From a toolkit perspective,
+        // it feels like we should not do this. Checking the current directory seems like more of a use
+        // case of a shell, and the which() function exposed by the toolkit should strive for consistency
+        // across platforms.
+        const directories = [];
+        if (process.env.PATH) {
+            for (const p of process.env.PATH.split(path$1.delimiter)) {
+                if (p) {
+                    directories.push(p);
+                }
+            }
+        }
+        // find all matches
+        const matches = [];
+        for (const directory of directories) {
+            const filePath = yield ioUtil$1.tryGetExecutablePath(path$1.join(directory, tool), extensions);
+            if (filePath) {
+                matches.push(filePath);
+            }
+        }
+        return matches;
+    });
+}
+exports.findInPath = findInPath;
+function readCopyOptions(options) {
+    const force = options.force == null ? true : options.force;
+    const recursive = Boolean(options.recursive);
+    const copySourceDirectory = options.copySourceDirectory == null
+        ? true
+        : Boolean(options.copySourceDirectory);
+    return { force, recursive, copySourceDirectory };
+}
+function cpDirRecursive(sourceDir, destDir, currentDepth, force) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // Ensure there is not a run away recursive copy
+        if (currentDepth >= 255)
+            return;
+        currentDepth++;
+        yield mkdirP(destDir);
+        const files = yield ioUtil$1.readdir(sourceDir);
+        for (const fileName of files) {
+            const srcFile = `${sourceDir}/${fileName}`;
+            const destFile = `${destDir}/${fileName}`;
+            const srcFileStat = yield ioUtil$1.lstat(srcFile);
+            if (srcFileStat.isDirectory()) {
+                // Recurse
+                yield cpDirRecursive(srcFile, destFile, currentDepth, force);
+            }
+            else {
+                yield copyFile(srcFile, destFile, force);
+            }
+        }
+        // Change the mode for the newly created directory
+        yield ioUtil$1.chmod(destDir, (yield ioUtil$1.stat(sourceDir)).mode);
+    });
+}
+// Buffered file copy
+function copyFile(srcFile, destFile, force) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if ((yield ioUtil$1.lstat(srcFile)).isSymbolicLink()) {
+            // unlink/re-link it
+            try {
+                yield ioUtil$1.lstat(destFile);
+                yield ioUtil$1.unlink(destFile);
+            }
+            catch (e) {
+                // Try to override file permission
+                if (e.code === 'EPERM') {
+                    yield ioUtil$1.chmod(destFile, '0666');
+                    yield ioUtil$1.unlink(destFile);
+                }
+                // other errors = it doesn't exist, no work to do
+            }
+            // Copy over symlink
+            const symlinkFull = yield ioUtil$1.readlink(srcFile);
+            yield ioUtil$1.symlink(symlinkFull, destFile, ioUtil$1.IS_WINDOWS ? 'junction' : null);
+        }
+        else if (!(yield ioUtil$1.exists(destFile)) || force) {
+            yield ioUtil$1.copyFile(srcFile, destFile);
+        }
+    });
+}
+
+});
+
+var toolrunner = createCommonjsModule(function (module, exports) {
+var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (commonjsGlobal && commonjsGlobal.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (commonjsGlobal && commonjsGlobal.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.argStringToArray = exports.ToolRunner = void 0;
+const os = __importStar(require$$0);
+const events = __importStar(EE);
+const child = __importStar(require$$2$2);
+const path$1 = __importStar(path);
+const io$1 = __importStar(io);
+const ioUtil$1 = __importStar(ioUtil);
+
+/* eslint-disable @typescript-eslint/unbound-method */
+const IS_WINDOWS = process.platform === 'win32';
+/*
+ * Class for running command line tools. Handles quoting and arg parsing in a platform agnostic way.
+ */
+class ToolRunner extends events.EventEmitter {
+    constructor(toolPath, args, options) {
+        super();
+        if (!toolPath) {
+            throw new Error("Parameter 'toolPath' cannot be null or empty.");
+        }
+        this.toolPath = toolPath;
+        this.args = args || [];
+        this.options = options || {};
+    }
+    _debug(message) {
+        if (this.options.listeners && this.options.listeners.debug) {
+            this.options.listeners.debug(message);
+        }
+    }
+    _getCommandString(options, noPrefix) {
+        const toolPath = this._getSpawnFileName();
+        const args = this._getSpawnArgs(options);
+        let cmd = noPrefix ? '' : '[command]'; // omit prefix when piped to a second tool
+        if (IS_WINDOWS) {
+            // Windows + cmd file
+            if (this._isCmdFile()) {
+                cmd += toolPath;
+                for (const a of args) {
+                    cmd += ` ${a}`;
+                }
+            }
+            // Windows + verbatim
+            else if (options.windowsVerbatimArguments) {
+                cmd += `"${toolPath}"`;
+                for (const a of args) {
+                    cmd += ` ${a}`;
+                }
+            }
+            // Windows (regular)
+            else {
+                cmd += this._windowsQuoteCmdArg(toolPath);
+                for (const a of args) {
+                    cmd += ` ${this._windowsQuoteCmdArg(a)}`;
+                }
+            }
+        }
+        else {
+            // OSX/Linux - this can likely be improved with some form of quoting.
+            // creating processes on Unix is fundamentally different than Windows.
+            // on Unix, execvp() takes an arg array.
+            cmd += toolPath;
+            for (const a of args) {
+                cmd += ` ${a}`;
+            }
+        }
+        return cmd;
+    }
+    _processLineBuffer(data, strBuffer, onLine) {
+        try {
+            let s = strBuffer + data.toString();
+            let n = s.indexOf(os.EOL);
+            while (n > -1) {
+                const line = s.substring(0, n);
+                onLine(line);
+                // the rest of the string ...
+                s = s.substring(n + os.EOL.length);
+                n = s.indexOf(os.EOL);
+            }
+            return s;
+        }
+        catch (err) {
+            // streaming lines to console is best effort.  Don't fail a build.
+            this._debug(`error processing line. Failed with error ${err}`);
+            return '';
+        }
+    }
+    _getSpawnFileName() {
+        if (IS_WINDOWS) {
+            if (this._isCmdFile()) {
+                return process.env['COMSPEC'] || 'cmd.exe';
+            }
+        }
+        return this.toolPath;
+    }
+    _getSpawnArgs(options) {
+        if (IS_WINDOWS) {
+            if (this._isCmdFile()) {
+                let argline = `/D /S /C "${this._windowsQuoteCmdArg(this.toolPath)}`;
+                for (const a of this.args) {
+                    argline += ' ';
+                    argline += options.windowsVerbatimArguments
+                        ? a
+                        : this._windowsQuoteCmdArg(a);
+                }
+                argline += '"';
+                return [argline];
+            }
+        }
+        return this.args;
+    }
+    _endsWith(str, end) {
+        return str.endsWith(end);
+    }
+    _isCmdFile() {
+        const upperToolPath = this.toolPath.toUpperCase();
+        return (this._endsWith(upperToolPath, '.CMD') ||
+            this._endsWith(upperToolPath, '.BAT'));
+    }
+    _windowsQuoteCmdArg(arg) {
+        // for .exe, apply the normal quoting rules that libuv applies
+        if (!this._isCmdFile()) {
+            return this._uvQuoteCmdArg(arg);
+        }
+        // otherwise apply quoting rules specific to the cmd.exe command line parser.
+        // the libuv rules are generic and are not designed specifically for cmd.exe
+        // command line parser.
+        //
+        // for a detailed description of the cmd.exe command line parser, refer to
+        // http://stackoverflow.com/questions/4094699/how-does-the-windows-command-interpreter-cmd-exe-parse-scripts/7970912#7970912
+        // need quotes for empty arg
+        if (!arg) {
+            return '""';
+        }
+        // determine whether the arg needs to be quoted
+        const cmdSpecialChars = [
+            ' ',
+            '\t',
+            '&',
+            '(',
+            ')',
+            '[',
+            ']',
+            '{',
+            '}',
+            '^',
+            '=',
+            ';',
+            '!',
+            "'",
+            '+',
+            ',',
+            '`',
+            '~',
+            '|',
+            '<',
+            '>',
+            '"'
+        ];
+        let needsQuotes = false;
+        for (const char of arg) {
+            if (cmdSpecialChars.some(x => x === char)) {
+                needsQuotes = true;
+                break;
+            }
+        }
+        // short-circuit if quotes not needed
+        if (!needsQuotes) {
+            return arg;
+        }
+        // the following quoting rules are very similar to the rules that by libuv applies.
+        //
+        // 1) wrap the string in quotes
+        //
+        // 2) double-up quotes - i.e. " => ""
+        //
+        //    this is different from the libuv quoting rules. libuv replaces " with \", which unfortunately
+        //    doesn't work well with a cmd.exe command line.
+        //
+        //    note, replacing " with "" also works well if the arg is passed to a downstream .NET console app.
+        //    for example, the command line:
+        //          foo.exe "myarg:""my val"""
+        //    is parsed by a .NET console app into an arg array:
+        //          [ "myarg:\"my val\"" ]
+        //    which is the same end result when applying libuv quoting rules. although the actual
+        //    command line from libuv quoting rules would look like:
+        //          foo.exe "myarg:\"my val\""
+        //
+        // 3) double-up slashes that precede a quote,
+        //    e.g.  hello \world    => "hello \world"
+        //          hello\"world    => "hello\\""world"
+        //          hello\\"world   => "hello\\\\""world"
+        //          hello world\    => "hello world\\"
+        //
+        //    technically this is not required for a cmd.exe command line, or the batch argument parser.
+        //    the reasons for including this as a .cmd quoting rule are:
+        //
+        //    a) this is optimized for the scenario where the argument is passed from the .cmd file to an
+        //       external program. many programs (e.g. .NET console apps) rely on the slash-doubling rule.
+        //
+        //    b) it's what we've been doing previously (by deferring to node default behavior) and we
+        //       haven't heard any complaints about that aspect.
+        //
+        // note, a weakness of the quoting rules chosen here, is that % is not escaped. in fact, % cannot be
+        // escaped when used on the command line directly - even though within a .cmd file % can be escaped
+        // by using %%.
+        //
+        // the saving grace is, on the command line, %var% is left as-is if var is not defined. this contrasts
+        // the line parsing rules within a .cmd file, where if var is not defined it is replaced with nothing.
+        //
+        // one option that was explored was replacing % with ^% - i.e. %var% => ^%var^%. this hack would
+        // often work, since it is unlikely that var^ would exist, and the ^ character is removed when the
+        // variable is used. the problem, however, is that ^ is not removed when %* is used to pass the args
+        // to an external program.
+        //
+        // an unexplored potential solution for the % escaping problem, is to create a wrapper .cmd file.
+        // % can be escaped within a .cmd file.
+        let reverse = '"';
+        let quoteHit = true;
+        for (let i = arg.length; i > 0; i--) {
+            // walk the string in reverse
+            reverse += arg[i - 1];
+            if (quoteHit && arg[i - 1] === '\\') {
+                reverse += '\\'; // double the slash
+            }
+            else if (arg[i - 1] === '"') {
+                quoteHit = true;
+                reverse += '"'; // double the quote
+            }
+            else {
+                quoteHit = false;
+            }
+        }
+        reverse += '"';
+        return reverse
+            .split('')
+            .reverse()
+            .join('');
+    }
+    _uvQuoteCmdArg(arg) {
+        // Tool runner wraps child_process.spawn() and needs to apply the same quoting as
+        // Node in certain cases where the undocumented spawn option windowsVerbatimArguments
+        // is used.
+        //
+        // Since this function is a port of quote_cmd_arg from Node 4.x (technically, lib UV,
+        // see https://github.com/nodejs/node/blob/v4.x/deps/uv/src/win/process.c for details),
+        // pasting copyright notice from Node within this function:
+        //
+        //      Copyright Joyent, Inc. and other Node contributors. All rights reserved.
+        //
+        //      Permission is hereby granted, free of charge, to any person obtaining a copy
+        //      of this software and associated documentation files (the "Software"), to
+        //      deal in the Software without restriction, including without limitation the
+        //      rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+        //      sell copies of the Software, and to permit persons to whom the Software is
+        //      furnished to do so, subject to the following conditions:
+        //
+        //      The above copyright notice and this permission notice shall be included in
+        //      all copies or substantial portions of the Software.
+        //
+        //      THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        //      IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        //      FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        //      AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        //      LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+        //      FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+        //      IN THE SOFTWARE.
+        if (!arg) {
+            // Need double quotation for empty argument
+            return '""';
+        }
+        if (!arg.includes(' ') && !arg.includes('\t') && !arg.includes('"')) {
+            // No quotation needed
+            return arg;
+        }
+        if (!arg.includes('"') && !arg.includes('\\')) {
+            // No embedded double quotes or backslashes, so I can just wrap
+            // quote marks around the whole thing.
+            return `"${arg}"`;
+        }
+        // Expected input/output:
+        //   input : hello"world
+        //   output: "hello\"world"
+        //   input : hello""world
+        //   output: "hello\"\"world"
+        //   input : hello\world
+        //   output: hello\world
+        //   input : hello\\world
+        //   output: hello\\world
+        //   input : hello\"world
+        //   output: "hello\\\"world"
+        //   input : hello\\"world
+        //   output: "hello\\\\\"world"
+        //   input : hello world\
+        //   output: "hello world\\" - note the comment in libuv actually reads "hello world\"
+        //                             but it appears the comment is wrong, it should be "hello world\\"
+        let reverse = '"';
+        let quoteHit = true;
+        for (let i = arg.length; i > 0; i--) {
+            // walk the string in reverse
+            reverse += arg[i - 1];
+            if (quoteHit && arg[i - 1] === '\\') {
+                reverse += '\\';
+            }
+            else if (arg[i - 1] === '"') {
+                quoteHit = true;
+                reverse += '\\';
+            }
+            else {
+                quoteHit = false;
+            }
+        }
+        reverse += '"';
+        return reverse
+            .split('')
+            .reverse()
+            .join('');
+    }
+    _cloneExecOptions(options) {
+        options = options || {};
+        const result = {
+            cwd: options.cwd || process.cwd(),
+            env: options.env || process.env,
+            silent: options.silent || false,
+            windowsVerbatimArguments: options.windowsVerbatimArguments || false,
+            failOnStdErr: options.failOnStdErr || false,
+            ignoreReturnCode: options.ignoreReturnCode || false,
+            delay: options.delay || 10000
+        };
+        result.outStream = options.outStream || process.stdout;
+        result.errStream = options.errStream || process.stderr;
+        return result;
+    }
+    _getSpawnOptions(options, toolPath) {
+        options = options || {};
+        const result = {};
+        result.cwd = options.cwd;
+        result.env = options.env;
+        result['windowsVerbatimArguments'] =
+            options.windowsVerbatimArguments || this._isCmdFile();
+        if (options.windowsVerbatimArguments) {
+            result.argv0 = `"${toolPath}"`;
+        }
+        return result;
+    }
+    /**
+     * Exec a tool.
+     * Output will be streamed to the live console.
+     * Returns promise with return code
+     *
+     * @param     tool     path to tool to exec
+     * @param     options  optional exec options.  See ExecOptions
+     * @returns   number
+     */
+    exec() {
+        return __awaiter(this, void 0, void 0, function* () {
+            // root the tool path if it is unrooted and contains relative pathing
+            if (!ioUtil$1.isRooted(this.toolPath) &&
+                (this.toolPath.includes('/') ||
+                    (IS_WINDOWS && this.toolPath.includes('\\')))) {
+                // prefer options.cwd if it is specified, however options.cwd may also need to be rooted
+                this.toolPath = path$1.resolve(process.cwd(), this.options.cwd || process.cwd(), this.toolPath);
+            }
+            // if the tool is only a file name, then resolve it from the PATH
+            // otherwise verify it exists (add extension on Windows if necessary)
+            this.toolPath = yield io$1.which(this.toolPath, true);
+            return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+                this._debug(`exec tool: ${this.toolPath}`);
+                this._debug('arguments:');
+                for (const arg of this.args) {
+                    this._debug(`   ${arg}`);
+                }
+                const optionsNonNull = this._cloneExecOptions(this.options);
+                if (!optionsNonNull.silent && optionsNonNull.outStream) {
+                    optionsNonNull.outStream.write(this._getCommandString(optionsNonNull) + os.EOL);
+                }
+                const state = new ExecState(optionsNonNull, this.toolPath);
+                state.on('debug', (message) => {
+                    this._debug(message);
+                });
+                if (this.options.cwd && !(yield ioUtil$1.exists(this.options.cwd))) {
+                    return reject(new Error(`The cwd: ${this.options.cwd} does not exist!`));
+                }
+                const fileName = this._getSpawnFileName();
+                const cp = child.spawn(fileName, this._getSpawnArgs(optionsNonNull), this._getSpawnOptions(this.options, fileName));
+                let stdbuffer = '';
+                if (cp.stdout) {
+                    cp.stdout.on('data', (data) => {
+                        if (this.options.listeners && this.options.listeners.stdout) {
+                            this.options.listeners.stdout(data);
+                        }
+                        if (!optionsNonNull.silent && optionsNonNull.outStream) {
+                            optionsNonNull.outStream.write(data);
+                        }
+                        stdbuffer = this._processLineBuffer(data, stdbuffer, (line) => {
+                            if (this.options.listeners && this.options.listeners.stdline) {
+                                this.options.listeners.stdline(line);
+                            }
+                        });
+                    });
+                }
+                let errbuffer = '';
+                if (cp.stderr) {
+                    cp.stderr.on('data', (data) => {
+                        state.processStderr = true;
+                        if (this.options.listeners && this.options.listeners.stderr) {
+                            this.options.listeners.stderr(data);
+                        }
+                        if (!optionsNonNull.silent &&
+                            optionsNonNull.errStream &&
+                            optionsNonNull.outStream) {
+                            const s = optionsNonNull.failOnStdErr
+                                ? optionsNonNull.errStream
+                                : optionsNonNull.outStream;
+                            s.write(data);
+                        }
+                        errbuffer = this._processLineBuffer(data, errbuffer, (line) => {
+                            if (this.options.listeners && this.options.listeners.errline) {
+                                this.options.listeners.errline(line);
+                            }
+                        });
+                    });
+                }
+                cp.on('error', (err) => {
+                    state.processError = err.message;
+                    state.processExited = true;
+                    state.processClosed = true;
+                    state.CheckComplete();
+                });
+                cp.on('exit', (code) => {
+                    state.processExitCode = code;
+                    state.processExited = true;
+                    this._debug(`Exit code ${code} received from tool '${this.toolPath}'`);
+                    state.CheckComplete();
+                });
+                cp.on('close', (code) => {
+                    state.processExitCode = code;
+                    state.processExited = true;
+                    state.processClosed = true;
+                    this._debug(`STDIO streams have closed for tool '${this.toolPath}'`);
+                    state.CheckComplete();
+                });
+                state.on('done', (error, exitCode) => {
+                    if (stdbuffer.length > 0) {
+                        this.emit('stdline', stdbuffer);
+                    }
+                    if (errbuffer.length > 0) {
+                        this.emit('errline', errbuffer);
+                    }
+                    cp.removeAllListeners();
+                    if (error) {
+                        reject(error);
+                    }
+                    else {
+                        resolve(exitCode);
+                    }
+                });
+                if (this.options.input) {
+                    if (!cp.stdin) {
+                        throw new Error('child process missing stdin');
+                    }
+                    cp.stdin.end(this.options.input);
+                }
+            }));
+        });
+    }
+}
+exports.ToolRunner = ToolRunner;
+/**
+ * Convert an arg string to an array of args. Handles escaping
+ *
+ * @param    argString   string of arguments
+ * @returns  string[]    array of arguments
+ */
+function argStringToArray(argString) {
+    const args = [];
+    let inQuotes = false;
+    let escaped = false;
+    let arg = '';
+    function append(c) {
+        // we only escape double quotes.
+        if (escaped && c !== '"') {
+            arg += '\\';
+        }
+        arg += c;
+        escaped = false;
+    }
+    for (let i = 0; i < argString.length; i++) {
+        const c = argString.charAt(i);
+        if (c === '"') {
+            if (!escaped) {
+                inQuotes = !inQuotes;
+            }
+            else {
+                append(c);
+            }
+            continue;
+        }
+        if (c === '\\' && escaped) {
+            append(c);
+            continue;
+        }
+        if (c === '\\' && inQuotes) {
+            escaped = true;
+            continue;
+        }
+        if (c === ' ' && !inQuotes) {
+            if (arg.length > 0) {
+                args.push(arg);
+                arg = '';
+            }
+            continue;
+        }
+        append(c);
+    }
+    if (arg.length > 0) {
+        args.push(arg.trim());
+    }
+    return args;
+}
+exports.argStringToArray = argStringToArray;
+class ExecState extends events.EventEmitter {
+    constructor(options, toolPath) {
+        super();
+        this.processClosed = false; // tracks whether the process has exited and stdio is closed
+        this.processError = '';
+        this.processExitCode = 0;
+        this.processExited = false; // tracks whether the process has exited
+        this.processStderr = false; // tracks whether stderr was written to
+        this.delay = 10000; // 10 seconds
+        this.done = false;
+        this.timeout = null;
+        if (!toolPath) {
+            throw new Error('toolPath must not be empty');
+        }
+        this.options = options;
+        this.toolPath = toolPath;
+        if (options.delay) {
+            this.delay = options.delay;
+        }
+    }
+    CheckComplete() {
+        if (this.done) {
+            return;
+        }
+        if (this.processClosed) {
+            this._setResult();
+        }
+        else if (this.processExited) {
+            this.timeout = timers_1.setTimeout(ExecState.HandleTimeout, this.delay, this);
+        }
+    }
+    _debug(message) {
+        this.emit('debug', message);
+    }
+    _setResult() {
+        // determine whether there is an error
+        let error;
+        if (this.processExited) {
+            if (this.processError) {
+                error = new Error(`There was an error when attempting to execute the process '${this.toolPath}'. This may indicate the process failed to start. Error: ${this.processError}`);
+            }
+            else if (this.processExitCode !== 0 && !this.options.ignoreReturnCode) {
+                error = new Error(`The process '${this.toolPath}' failed with exit code ${this.processExitCode}`);
+            }
+            else if (this.processStderr && this.options.failOnStdErr) {
+                error = new Error(`The process '${this.toolPath}' failed because one or more lines were written to the STDERR stream`);
+            }
+        }
+        // clear the timeout
+        if (this.timeout) {
+            clearTimeout(this.timeout);
+            this.timeout = null;
+        }
+        this.done = true;
+        this.emit('done', error, this.processExitCode);
+    }
+    static HandleTimeout(state) {
+        if (state.done) {
+            return;
+        }
+        if (!state.processClosed && state.processExited) {
+            const message = `The STDIO streams did not close within ${state.delay /
+                1000} seconds of the exit event from process '${state.toolPath}'. This may indicate a child process inherited the STDIO streams and has not yet exited.`;
+            state._debug(message);
+        }
+        state._setResult();
+    }
+}
+
+});
+
+var exec_1 = createCommonjsModule(function (module, exports) {
+var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (commonjsGlobal && commonjsGlobal.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (commonjsGlobal && commonjsGlobal.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getExecOutput = exports.exec = void 0;
+
+const tr = __importStar(toolrunner);
+/**
+ * Exec a command.
+ * Output will be streamed to the live console.
+ * Returns promise with return code
+ *
+ * @param     commandLine        command to execute (can include additional args). Must be correctly escaped.
+ * @param     args               optional arguments for tool. Escaping is handled by the lib.
+ * @param     options            optional exec options.  See ExecOptions
+ * @returns   Promise<number>    exit code
+ */
+function exec(commandLine, args, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const commandArgs = tr.argStringToArray(commandLine);
+        if (commandArgs.length === 0) {
+            throw new Error(`Parameter 'commandLine' cannot be null or empty.`);
+        }
+        // Path to tool to execute should be first arg
+        const toolPath = commandArgs[0];
+        args = commandArgs.slice(1).concat(args || []);
+        const runner = new tr.ToolRunner(toolPath, args, options);
+        return runner.exec();
+    });
+}
+exports.exec = exec;
+/**
+ * Exec a command and get the output.
+ * Output will be streamed to the live console.
+ * Returns promise with the exit code and collected stdout and stderr
+ *
+ * @param     commandLine           command to execute (can include additional args). Must be correctly escaped.
+ * @param     args                  optional arguments for tool. Escaping is handled by the lib.
+ * @param     options               optional exec options.  See ExecOptions
+ * @returns   Promise<ExecOutput>   exit code, stdout, and stderr
+ */
+function getExecOutput(commandLine, args, options) {
+    var _a, _b;
+    return __awaiter(this, void 0, void 0, function* () {
+        let stdout = '';
+        let stderr = '';
+        //Using string decoder covers the case where a mult-byte character is split
+        const stdoutDecoder = new string_decoder_1.StringDecoder('utf8');
+        const stderrDecoder = new string_decoder_1.StringDecoder('utf8');
+        const originalStdoutListener = (_a = options === null || options === void 0 ? void 0 : options.listeners) === null || _a === void 0 ? void 0 : _a.stdout;
+        const originalStdErrListener = (_b = options === null || options === void 0 ? void 0 : options.listeners) === null || _b === void 0 ? void 0 : _b.stderr;
+        const stdErrListener = (data) => {
+            stderr += stderrDecoder.write(data);
+            if (originalStdErrListener) {
+                originalStdErrListener(data);
+            }
+        };
+        const stdOutListener = (data) => {
+            stdout += stdoutDecoder.write(data);
+            if (originalStdoutListener) {
+                originalStdoutListener(data);
+            }
+        };
+        const listeners = Object.assign(Object.assign({}, options === null || options === void 0 ? void 0 : options.listeners), { stdout: stdOutListener, stderr: stdErrListener });
+        const exitCode = yield exec(commandLine, args, Object.assign(Object.assign({}, options), { listeners }));
+        //flush any remaining characters
+        stdout += stdoutDecoder.end();
+        stderr += stderrDecoder.end();
+        return {
+            exitCode,
+            stdout,
+            stderr
+        };
+    });
+}
+exports.getExecOutput = getExecOutput;
+
+});
+
+var platform = createCommonjsModule(function (module, exports) {
+var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (commonjsGlobal && commonjsGlobal.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (commonjsGlobal && commonjsGlobal.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (commonjsGlobal && commonjsGlobal.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getDetails = exports.isLinux = exports.isMacOS = exports.isWindows = exports.arch = exports.platform = void 0;
+const os_1 = __importDefault(require$$0);
+const exec = __importStar(exec_1);
+const getWindowsInfo = () => __awaiter(void 0, void 0, void 0, function* () {
+    const { stdout: version } = yield exec.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Version"', undefined, {
+        silent: true
+    });
+    const { stdout: name } = yield exec.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Caption"', undefined, {
+        silent: true
+    });
+    return {
+        name: name.trim(),
+        version: version.trim()
+    };
+});
+const getMacOsInfo = () => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c, _d;
+    const { stdout } = yield exec.getExecOutput('sw_vers', undefined, {
+        silent: true
+    });
+    const version = (_b = (_a = stdout.match(/ProductVersion:\s*(.+)/)) === null || _a === void 0 ? void 0 : _a[1]) !== null && _b !== void 0 ? _b : '';
+    const name = (_d = (_c = stdout.match(/ProductName:\s*(.+)/)) === null || _c === void 0 ? void 0 : _c[1]) !== null && _d !== void 0 ? _d : '';
+    return {
+        name,
+        version
+    };
+});
+const getLinuxInfo = () => __awaiter(void 0, void 0, void 0, function* () {
+    const { stdout } = yield exec.getExecOutput('lsb_release', ['-i', '-r', '-s'], {
+        silent: true
+    });
+    const [name, version] = stdout.trim().split('\n');
+    return {
+        name,
+        version
+    };
+});
+exports.platform = os_1.default.platform();
+exports.arch = os_1.default.arch();
+exports.isWindows = exports.platform === 'win32';
+exports.isMacOS = exports.platform === 'darwin';
+exports.isLinux = exports.platform === 'linux';
+function getDetails() {
+    return __awaiter(this, void 0, void 0, function* () {
+        return Object.assign(Object.assign({}, (yield (exports.isWindows
+            ? getWindowsInfo()
+            : exports.isMacOS
+                ? getMacOsInfo()
+                : getLinuxInfo()))), { platform: exports.platform,
+            arch: exports.arch,
+            isWindows: exports.isWindows,
+            isMacOS: exports.isMacOS,
+            isLinux: exports.isLinux });
+    });
+}
+exports.getDetails = getDetails;
+
+});
+
+var core = createCommonjsModule(function (module, exports) {
+var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (commonjsGlobal && commonjsGlobal.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (commonjsGlobal && commonjsGlobal.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.platform = exports.toPlatformPath = exports.toWin32Path = exports.toPosixPath = exports.markdownSummary = exports.summary = exports.getIDToken = exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.notice = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
 
 
 
 const os = __importStar(require$$0);
-const path = __importStar(path$1);
+const path$1 = __importStar(path);
 
 /**
  * The code to exit an action
@@ -24942,7 +25965,7 @@ var ExitCode;
      * A code indicating that the action was a failure
      */
     ExitCode[ExitCode["Failure"] = 1] = "Failure";
-})(ExitCode = exports.ExitCode || (exports.ExitCode = {}));
+})(ExitCode || (exports.ExitCode = ExitCode = {}));
 //-----------------------------------------------------------------------
 // Variables
 //-----------------------------------------------------------------------
@@ -24953,13 +25976,13 @@ var ExitCode;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function exportVariable(name, val) {
-    const convertedVal = utils$7.toCommandValue(val);
+    const convertedVal = (0, utils$7.toCommandValue)(val);
     process.env[name] = convertedVal;
     const filePath = process.env['GITHUB_ENV'] || '';
     if (filePath) {
-        return fileCommand.issueFileCommand('ENV', fileCommand.prepareKeyValueMessage(name, val));
+        return (0, fileCommand.issueFileCommand)('ENV', (0, fileCommand.prepareKeyValueMessage)(name, val));
     }
-    command.issueCommand('set-env', { name }, convertedVal);
+    (0, command.issueCommand)('set-env', { name }, convertedVal);
 }
 exports.exportVariable = exportVariable;
 /**
@@ -24967,7 +25990,7 @@ exports.exportVariable = exportVariable;
  * @param secret value of the secret
  */
 function setSecret(secret) {
-    command.issueCommand('add-mask', {}, secret);
+    (0, command.issueCommand)('add-mask', {}, secret);
 }
 exports.setSecret = setSecret;
 /**
@@ -24977,12 +26000,12 @@ exports.setSecret = setSecret;
 function addPath(inputPath) {
     const filePath = process.env['GITHUB_PATH'] || '';
     if (filePath) {
-        fileCommand.issueFileCommand('PATH', inputPath);
+        (0, fileCommand.issueFileCommand)('PATH', inputPath);
     }
     else {
-        command.issueCommand('add-path', {}, inputPath);
+        (0, command.issueCommand)('add-path', {}, inputPath);
     }
-    process.env['PATH'] = `${inputPath}${path.delimiter}${process.env['PATH']}`;
+    process.env['PATH'] = `${inputPath}${path$1.delimiter}${process.env['PATH']}`;
 }
 exports.addPath = addPath;
 /**
@@ -25055,10 +26078,10 @@ exports.getBooleanInput = getBooleanInput;
 function setOutput(name, value) {
     const filePath = process.env['GITHUB_OUTPUT'] || '';
     if (filePath) {
-        return fileCommand.issueFileCommand('OUTPUT', fileCommand.prepareKeyValueMessage(name, value));
+        return (0, fileCommand.issueFileCommand)('OUTPUT', (0, fileCommand.prepareKeyValueMessage)(name, value));
     }
     process.stdout.write(os.EOL);
-    command.issueCommand('set-output', { name }, utils$7.toCommandValue(value));
+    (0, command.issueCommand)('set-output', { name }, (0, utils$7.toCommandValue)(value));
 }
 exports.setOutput = setOutput;
 /**
@@ -25067,7 +26090,7 @@ exports.setOutput = setOutput;
  *
  */
 function setCommandEcho(enabled) {
-    command.issue('echo', enabled ? 'on' : 'off');
+    (0, command.issue)('echo', enabled ? 'on' : 'off');
 }
 exports.setCommandEcho = setCommandEcho;
 //-----------------------------------------------------------------------
@@ -25098,7 +26121,7 @@ exports.isDebug = isDebug;
  * @param message debug message
  */
 function debug(message) {
-    command.issueCommand('debug', {}, message);
+    (0, command.issueCommand)('debug', {}, message);
 }
 exports.debug = debug;
 /**
@@ -25107,7 +26130,7 @@ exports.debug = debug;
  * @param properties optional properties to add to the annotation.
  */
 function error(message, properties = {}) {
-    command.issueCommand('error', utils$7.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+    (0, command.issueCommand)('error', (0, utils$7.toCommandProperties)(properties), message instanceof Error ? message.toString() : message);
 }
 exports.error = error;
 /**
@@ -25116,7 +26139,7 @@ exports.error = error;
  * @param properties optional properties to add to the annotation.
  */
 function warning(message, properties = {}) {
-    command.issueCommand('warning', utils$7.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+    (0, command.issueCommand)('warning', (0, utils$7.toCommandProperties)(properties), message instanceof Error ? message.toString() : message);
 }
 exports.warning = warning;
 /**
@@ -25125,7 +26148,7 @@ exports.warning = warning;
  * @param properties optional properties to add to the annotation.
  */
 function notice(message, properties = {}) {
-    command.issueCommand('notice', utils$7.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+    (0, command.issueCommand)('notice', (0, utils$7.toCommandProperties)(properties), message instanceof Error ? message.toString() : message);
 }
 exports.notice = notice;
 /**
@@ -25144,14 +26167,14 @@ exports.info = info;
  * @param name The name of the output group
  */
 function startGroup(name) {
-    command.issue('group', name);
+    (0, command.issue)('group', name);
 }
 exports.startGroup = startGroup;
 /**
  * End an output group.
  */
 function endGroup() {
-    command.issue('endgroup');
+    (0, command.issue)('endgroup');
 }
 exports.endGroup = endGroup;
 /**
@@ -25189,9 +26212,9 @@ exports.group = group;
 function saveState(name, value) {
     const filePath = process.env['GITHUB_STATE'] || '';
     if (filePath) {
-        return fileCommand.issueFileCommand('STATE', fileCommand.prepareKeyValueMessage(name, value));
+        return (0, fileCommand.issueFileCommand)('STATE', (0, fileCommand.prepareKeyValueMessage)(name, value));
     }
-    command.issueCommand('save-state', { name }, utils$7.toCommandValue(value));
+    (0, command.issueCommand)('save-state', { name }, (0, utils$7.toCommandValue)(value));
 }
 exports.saveState = saveState;
 /**
@@ -25227,6 +26250,10 @@ Object.defineProperty(exports, "markdownSummary", { enumerable: true, get: funct
 Object.defineProperty(exports, "toPosixPath", { enumerable: true, get: function () { return pathUtils.toPosixPath; } });
 Object.defineProperty(exports, "toWin32Path", { enumerable: true, get: function () { return pathUtils.toWin32Path; } });
 Object.defineProperty(exports, "toPlatformPath", { enumerable: true, get: function () { return pathUtils.toPlatformPath; } });
+/**
+ * Platform utilities exports
+ */
+exports.platform = __importStar(platform);
 
 });
 
@@ -25361,7 +26388,7 @@ exports.getApiBaseUrl = getApiBaseUrl;
 
 });
 
-function getUserAgent$8() {
+function getUserAgent() {
     if (typeof navigator === "object" && "userAgent" in navigator) {
         return navigator.userAgent;
     }
@@ -25371,9 +26398,9 @@ function getUserAgent$8() {
     return "<environment undetectable>";
 }
 
-var register_1 = register$3;
+var register_1 = register;
 
-function register$3(state, name, method, options) {
+function register(state, name, method, options) {
   if (typeof method !== "function") {
     throw new Error("method for before hook must be a function");
   }
@@ -25384,7 +26411,7 @@ function register$3(state, name, method, options) {
 
   if (Array.isArray(name)) {
     return name.reverse().reduce(function (callback, name) {
-      return register$3.bind(null, state, name, callback, options);
+      return register.bind(null, state, name, callback, options);
     }, method)();
   }
 
@@ -25399,9 +26426,9 @@ function register$3(state, name, method, options) {
   });
 }
 
-var add = addHook$3;
+var add = addHook;
 
-function addHook$3(state, kind, name, hook) {
+function addHook(state, kind, name, hook) {
   var orig = hook;
   if (!state.registry[name]) {
     state.registry[name] = [];
@@ -25446,9 +26473,9 @@ function addHook$3(state, kind, name, hook) {
   });
 }
 
-var remove = removeHook$3;
+var remove = removeHook;
 
-function removeHook$3(state, name, method) {
+function removeHook(state, name, method) {
   if (!state.registry[name]) {
     return;
   }
@@ -25467,11 +26494,11 @@ function removeHook$3(state, name, method) {
 }
 
 // bind with array of arguments: https://stackoverflow.com/a/21792913
-var bind$3 = Function.bind;
-var bindable$3 = bind$3.bind(bind$3);
+var bind = Function.bind;
+var bindable = bind.bind(bind);
 
-function bindApi$3(hook, state, name) {
-  var removeHookRef = bindable$3(remove, null).apply(
+function bindApi(hook, state, name) {
+  var removeHookRef = bindable(remove, null).apply(
     null,
     name ? [state, name] : [state]
   );
@@ -25479,7 +26506,7 @@ function bindApi$3(hook, state, name) {
   hook.remove = removeHookRef;
   ["before", "error", "after", "wrap"].forEach(function (kind) {
     var args = name ? [state, kind, name] : [state, kind];
-    hook[kind] = hook.api[kind] = bindable$3(add, null).apply(null, args);
+    hook[kind] = hook.api[kind] = bindable(add, null).apply(null, args);
   });
 }
 
@@ -25489,7 +26516,7 @@ function HookSingular() {
     registry: {},
   };
   var singularHook = register_1.bind(null, singularHookState, singularHookName);
-  bindApi$3(singularHook, singularHookState, singularHookName);
+  bindApi(singularHook, singularHookState, singularHookName);
   return singularHook;
 }
 
@@ -25499,13 +26526,13 @@ function HookCollection() {
   };
 
   var hook = register_1.bind(null, state);
-  bindApi$3(hook, state);
+  bindApi(hook, state);
 
   return hook;
 }
 
 var collectionHookDeprecationMessageDisplayed = false;
-function Hook$3() {
+function Hook() {
   if (!collectionHookDeprecationMessageDisplayed) {
     console.warn(
       '[before-after-hook]: "Hook()" repurposing warning, use "Hook.Collection()". Read more: https://git.io/upgrade-before-after-hook-to-1.4'
@@ -25515,34 +26542,34 @@ function Hook$3() {
   return HookCollection();
 }
 
-Hook$3.Singular = HookSingular.bind();
-Hook$3.Collection = HookCollection.bind();
+Hook.Singular = HookSingular.bind();
+Hook.Collection = HookCollection.bind();
 
-var beforeAfterHook = Hook$3;
+var beforeAfterHook = Hook;
 // expose constructors as a named property for TypeScript
-var Hook_1 = Hook$3;
-var Singular$3 = Hook$3.Singular;
-var Collection$4 = Hook$3.Collection;
+var Hook_1 = Hook;
+var Singular = Hook.Singular;
+var Collection$1 = Hook.Collection;
 beforeAfterHook.Hook = Hook_1;
-beforeAfterHook.Singular = Singular$3;
-beforeAfterHook.Collection = Collection$4;
+beforeAfterHook.Singular = Singular;
+beforeAfterHook.Collection = Collection$1;
 
-const VERSION$D = "9.0.5";
+const VERSION$5 = "9.0.5";
 
-const userAgent$8 = `octokit-endpoint.js/${VERSION$D} ${getUserAgent$8()}`;
-const DEFAULTS$8 = {
+const userAgent = `octokit-endpoint.js/${VERSION$5} ${getUserAgent()}`;
+const DEFAULTS = {
   method: "GET",
   baseUrl: "https://api.github.com",
   headers: {
     accept: "application/vnd.github.v3+json",
-    "user-agent": userAgent$8
+    "user-agent": userAgent
   },
   mediaType: {
     format: ""
   }
 };
 
-function lowercaseKeys$8(object) {
+function lowercaseKeys(object) {
   if (!object) {
     return {};
   }
@@ -25552,7 +26579,7 @@ function lowercaseKeys$8(object) {
   }, {});
 }
 
-function isPlainObject$h(value) {
+function isPlainObject$1(value) {
   if (typeof value !== "object" || value === null)
     return false;
   if (Object.prototype.toString.call(value) !== "[object Object]")
@@ -25564,14 +26591,14 @@ function isPlainObject$h(value) {
   return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
 }
 
-function mergeDeep$8(defaults, options) {
+function mergeDeep(defaults, options) {
   const result = Object.assign({}, defaults);
   Object.keys(options).forEach((key) => {
-    if (isPlainObject$h(options[key])) {
+    if (isPlainObject$1(options[key])) {
       if (!(key in defaults))
         Object.assign(result, { [key]: options[key] });
       else
-        result[key] = mergeDeep$8(defaults[key], options[key]);
+        result[key] = mergeDeep(defaults[key], options[key]);
     } else {
       Object.assign(result, { [key]: options[key] });
     }
@@ -25579,7 +26606,7 @@ function mergeDeep$8(defaults, options) {
   return result;
 }
 
-function removeUndefinedProperties$8(obj) {
+function removeUndefinedProperties(obj) {
   for (const key in obj) {
     if (obj[key] === void 0) {
       delete obj[key];
@@ -25588,17 +26615,17 @@ function removeUndefinedProperties$8(obj) {
   return obj;
 }
 
-function merge$8(defaults, route, options) {
+function merge$1(defaults, route, options) {
   if (typeof route === "string") {
     let [method, url] = route.split(" ");
     options = Object.assign(url ? { method, url } : { url: method }, options);
   } else {
     options = Object.assign({}, route);
   }
-  options.headers = lowercaseKeys$8(options.headers);
-  removeUndefinedProperties$8(options);
-  removeUndefinedProperties$8(options.headers);
-  const mergedOptions = mergeDeep$8(defaults || {}, options);
+  options.headers = lowercaseKeys(options.headers);
+  removeUndefinedProperties(options);
+  removeUndefinedProperties(options.headers);
+  const mergedOptions = mergeDeep(defaults || {}, options);
   if (options.url === "/graphql") {
     if (defaults && defaults.mediaType.previews?.length) {
       mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(
@@ -25610,7 +26637,7 @@ function merge$8(defaults, route, options) {
   return mergedOptions;
 }
 
-function addQueryParameters$8(url, parameters) {
+function addQueryParameters(url, parameters) {
   const separator = /\?/.test(url) ? "&" : "?";
   const names = Object.keys(parameters);
   if (names.length === 0) {
@@ -25624,19 +26651,19 @@ function addQueryParameters$8(url, parameters) {
   }).join("&");
 }
 
-const urlVariableRegex$8 = /\{[^}]+\}/g;
-function removeNonChars$8(variableName) {
+const urlVariableRegex = /\{[^}]+\}/g;
+function removeNonChars(variableName) {
   return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
 }
-function extractUrlVariableNames$8(url) {
-  const matches = url.match(urlVariableRegex$8);
+function extractUrlVariableNames(url) {
+  const matches = url.match(urlVariableRegex);
   if (!matches) {
     return [];
   }
-  return matches.map(removeNonChars$8).reduce((a, b) => a.concat(b), []);
+  return matches.map(removeNonChars).reduce((a, b) => a.concat(b), []);
 }
 
-function omit$8(object, keysToOmit) {
+function omit(object, keysToOmit) {
   const result = { __proto__: null };
   for (const key of Object.keys(object)) {
     if (keysToOmit.indexOf(key) === -1) {
@@ -25646,7 +26673,7 @@ function omit$8(object, keysToOmit) {
   return result;
 }
 
-function encodeReserved$8(str) {
+function encodeReserved(str) {
   return str.split(/(%[0-9A-Fa-f]{2})/g).map(function(part) {
     if (!/%[0-9A-Fa-f]/.test(part)) {
       part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
@@ -25654,67 +26681,67 @@ function encodeReserved$8(str) {
     return part;
   }).join("");
 }
-function encodeUnreserved$8(str) {
+function encodeUnreserved(str) {
   return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
     return "%" + c.charCodeAt(0).toString(16).toUpperCase();
   });
 }
-function encodeValue$8(operator, value, key) {
-  value = operator === "+" || operator === "#" ? encodeReserved$8(value) : encodeUnreserved$8(value);
+function encodeValue(operator, value, key) {
+  value = operator === "+" || operator === "#" ? encodeReserved(value) : encodeUnreserved(value);
   if (key) {
-    return encodeUnreserved$8(key) + "=" + value;
+    return encodeUnreserved(key) + "=" + value;
   } else {
     return value;
   }
 }
-function isDefined$8(value) {
+function isDefined(value) {
   return value !== void 0 && value !== null;
 }
-function isKeyOperator$8(operator) {
+function isKeyOperator(operator) {
   return operator === ";" || operator === "&" || operator === "?";
 }
-function getValues$8(context, operator, key, modifier) {
+function getValues(context, operator, key, modifier) {
   var value = context[key], result = [];
-  if (isDefined$8(value) && value !== "") {
+  if (isDefined(value) && value !== "") {
     if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
       value = value.toString();
       if (modifier && modifier !== "*") {
         value = value.substring(0, parseInt(modifier, 10));
       }
       result.push(
-        encodeValue$8(operator, value, isKeyOperator$8(operator) ? key : "")
+        encodeValue(operator, value, isKeyOperator(operator) ? key : "")
       );
     } else {
       if (modifier === "*") {
         if (Array.isArray(value)) {
-          value.filter(isDefined$8).forEach(function(value2) {
+          value.filter(isDefined).forEach(function(value2) {
             result.push(
-              encodeValue$8(operator, value2, isKeyOperator$8(operator) ? key : "")
+              encodeValue(operator, value2, isKeyOperator(operator) ? key : "")
             );
           });
         } else {
           Object.keys(value).forEach(function(k) {
-            if (isDefined$8(value[k])) {
-              result.push(encodeValue$8(operator, value[k], k));
+            if (isDefined(value[k])) {
+              result.push(encodeValue(operator, value[k], k));
             }
           });
         }
       } else {
         const tmp = [];
         if (Array.isArray(value)) {
-          value.filter(isDefined$8).forEach(function(value2) {
-            tmp.push(encodeValue$8(operator, value2));
+          value.filter(isDefined).forEach(function(value2) {
+            tmp.push(encodeValue(operator, value2));
           });
         } else {
           Object.keys(value).forEach(function(k) {
-            if (isDefined$8(value[k])) {
-              tmp.push(encodeUnreserved$8(k));
-              tmp.push(encodeValue$8(operator, value[k].toString()));
+            if (isDefined(value[k])) {
+              tmp.push(encodeUnreserved(k));
+              tmp.push(encodeValue(operator, value[k].toString()));
             }
           });
         }
-        if (isKeyOperator$8(operator)) {
-          result.push(encodeUnreserved$8(key) + "=" + tmp.join(","));
+        if (isKeyOperator(operator)) {
+          result.push(encodeUnreserved(key) + "=" + tmp.join(","));
         } else if (tmp.length !== 0) {
           result.push(tmp.join(","));
         }
@@ -25722,23 +26749,23 @@ function getValues$8(context, operator, key, modifier) {
     }
   } else {
     if (operator === ";") {
-      if (isDefined$8(value)) {
-        result.push(encodeUnreserved$8(key));
+      if (isDefined(value)) {
+        result.push(encodeUnreserved(key));
       }
     } else if (value === "" && (operator === "&" || operator === "?")) {
-      result.push(encodeUnreserved$8(key) + "=");
+      result.push(encodeUnreserved(key) + "=");
     } else if (value === "") {
       result.push("");
     }
   }
   return result;
 }
-function parseUrl$8(template) {
+function parseUrl(template) {
   return {
-    expand: expand$9.bind(null, template)
+    expand: expand$1.bind(null, template)
   };
 }
-function expand$9(template, context) {
+function expand$1(template, context) {
   var operators = ["+", "#", ".", "/", ";", "?", "&"];
   template = template.replace(
     /\{([^\{\}]+)\}|([^\{\}]+)/g,
@@ -25752,7 +26779,7 @@ function expand$9(template, context) {
         }
         expression.split(/,/g).forEach(function(variable) {
           var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-          values.push(getValues$8(context, operator, tmp[1], tmp[2] || tmp[3]));
+          values.push(getValues(context, operator, tmp[1], tmp[2] || tmp[3]));
         });
         if (operator && operator !== "+") {
           var separator = ",";
@@ -25766,7 +26793,7 @@ function expand$9(template, context) {
           return values.join(",");
         }
       } else {
-        return encodeReserved$8(literal);
+        return encodeReserved(literal);
       }
     }
   );
@@ -25777,12 +26804,12 @@ function expand$9(template, context) {
   }
 }
 
-function parse$c(options) {
+function parse$4(options) {
   let method = options.method.toUpperCase();
   let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
   let headers = Object.assign({}, options.headers);
   let body;
-  let parameters = omit$8(options, [
+  let parameters = omit(options, [
     "method",
     "baseUrl",
     "url",
@@ -25790,13 +26817,13 @@ function parse$c(options) {
     "request",
     "mediaType"
   ]);
-  const urlVariableNames = extractUrlVariableNames$8(url);
-  url = parseUrl$8(url).expand(parameters);
+  const urlVariableNames = extractUrlVariableNames(url);
+  url = parseUrl(url).expand(parameters);
   if (!/^http/.test(url)) {
     url = options.baseUrl + url;
   }
   const omittedParameters = Object.keys(options).filter((option) => urlVariableNames.includes(option)).concat("baseUrl");
-  const remainingParameters = omit$8(parameters, omittedParameters);
+  const remainingParameters = omit(parameters, omittedParameters);
   const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
   if (!isBinaryRequest) {
     if (options.mediaType.format) {
@@ -25818,7 +26845,7 @@ function parse$c(options) {
     }
   }
   if (["GET", "HEAD"].includes(method)) {
-    url = addQueryParameters$8(url, remainingParameters);
+    url = addQueryParameters(url, remainingParameters);
   } else {
     if ("data" in remainingParameters) {
       body = remainingParameters.data;
@@ -25841,26 +26868,26 @@ function parse$c(options) {
   );
 }
 
-function endpointWithDefaults$8(defaults, route, options) {
-  return parse$c(merge$8(defaults, route, options));
+function endpointWithDefaults(defaults, route, options) {
+  return parse$4(merge$1(defaults, route, options));
 }
 
-function withDefaults$l(oldDefaults, newDefaults) {
-  const DEFAULTS = merge$8(oldDefaults, newDefaults);
-  const endpoint = endpointWithDefaults$8.bind(null, DEFAULTS);
+function withDefaults$2(oldDefaults, newDefaults) {
+  const DEFAULTS = merge$1(oldDefaults, newDefaults);
+  const endpoint = endpointWithDefaults.bind(null, DEFAULTS);
   return Object.assign(endpoint, {
     DEFAULTS,
-    defaults: withDefaults$l.bind(null, DEFAULTS),
-    merge: merge$8.bind(null, DEFAULTS),
-    parse: parse$c
+    defaults: withDefaults$2.bind(null, DEFAULTS),
+    merge: merge$1.bind(null, DEFAULTS),
+    parse: parse$4
   });
 }
 
-const endpoint$8 = withDefaults$l(null, DEFAULTS$8);
+const endpoint = withDefaults$2(null, DEFAULTS);
 
-const VERSION$C = "8.4.0";
+const VERSION$4 = "8.4.0";
 
-function isPlainObject$g(value) {
+function isPlainObject(value) {
   if (typeof value !== "object" || value === null)
     return false;
   if (Object.prototype.toString.call(value) !== "[object Object]")
@@ -25966,7 +26993,7 @@ once_1.strict = strict;
 
 const logOnceCode = once_1((deprecation) => console.warn(deprecation));
 const logOnceHeaders = once_1((deprecation) => console.warn(deprecation));
-class RequestError$8 extends Error {
+class RequestError extends Error {
   constructor(message, statusCode, options) {
     super(message);
     if (Error.captureStackTrace) {
@@ -26016,14 +27043,14 @@ class RequestError$8 extends Error {
   }
 }
 
-function getBufferResponse$8(response) {
+function getBufferResponse(response) {
   return response.arrayBuffer();
 }
 
-function fetchWrapper$8(requestOptions) {
+function fetchWrapper(requestOptions) {
   const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
   const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  if (isPlainObject$g(requestOptions.body) || Array.isArray(requestOptions.body)) {
+  if (isPlainObject(requestOptions.body) || Array.isArray(requestOptions.body)) {
     requestOptions.body = JSON.stringify(requestOptions.body);
   }
   let headers = {};
@@ -26067,7 +27094,7 @@ function fetchWrapper$8(requestOptions) {
       if (status < 400) {
         return;
       }
-      throw new RequestError$8(response.statusText, status, {
+      throw new RequestError(response.statusText, status, {
         response: {
           url,
           status,
@@ -26078,19 +27105,19 @@ function fetchWrapper$8(requestOptions) {
       });
     }
     if (status === 304) {
-      throw new RequestError$8("Not modified", status, {
+      throw new RequestError("Not modified", status, {
         response: {
           url,
           status,
           headers,
-          data: await getResponseData$8(response)
+          data: await getResponseData(response)
         },
         request: requestOptions
       });
     }
     if (status >= 400) {
-      const data = await getResponseData$8(response);
-      const error = new RequestError$8(toErrorMessage$8(data), status, {
+      const data = await getResponseData(response);
+      const error = new RequestError(toErrorMessage(data), status, {
         response: {
           url,
           status,
@@ -26101,7 +27128,7 @@ function fetchWrapper$8(requestOptions) {
       });
       throw error;
     }
-    return parseSuccessResponseBody ? await getResponseData$8(response) : response.body;
+    return parseSuccessResponseBody ? await getResponseData(response) : response.body;
   }).then((data) => {
     return {
       status,
@@ -26110,7 +27137,7 @@ function fetchWrapper$8(requestOptions) {
       data
     };
   }).catch((error) => {
-    if (error instanceof RequestError$8)
+    if (error instanceof RequestError)
       throw error;
     else if (error.name === "AbortError")
       throw error;
@@ -26122,12 +27149,12 @@ function fetchWrapper$8(requestOptions) {
         message = error.cause;
       }
     }
-    throw new RequestError$8(message, 500, {
+    throw new RequestError(message, 500, {
       request: requestOptions
     });
   });
 }
-async function getResponseData$8(response) {
+async function getResponseData(response) {
   const contentType = response.headers.get("content-type");
   if (/application\/json/.test(contentType)) {
     return response.json().catch(() => response.text()).catch(() => "");
@@ -26135,9 +27162,9 @@ async function getResponseData$8(response) {
   if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
     return response.text();
   }
-  return getBufferResponse$8(response);
+  return getBufferResponse(response);
 }
-function toErrorMessage$8(data) {
+function toErrorMessage(data) {
   if (typeof data === "string")
     return data;
   let suffix;
@@ -26155,49 +27182,49 @@ function toErrorMessage$8(data) {
   return `Unknown error: ${JSON.stringify(data)}`;
 }
 
-function withDefaults$k(oldEndpoint, newDefaults) {
+function withDefaults$1(oldEndpoint, newDefaults) {
   const endpoint = oldEndpoint.defaults(newDefaults);
   const newApi = function(route, parameters) {
     const endpointOptions = endpoint.merge(route, parameters);
     if (!endpointOptions.request || !endpointOptions.request.hook) {
-      return fetchWrapper$8(endpoint.parse(endpointOptions));
+      return fetchWrapper(endpoint.parse(endpointOptions));
     }
     const request = (route2, parameters2) => {
-      return fetchWrapper$8(
+      return fetchWrapper(
         endpoint.parse(endpoint.merge(route2, parameters2))
       );
     };
     Object.assign(request, {
       endpoint,
-      defaults: withDefaults$k.bind(null, endpoint)
+      defaults: withDefaults$1.bind(null, endpoint)
     });
     return endpointOptions.request.hook(request, endpointOptions);
   };
   return Object.assign(newApi, {
     endpoint,
-    defaults: withDefaults$k.bind(null, endpoint)
+    defaults: withDefaults$1.bind(null, endpoint)
   });
 }
 
-const request$8 = withDefaults$k(endpoint$8, {
+const request = withDefaults$1(endpoint, {
   headers: {
-    "user-agent": `octokit-request.js/${VERSION$C} ${getUserAgent$8()}`
+    "user-agent": `octokit-request.js/${VERSION$4} ${getUserAgent()}`
   }
 });
 
 // pkg/dist-src/index.js
 
 // pkg/dist-src/version.js
-var VERSION$B = "7.1.0";
+var VERSION$3 = "7.1.0";
 
 // pkg/dist-src/error.js
-function _buildMessageForResponseErrors$3(data) {
+function _buildMessageForResponseErrors(data) {
   return `Request failed due to following response errors:
 ` + data.errors.map((e) => ` - ${e.message}`).join("\n");
 }
-var GraphqlResponseError$3 = class extends Error {
+var GraphqlResponseError = class extends Error {
   constructor(request2, headers, response) {
-    super(_buildMessageForResponseErrors$3(response));
+    super(_buildMessageForResponseErrors(response));
     this.request = request2;
     this.headers = headers;
     this.response = response;
@@ -26211,7 +27238,7 @@ var GraphqlResponseError$3 = class extends Error {
 };
 
 // pkg/dist-src/graphql.js
-var NON_VARIABLE_OPTIONS$3 = [
+var NON_VARIABLE_OPTIONS = [
   "method",
   "baseUrl",
   "url",
@@ -26220,9 +27247,9 @@ var NON_VARIABLE_OPTIONS$3 = [
   "query",
   "mediaType"
 ];
-var FORBIDDEN_VARIABLE_OPTIONS$3 = ["query", "method", "url"];
-var GHES_V3_SUFFIX_REGEX$3 = /\/api\/v3\/?$/;
-function graphql$3(request2, query, options) {
+var FORBIDDEN_VARIABLE_OPTIONS = ["query", "method", "url"];
+var GHES_V3_SUFFIX_REGEX = /\/api\/v3\/?$/;
+function graphql(request2, query, options) {
   if (options) {
     if (typeof query === "string" && "query" in options) {
       return Promise.reject(
@@ -26230,7 +27257,7 @@ function graphql$3(request2, query, options) {
       );
     }
     for (const key in options) {
-      if (!FORBIDDEN_VARIABLE_OPTIONS$3.includes(key))
+      if (!FORBIDDEN_VARIABLE_OPTIONS.includes(key))
         continue;
       return Promise.reject(
         new Error(
@@ -26243,7 +27270,7 @@ function graphql$3(request2, query, options) {
   const requestOptions = Object.keys(
     parsedOptions
   ).reduce((result, key) => {
-    if (NON_VARIABLE_OPTIONS$3.includes(key)) {
+    if (NON_VARIABLE_OPTIONS.includes(key)) {
       result[key] = parsedOptions[key];
       return result;
     }
@@ -26254,8 +27281,8 @@ function graphql$3(request2, query, options) {
     return result;
   }, {});
   const baseUrl = parsedOptions.baseUrl || request2.endpoint.DEFAULTS.baseUrl;
-  if (GHES_V3_SUFFIX_REGEX$3.test(baseUrl)) {
-    requestOptions.url = baseUrl.replace(GHES_V3_SUFFIX_REGEX$3, "/api/graphql");
+  if (GHES_V3_SUFFIX_REGEX.test(baseUrl)) {
+    requestOptions.url = baseUrl.replace(GHES_V3_SUFFIX_REGEX, "/api/graphql");
   }
   return request2(requestOptions).then((response) => {
     if (response.data.errors) {
@@ -26263,7 +27290,7 @@ function graphql$3(request2, query, options) {
       for (const key of Object.keys(response.headers)) {
         headers[key] = response.headers[key];
       }
-      throw new GraphqlResponseError$3(
+      throw new GraphqlResponseError(
         requestOptions,
         headers,
         response.data
@@ -26274,39 +27301,39 @@ function graphql$3(request2, query, options) {
 }
 
 // pkg/dist-src/with-defaults.js
-function withDefaults$j(request2, newDefaults) {
+function withDefaults(request2, newDefaults) {
   const newRequest = request2.defaults(newDefaults);
   const newApi = (query, options) => {
-    return graphql$3(newRequest, query, options);
+    return graphql(newRequest, query, options);
   };
   return Object.assign(newApi, {
-    defaults: withDefaults$j.bind(null, newRequest),
+    defaults: withDefaults.bind(null, newRequest),
     endpoint: newRequest.endpoint
   });
 }
 
 // pkg/dist-src/index.js
-withDefaults$j(request$8, {
+withDefaults(request, {
   headers: {
-    "user-agent": `octokit-graphql.js/${VERSION$B} ${getUserAgent$8()}`
+    "user-agent": `octokit-graphql.js/${VERSION$3} ${getUserAgent()}`
   },
   method: "POST",
   url: "/graphql"
 });
-function withCustomRequest$3(customRequest) {
-  return withDefaults$j(customRequest, {
+function withCustomRequest(customRequest) {
+  return withDefaults(customRequest, {
     method: "POST",
     url: "/graphql"
   });
 }
 
-const REGEX_IS_INSTALLATION_LEGACY$3 = /^v1\./;
-const REGEX_IS_INSTALLATION$3 = /^ghs_/;
-const REGEX_IS_USER_TO_SERVER$3 = /^ghu_/;
-async function auth$8(token) {
+const REGEX_IS_INSTALLATION_LEGACY = /^v1\./;
+const REGEX_IS_INSTALLATION = /^ghs_/;
+const REGEX_IS_USER_TO_SERVER = /^ghu_/;
+async function auth(token) {
   const isApp = token.split(/\./).length === 3;
-  const isInstallation = REGEX_IS_INSTALLATION_LEGACY$3.test(token) || REGEX_IS_INSTALLATION$3.test(token);
-  const isUserToServer = REGEX_IS_USER_TO_SERVER$3.test(token);
+  const isInstallation = REGEX_IS_INSTALLATION_LEGACY.test(token) || REGEX_IS_INSTALLATION.test(token);
+  const isUserToServer = REGEX_IS_USER_TO_SERVER.test(token);
   const tokenType = isApp ? "app" : isInstallation ? "installation" : isUserToServer ? "user-to-server" : "oauth";
   return {
     type: "token",
@@ -26315,23 +27342,23 @@ async function auth$8(token) {
   };
 }
 
-function withAuthorizationPrefix$3(token) {
+function withAuthorizationPrefix(token) {
   if (token.split(/\./).length === 3) {
     return `bearer ${token}`;
   }
   return `token ${token}`;
 }
 
-async function hook$8(token, request, route, parameters) {
+async function hook(token, request, route, parameters) {
   const endpoint = request.endpoint.merge(
     route,
     parameters
   );
-  endpoint.headers.authorization = withAuthorizationPrefix$3(token);
+  endpoint.headers.authorization = withAuthorizationPrefix(token);
   return request(endpoint);
 }
 
-const createTokenAuth$3 = function createTokenAuth2(token) {
+const createTokenAuth = function createTokenAuth2(token) {
   if (!token) {
     throw new Error("[@octokit/auth-token] No token passed to createTokenAuth");
   }
@@ -26341,25 +27368,25 @@ const createTokenAuth$3 = function createTokenAuth2(token) {
     );
   }
   token = token.replace(/^(token|bearer) +/i, "");
-  return Object.assign(auth$8.bind(null, token), {
-    hook: hook$8.bind(null, token)
+  return Object.assign(auth.bind(null, token), {
+    hook: hook.bind(null, token)
   });
 };
 
 // pkg/dist-src/index.js
 
 // pkg/dist-src/version.js
-var VERSION$A = "5.2.0";
+var VERSION$2 = "5.2.0";
 
 // pkg/dist-src/index.js
-var noop$5 = () => {
+var noop$1 = () => {
 };
-var consoleWarn$3 = console.warn.bind(console);
-var consoleError$3 = console.error.bind(console);
-var userAgentTrail$3 = `octokit-core.js/${VERSION$A} ${getUserAgent$8()}`;
-var Octokit$4 = class {
+var consoleWarn = console.warn.bind(console);
+var consoleError = console.error.bind(console);
+var userAgentTrail = `octokit-core.js/${VERSION$2} ${getUserAgent()}`;
+var Octokit = class {
   static {
-    this.VERSION = VERSION$A;
+    this.VERSION = VERSION$2;
   }
   static defaults(defaults) {
     const OctokitWithDefaults = class extends this {
@@ -26404,9 +27431,9 @@ var Octokit$4 = class {
     return NewOctokit;
   }
   constructor(options = {}) {
-    const hook = new Collection$4();
+    const hook = new Collection$1();
     const requestDefaults = {
-      baseUrl: request$8.endpoint.DEFAULTS.baseUrl,
+      baseUrl: request.endpoint.DEFAULTS.baseUrl,
       headers: {},
       request: Object.assign({}, options.request, {
         // @ts-ignore internal usage only, no need to type
@@ -26417,7 +27444,7 @@ var Octokit$4 = class {
         format: ""
       }
     };
-    requestDefaults.headers["user-agent"] = options.userAgent ? `${options.userAgent} ${userAgentTrail$3}` : userAgentTrail$3;
+    requestDefaults.headers["user-agent"] = options.userAgent ? `${options.userAgent} ${userAgentTrail}` : userAgentTrail;
     if (options.baseUrl) {
       requestDefaults.baseUrl = options.baseUrl;
     }
@@ -26427,14 +27454,14 @@ var Octokit$4 = class {
     if (options.timeZone) {
       requestDefaults.headers["time-zone"] = options.timeZone;
     }
-    this.request = request$8.defaults(requestDefaults);
-    this.graphql = withCustomRequest$3(this.request).defaults(requestDefaults);
+    this.request = request.defaults(requestDefaults);
+    this.graphql = withCustomRequest(this.request).defaults(requestDefaults);
     this.log = Object.assign(
       {
-        debug: noop$5,
-        info: noop$5,
-        warn: consoleWarn$3,
-        error: consoleError$3
+        debug: noop$1,
+        info: noop$1,
+        warn: consoleWarn,
+        error: consoleError
       },
       options.log
     );
@@ -26445,7 +27472,7 @@ var Octokit$4 = class {
           type: "unauthenticated"
         });
       } else {
-        const auth = createTokenAuth$3(options.auth);
+        const auth = createTokenAuth(options.auth);
         hook.wrap("request", auth.hook);
         this.auth = auth;
       }
@@ -26479,12 +27506,12 @@ var Octokit$4 = class {
 
 var distWeb$1 = {
 	__proto__: null,
-	Octokit: Octokit$4
+	Octokit: Octokit
 };
 
-const VERSION$z = "10.4.1";
+const VERSION$1 = "10.4.1";
 
-const Endpoints$1 = {
+const Endpoints = {
   actions: {
     addCustomLabelsToSelfHostedRunnerForOrg: [
       "POST /orgs/{org}/actions/runners/{runner_id}/labels"
@@ -28472,10 +29499,10 @@ const Endpoints$1 = {
     updateAuthenticated: ["PATCH /user"]
   }
 };
-var endpoints_default$1 = Endpoints$1;
+var endpoints_default = Endpoints;
 
-const endpointMethodsMap$1 = /* @__PURE__ */ new Map();
-for (const [scope, endpoints] of Object.entries(endpoints_default$1)) {
+const endpointMethodsMap = /* @__PURE__ */ new Map();
+for (const [scope, endpoints] of Object.entries(endpoints_default)) {
   for (const [methodName, endpoint] of Object.entries(endpoints)) {
     const [route, defaults, decorations] = endpoint;
     const [method, url] = route.split(/ /);
@@ -28486,10 +29513,10 @@ for (const [scope, endpoints] of Object.entries(endpoints_default$1)) {
       },
       defaults
     );
-    if (!endpointMethodsMap$1.has(scope)) {
-      endpointMethodsMap$1.set(scope, /* @__PURE__ */ new Map());
+    if (!endpointMethodsMap.has(scope)) {
+      endpointMethodsMap.set(scope, /* @__PURE__ */ new Map());
     }
-    endpointMethodsMap$1.get(scope).set(methodName, {
+    endpointMethodsMap.get(scope).set(methodName, {
       scope,
       methodName,
       endpointDefaults,
@@ -28497,9 +29524,9 @@ for (const [scope, endpoints] of Object.entries(endpoints_default$1)) {
     });
   }
 }
-const handler$1 = {
+const handler = {
   has({ scope }, methodName) {
-    return endpointMethodsMap$1.get(scope).has(methodName);
+    return endpointMethodsMap.get(scope).has(methodName);
   },
   getOwnPropertyDescriptor(target, methodName) {
     return {
@@ -28519,7 +29546,7 @@ const handler$1 = {
     return true;
   },
   ownKeys({ scope }) {
-    return [...endpointMethodsMap$1.get(scope).keys()];
+    return [...endpointMethodsMap.get(scope).keys()];
   },
   set(target, methodName, value) {
     return target.cache[methodName] = value;
@@ -28528,13 +29555,13 @@ const handler$1 = {
     if (cache[methodName]) {
       return cache[methodName];
     }
-    const method = endpointMethodsMap$1.get(scope).get(methodName);
+    const method = endpointMethodsMap.get(scope).get(methodName);
     if (!method) {
       return void 0;
     }
     const { endpointDefaults, decorations } = method;
     if (decorations) {
-      cache[methodName] = decorate$1(
+      cache[methodName] = decorate(
         octokit,
         scope,
         methodName,
@@ -28547,14 +29574,14 @@ const handler$1 = {
     return cache[methodName];
   }
 };
-function endpointsToMethods$1(octokit) {
+function endpointsToMethods(octokit) {
   const newMethods = {};
-  for (const scope of endpointMethodsMap$1.keys()) {
-    newMethods[scope] = new Proxy({ octokit, scope, cache: {} }, handler$1);
+  for (const scope of endpointMethodsMap.keys()) {
+    newMethods[scope] = new Proxy({ octokit, scope, cache: {} }, handler);
   }
   return newMethods;
 }
-function decorate$1(octokit, scope, methodName, defaults, decorations) {
+function decorate(octokit, scope, methodName, defaults, decorations) {
   const requestWithDefaults = octokit.request.defaults(defaults);
   function withDecorations(...args) {
     let options = requestWithDefaults.endpoint.merge(...args);
@@ -28596,33 +29623,33 @@ function decorate$1(octokit, scope, methodName, defaults, decorations) {
   return Object.assign(withDecorations, requestWithDefaults);
 }
 
-function restEndpointMethods$1(octokit) {
-  const api = endpointsToMethods$1(octokit);
+function restEndpointMethods(octokit) {
+  const api = endpointsToMethods(octokit);
   return {
     rest: api
   };
 }
-restEndpointMethods$1.VERSION = VERSION$z;
+restEndpointMethods.VERSION = VERSION$1;
 function legacyRestEndpointMethods(octokit) {
-  const api = endpointsToMethods$1(octokit);
+  const api = endpointsToMethods(octokit);
   return {
     ...api,
     rest: api
   };
 }
-legacyRestEndpointMethods.VERSION = VERSION$z;
+legacyRestEndpointMethods.VERSION = VERSION$1;
 
 var distSrc = {
 	__proto__: null,
 	legacyRestEndpointMethods: legacyRestEndpointMethods,
-	restEndpointMethods: restEndpointMethods$1
+	restEndpointMethods: restEndpointMethods
 };
 
 // pkg/dist-src/version.js
-var VERSION$y = "9.2.1";
+var VERSION = "9.2.1";
 
 // pkg/dist-src/normalize-paginated-list-response.js
-function normalizePaginatedListResponse$2(response) {
+function normalizePaginatedListResponse(response) {
   if (!response.data) {
     return {
       ...response,
@@ -28652,7 +29679,7 @@ function normalizePaginatedListResponse$2(response) {
 }
 
 // pkg/dist-src/iterator.js
-function iterator$2(octokit, route, parameters) {
+function iterator(octokit, route, parameters) {
   const options = typeof route === "function" ? route.endpoint(parameters) : octokit.request.endpoint(route, parameters);
   const requestMethod = typeof route === "function" ? route : octokit.request;
   const method = options.method;
@@ -28665,7 +29692,7 @@ function iterator$2(octokit, route, parameters) {
           return { done: true };
         try {
           const response = await requestMethod({ method, url, headers });
-          const normalizedResponse = normalizePaginatedListResponse$2(response);
+          const normalizedResponse = normalizePaginatedListResponse(response);
           url = ((normalizedResponse.headers.link || "").match(
             /<([^>]+)>;\s*rel="next"/
           ) || [])[1];
@@ -28688,19 +29715,19 @@ function iterator$2(octokit, route, parameters) {
 }
 
 // pkg/dist-src/paginate.js
-function paginate$2(octokit, route, parameters, mapFn) {
+function paginate(octokit, route, parameters, mapFn) {
   if (typeof parameters === "function") {
     mapFn = parameters;
     parameters = void 0;
   }
-  return gather$2(
+  return gather(
     octokit,
     [],
-    iterator$2(octokit, route, parameters)[Symbol.asyncIterator](),
+    iterator(octokit, route, parameters)[Symbol.asyncIterator](),
     mapFn
   );
 }
-function gather$2(octokit, results, iterator2, mapFn) {
+function gather(octokit, results, iterator2, mapFn) {
   return iterator2.next().then((result) => {
     if (result.done) {
       return results;
@@ -28715,13 +29742,13 @@ function gather$2(octokit, results, iterator2, mapFn) {
     if (earlyExit) {
       return results;
     }
-    return gather$2(octokit, results, iterator2, mapFn);
+    return gather(octokit, results, iterator2, mapFn);
   });
 }
 
 // pkg/dist-src/compose-paginate.js
-var composePaginateRest$1 = Object.assign(paginate$2, {
-  iterator: iterator$2
+var composePaginateRest = Object.assign(paginate, {
+  iterator
 });
 
 // pkg/dist-src/generated/paginating-endpoints.js
@@ -28972,20 +29999,20 @@ function isPaginatingEndpoint(arg) {
 }
 
 // pkg/dist-src/index.js
-function paginateRest$1(octokit) {
+function paginateRest(octokit) {
   return {
-    paginate: Object.assign(paginate$2.bind(null, octokit), {
-      iterator: iterator$2.bind(null, octokit)
+    paginate: Object.assign(paginate.bind(null, octokit), {
+      iterator: iterator.bind(null, octokit)
     })
   };
 }
-paginateRest$1.VERSION = VERSION$y;
+paginateRest.VERSION = VERSION;
 
 var distWeb = {
 	__proto__: null,
-	composePaginateRest: composePaginateRest$1,
+	composePaginateRest: composePaginateRest,
 	isPaginatingEndpoint: isPaginatingEndpoint,
-	paginateRest: paginateRest$1,
+	paginateRest: paginateRest,
 	paginatingEndpoints: paginatingEndpoints
 };
 
@@ -29094,14571 +30121,6 @@ exports.getOctokit = getOctokit;
 });
 
 var github$1 = /*@__PURE__*/getDefaultExportFromCjs(github);
-
-function getUserAgent$7() {
-  if (typeof navigator === "object" && "userAgent" in navigator) {
-    return navigator.userAgent;
-  }
-
-  if (typeof process === "object" && process.version !== undefined) {
-    return `Node.js/${process.version.substr(1)} (${process.platform}; ${
-      process.arch
-    })`;
-  }
-
-  return "<environment undetectable>";
-}
-
-// @ts-check
-
-function register$2(state, name, method, options) {
-  if (typeof method !== "function") {
-    throw new Error("method for before hook must be a function");
-  }
-
-  if (!options) {
-    options = {};
-  }
-
-  if (Array.isArray(name)) {
-    return name.reverse().reduce((callback, name) => {
-      return register$2.bind(null, state, name, callback, options);
-    }, method)();
-  }
-
-  return Promise.resolve().then(() => {
-    if (!state.registry[name]) {
-      return method(options);
-    }
-
-    return state.registry[name].reduce((method, registered) => {
-      return registered.hook.bind(null, method, options);
-    }, method)();
-  });
-}
-
-// @ts-check
-
-function addHook$2(state, kind, name, hook) {
-  const orig = hook;
-  if (!state.registry[name]) {
-    state.registry[name] = [];
-  }
-
-  if (kind === "before") {
-    hook = (method, options) => {
-      return Promise.resolve()
-        .then(orig.bind(null, options))
-        .then(method.bind(null, options));
-    };
-  }
-
-  if (kind === "after") {
-    hook = (method, options) => {
-      let result;
-      return Promise.resolve()
-        .then(method.bind(null, options))
-        .then((result_) => {
-          result = result_;
-          return orig(result, options);
-        })
-        .then(() => {
-          return result;
-        });
-    };
-  }
-
-  if (kind === "error") {
-    hook = (method, options) => {
-      return Promise.resolve()
-        .then(method.bind(null, options))
-        .catch((error) => {
-          return orig(error, options);
-        });
-    };
-  }
-
-  state.registry[name].push({
-    hook: hook,
-    orig: orig,
-  });
-}
-
-// @ts-check
-
-function removeHook$2(state, name, method) {
-  if (!state.registry[name]) {
-    return;
-  }
-
-  const index = state.registry[name]
-    .map((registered) => {
-      return registered.orig;
-    })
-    .indexOf(method);
-
-  if (index === -1) {
-    return;
-  }
-
-  state.registry[name].splice(index, 1);
-}
-
-// @ts-check
-
-// bind with array of arguments: https://stackoverflow.com/a/21792913
-const bind$2 = Function.bind;
-const bindable$2 = bind$2.bind(bind$2);
-
-function bindApi$2(hook, state, name) {
-  const removeHookRef = bindable$2(removeHook$2, null).apply(
-    null,
-    name ? [state, name] : [state]
-  );
-  hook.api = { remove: removeHookRef };
-  hook.remove = removeHookRef;
-  ["before", "error", "after", "wrap"].forEach((kind) => {
-    const args = name ? [state, kind, name] : [state, kind];
-    hook[kind] = hook.api[kind] = bindable$2(addHook$2, null).apply(null, args);
-  });
-}
-
-function Singular$2() {
-  const singularHookName = Symbol("Singular");
-  const singularHookState = {
-    registry: {},
-  };
-  const singularHook = register$2.bind(null, singularHookState, singularHookName);
-  bindApi$2(singularHook, singularHookState, singularHookName);
-  return singularHook;
-}
-
-function Collection$3() {
-  const state = {
-    registry: {},
-  };
-
-  const hook = register$2.bind(null, state);
-  bindApi$2(hook, state);
-
-  return hook;
-}
-
-var Hook$2 = { Singular: Singular$2, Collection: Collection$3 };
-
-// pkg/dist-src/defaults.js
-
-// pkg/dist-src/version.js
-var VERSION$x = "0.0.0-development";
-
-// pkg/dist-src/defaults.js
-var userAgent$7 = `octokit-endpoint.js/${VERSION$x} ${getUserAgent$7()}`;
-var DEFAULTS$7 = {
-  method: "GET",
-  baseUrl: "https://api.github.com",
-  headers: {
-    accept: "application/vnd.github.v3+json",
-    "user-agent": userAgent$7
-  },
-  mediaType: {
-    format: ""
-  }
-};
-
-// pkg/dist-src/util/lowercase-keys.js
-function lowercaseKeys$7(object) {
-  if (!object) {
-    return {};
-  }
-  return Object.keys(object).reduce((newObj, key) => {
-    newObj[key.toLowerCase()] = object[key];
-    return newObj;
-  }, {});
-}
-
-// pkg/dist-src/util/is-plain-object.js
-function isPlainObject$f(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/util/merge-deep.js
-function mergeDeep$7(defaults, options) {
-  const result = Object.assign({}, defaults);
-  Object.keys(options).forEach((key) => {
-    if (isPlainObject$f(options[key])) {
-      if (!(key in defaults))
-        Object.assign(result, { [key]: options[key] });
-      else
-        result[key] = mergeDeep$7(defaults[key], options[key]);
-    } else {
-      Object.assign(result, { [key]: options[key] });
-    }
-  });
-  return result;
-}
-
-// pkg/dist-src/util/remove-undefined-properties.js
-function removeUndefinedProperties$7(obj) {
-  for (const key in obj) {
-    if (obj[key] === void 0) {
-      delete obj[key];
-    }
-  }
-  return obj;
-}
-
-// pkg/dist-src/merge.js
-function merge$7(defaults, route, options) {
-  if (typeof route === "string") {
-    let [method, url] = route.split(" ");
-    options = Object.assign(url ? { method, url } : { url: method }, options);
-  } else {
-    options = Object.assign({}, route);
-  }
-  options.headers = lowercaseKeys$7(options.headers);
-  removeUndefinedProperties$7(options);
-  removeUndefinedProperties$7(options.headers);
-  const mergedOptions = mergeDeep$7(defaults || {}, options);
-  if (options.url === "/graphql") {
-    if (defaults && defaults.mediaType.previews?.length) {
-      mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(
-        (preview) => !mergedOptions.mediaType.previews.includes(preview)
-      ).concat(mergedOptions.mediaType.previews);
-    }
-    mergedOptions.mediaType.previews = (mergedOptions.mediaType.previews || []).map((preview) => preview.replace(/-preview/, ""));
-  }
-  return mergedOptions;
-}
-
-// pkg/dist-src/util/add-query-parameters.js
-function addQueryParameters$7(url, parameters) {
-  const separator = /\?/.test(url) ? "&" : "?";
-  const names = Object.keys(parameters);
-  if (names.length === 0) {
-    return url;
-  }
-  return url + separator + names.map((name) => {
-    if (name === "q") {
-      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
-    }
-    return `${name}=${encodeURIComponent(parameters[name])}`;
-  }).join("&");
-}
-
-// pkg/dist-src/util/extract-url-variable-names.js
-var urlVariableRegex$7 = /\{[^}]+\}/g;
-function removeNonChars$7(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
-}
-function extractUrlVariableNames$7(url) {
-  const matches = url.match(urlVariableRegex$7);
-  if (!matches) {
-    return [];
-  }
-  return matches.map(removeNonChars$7).reduce((a, b) => a.concat(b), []);
-}
-
-// pkg/dist-src/util/omit.js
-function omit$7(object, keysToOmit) {
-  const result = { __proto__: null };
-  for (const key of Object.keys(object)) {
-    if (keysToOmit.indexOf(key) === -1) {
-      result[key] = object[key];
-    }
-  }
-  return result;
-}
-
-// pkg/dist-src/util/url-template.js
-function encodeReserved$7(str) {
-  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function(part) {
-    if (!/%[0-9A-Fa-f]/.test(part)) {
-      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
-    }
-    return part;
-  }).join("");
-}
-function encodeUnreserved$7(str) {
-  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
-    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
-  });
-}
-function encodeValue$7(operator, value, key) {
-  value = operator === "+" || operator === "#" ? encodeReserved$7(value) : encodeUnreserved$7(value);
-  if (key) {
-    return encodeUnreserved$7(key) + "=" + value;
-  } else {
-    return value;
-  }
-}
-function isDefined$7(value) {
-  return value !== void 0 && value !== null;
-}
-function isKeyOperator$7(operator) {
-  return operator === ";" || operator === "&" || operator === "?";
-}
-function getValues$7(context, operator, key, modifier) {
-  var value = context[key], result = [];
-  if (isDefined$7(value) && value !== "") {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      value = value.toString();
-      if (modifier && modifier !== "*") {
-        value = value.substring(0, parseInt(modifier, 10));
-      }
-      result.push(
-        encodeValue$7(operator, value, isKeyOperator$7(operator) ? key : "")
-      );
-    } else {
-      if (modifier === "*") {
-        if (Array.isArray(value)) {
-          value.filter(isDefined$7).forEach(function(value2) {
-            result.push(
-              encodeValue$7(operator, value2, isKeyOperator$7(operator) ? key : "")
-            );
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$7(value[k])) {
-              result.push(encodeValue$7(operator, value[k], k));
-            }
-          });
-        }
-      } else {
-        const tmp = [];
-        if (Array.isArray(value)) {
-          value.filter(isDefined$7).forEach(function(value2) {
-            tmp.push(encodeValue$7(operator, value2));
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$7(value[k])) {
-              tmp.push(encodeUnreserved$7(k));
-              tmp.push(encodeValue$7(operator, value[k].toString()));
-            }
-          });
-        }
-        if (isKeyOperator$7(operator)) {
-          result.push(encodeUnreserved$7(key) + "=" + tmp.join(","));
-        } else if (tmp.length !== 0) {
-          result.push(tmp.join(","));
-        }
-      }
-    }
-  } else {
-    if (operator === ";") {
-      if (isDefined$7(value)) {
-        result.push(encodeUnreserved$7(key));
-      }
-    } else if (value === "" && (operator === "&" || operator === "?")) {
-      result.push(encodeUnreserved$7(key) + "=");
-    } else if (value === "") {
-      result.push("");
-    }
-  }
-  return result;
-}
-function parseUrl$7(template) {
-  return {
-    expand: expand$8.bind(null, template)
-  };
-}
-function expand$8(template, context) {
-  var operators = ["+", "#", ".", "/", ";", "?", "&"];
-  template = template.replace(
-    /\{([^\{\}]+)\}|([^\{\}]+)/g,
-    function(_, expression, literal) {
-      if (expression) {
-        let operator = "";
-        const values = [];
-        if (operators.indexOf(expression.charAt(0)) !== -1) {
-          operator = expression.charAt(0);
-          expression = expression.substr(1);
-        }
-        expression.split(/,/g).forEach(function(variable) {
-          var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-          values.push(getValues$7(context, operator, tmp[1], tmp[2] || tmp[3]));
-        });
-        if (operator && operator !== "+") {
-          var separator = ",";
-          if (operator === "?") {
-            separator = "&";
-          } else if (operator !== "#") {
-            separator = operator;
-          }
-          return (values.length !== 0 ? operator : "") + values.join(separator);
-        } else {
-          return values.join(",");
-        }
-      } else {
-        return encodeReserved$7(literal);
-      }
-    }
-  );
-  if (template === "/") {
-    return template;
-  } else {
-    return template.replace(/\/$/, "");
-  }
-}
-
-// pkg/dist-src/parse.js
-function parse$b(options) {
-  let method = options.method.toUpperCase();
-  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
-  let headers = Object.assign({}, options.headers);
-  let body;
-  let parameters = omit$7(options, [
-    "method",
-    "baseUrl",
-    "url",
-    "headers",
-    "request",
-    "mediaType"
-  ]);
-  const urlVariableNames = extractUrlVariableNames$7(url);
-  url = parseUrl$7(url).expand(parameters);
-  if (!/^http/.test(url)) {
-    url = options.baseUrl + url;
-  }
-  const omittedParameters = Object.keys(options).filter((option) => urlVariableNames.includes(option)).concat("baseUrl");
-  const remainingParameters = omit$7(parameters, omittedParameters);
-  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
-  if (!isBinaryRequest) {
-    if (options.mediaType.format) {
-      headers.accept = headers.accept.split(/,/).map(
-        (format) => format.replace(
-          /application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/,
-          `application/vnd$1$2.${options.mediaType.format}`
-        )
-      ).join(",");
-    }
-    if (url.endsWith("/graphql")) {
-      if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
-        headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
-          const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
-          return `application/vnd.github.${preview}-preview${format}`;
-        }).join(",");
-      }
-    }
-  }
-  if (["GET", "HEAD"].includes(method)) {
-    url = addQueryParameters$7(url, remainingParameters);
-  } else {
-    if ("data" in remainingParameters) {
-      body = remainingParameters.data;
-    } else {
-      if (Object.keys(remainingParameters).length) {
-        body = remainingParameters;
-      }
-    }
-  }
-  if (!headers["content-type"] && typeof body !== "undefined") {
-    headers["content-type"] = "application/json; charset=utf-8";
-  }
-  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
-    body = "";
-  }
-  return Object.assign(
-    { method, url, headers },
-    typeof body !== "undefined" ? { body } : null,
-    options.request ? { request: options.request } : null
-  );
-}
-
-// pkg/dist-src/endpoint-with-defaults.js
-function endpointWithDefaults$7(defaults, route, options) {
-  return parse$b(merge$7(defaults, route, options));
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$i(oldDefaults, newDefaults) {
-  const DEFAULTS2 = merge$7(oldDefaults, newDefaults);
-  const endpoint2 = endpointWithDefaults$7.bind(null, DEFAULTS2);
-  return Object.assign(endpoint2, {
-    DEFAULTS: DEFAULTS2,
-    defaults: withDefaults$i.bind(null, DEFAULTS2),
-    merge: merge$7.bind(null, DEFAULTS2),
-    parse: parse$b
-  });
-}
-
-// pkg/dist-src/index.js
-var endpoint$7 = withDefaults$i(null, DEFAULTS$7);
-
-class RequestError$7 extends Error {
-  name;
-  /**
-   * http status code
-   */
-  status;
-  /**
-   * Request options that lead to the error.
-   */
-  request;
-  /**
-   * Response object if a response was received
-   */
-  response;
-  constructor(message, statusCode, options) {
-    super(message);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-    this.name = "HttpError";
-    this.status = statusCode;
-    if ("response" in options) {
-      this.response = options.response;
-    }
-    const requestCopy = Object.assign({}, options.request);
-    if (options.request.headers.authorization) {
-      requestCopy.headers = Object.assign({}, options.request.headers, {
-        authorization: options.request.headers.authorization.replace(
-          / .*$/,
-          " [REDACTED]"
-        )
-      });
-    }
-    requestCopy.url = requestCopy.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy;
-  }
-}
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$w = "0.0.0-development";
-
-// pkg/dist-src/is-plain-object.js
-function isPlainObject$e(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/get-buffer-response.js
-function getBufferResponse$7(response) {
-  return response.arrayBuffer();
-}
-
-// pkg/dist-src/fetch-wrapper.js
-function fetchWrapper$7(requestOptions) {
-  const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
-  const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  if (isPlainObject$e(requestOptions.body) || Array.isArray(requestOptions.body)) {
-    requestOptions.body = JSON.stringify(requestOptions.body);
-  }
-  let headers = {};
-  let status;
-  let url;
-  let { fetch } = globalThis;
-  if (requestOptions.request?.fetch) {
-    fetch = requestOptions.request.fetch;
-  }
-  if (!fetch) {
-    throw new Error(
-      "fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). Learn more at https://github.com/octokit/octokit.js/#fetch-missing"
-    );
-  }
-  return fetch(requestOptions.url, {
-    method: requestOptions.method,
-    body: requestOptions.body,
-    redirect: requestOptions.request?.redirect,
-    // Header values must be `string`
-    headers: Object.fromEntries(
-      Object.entries(requestOptions.headers).map(([name, value]) => [
-        name,
-        String(value)
-      ])
-    ),
-    signal: requestOptions.request?.signal,
-    // duplex must be set if request.body is ReadableStream or Async Iterables.
-    // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
-    ...requestOptions.body && { duplex: "half" }
-  }).then(async (response) => {
-    url = response.url;
-    status = response.status;
-    for (const keyAndValue of response.headers) {
-      headers[keyAndValue[0]] = keyAndValue[1];
-    }
-    if ("deprecation" in headers) {
-      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
-      const deprecationLink = matches && matches.pop();
-      log.warn(
-        `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
-      );
-    }
-    if (status === 204 || status === 205) {
-      return;
-    }
-    if (requestOptions.method === "HEAD") {
-      if (status < 400) {
-        return;
-      }
-      throw new RequestError$7(response.statusText, status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: void 0
-        },
-        request: requestOptions
-      });
-    }
-    if (status === 304) {
-      throw new RequestError$7("Not modified", status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: await getResponseData$7(response)
-        },
-        request: requestOptions
-      });
-    }
-    if (status >= 400) {
-      const data = await getResponseData$7(response);
-      const error = new RequestError$7(toErrorMessage$7(data), status, {
-        response: {
-          url,
-          status,
-          headers,
-          data
-        },
-        request: requestOptions
-      });
-      throw error;
-    }
-    return parseSuccessResponseBody ? await getResponseData$7(response) : response.body;
-  }).then((data) => {
-    return {
-      status,
-      url,
-      headers,
-      data
-    };
-  }).catch((error) => {
-    if (error instanceof RequestError$7)
-      throw error;
-    else if (error.name === "AbortError")
-      throw error;
-    let message = error.message;
-    if (error.name === "TypeError" && "cause" in error) {
-      if (error.cause instanceof Error) {
-        message = error.cause.message;
-      } else if (typeof error.cause === "string") {
-        message = error.cause;
-      }
-    }
-    throw new RequestError$7(message, 500, {
-      request: requestOptions
-    });
-  });
-}
-async function getResponseData$7(response) {
-  const contentType = response.headers.get("content-type");
-  if (/application\/json/.test(contentType)) {
-    return response.json().catch(() => response.text()).catch(() => "");
-  }
-  if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
-    return response.text();
-  }
-  return getBufferResponse$7(response);
-}
-function toErrorMessage$7(data) {
-  if (typeof data === "string")
-    return data;
-  let suffix;
-  if ("documentation_url" in data) {
-    suffix = ` - ${data.documentation_url}`;
-  } else {
-    suffix = "";
-  }
-  if ("message" in data) {
-    if (Array.isArray(data.errors)) {
-      return `${data.message}: ${data.errors.map(JSON.stringify).join(", ")}${suffix}`;
-    }
-    return `${data.message}${suffix}`;
-  }
-  return `Unknown error: ${JSON.stringify(data)}`;
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$h(oldEndpoint, newDefaults) {
-  const endpoint2 = oldEndpoint.defaults(newDefaults);
-  const newApi = function(route, parameters) {
-    const endpointOptions = endpoint2.merge(route, parameters);
-    if (!endpointOptions.request || !endpointOptions.request.hook) {
-      return fetchWrapper$7(endpoint2.parse(endpointOptions));
-    }
-    const request2 = (route2, parameters2) => {
-      return fetchWrapper$7(
-        endpoint2.parse(endpoint2.merge(route2, parameters2))
-      );
-    };
-    Object.assign(request2, {
-      endpoint: endpoint2,
-      defaults: withDefaults$h.bind(null, endpoint2)
-    });
-    return endpointOptions.request.hook(request2, endpointOptions);
-  };
-  return Object.assign(newApi, {
-    endpoint: endpoint2,
-    defaults: withDefaults$h.bind(null, endpoint2)
-  });
-}
-
-// pkg/dist-src/index.js
-var request$7 = withDefaults$h(endpoint$7, {
-  headers: {
-    "user-agent": `octokit-request.js/${VERSION$w} ${getUserAgent$7()}`
-  }
-});
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$v = "0.0.0-development";
-
-// pkg/dist-src/error.js
-function _buildMessageForResponseErrors$2(data) {
-  return `Request failed due to following response errors:
-` + data.errors.map((e) => ` - ${e.message}`).join("\n");
-}
-var GraphqlResponseError$2 = class extends Error {
-  constructor(request2, headers, response) {
-    super(_buildMessageForResponseErrors$2(response));
-    this.request = request2;
-    this.headers = headers;
-    this.response = response;
-    this.errors = response.errors;
-    this.data = response.data;
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-  }
-  name = "GraphqlResponseError";
-  errors;
-  data;
-};
-
-// pkg/dist-src/graphql.js
-var NON_VARIABLE_OPTIONS$2 = [
-  "method",
-  "baseUrl",
-  "url",
-  "headers",
-  "request",
-  "query",
-  "mediaType"
-];
-var FORBIDDEN_VARIABLE_OPTIONS$2 = ["query", "method", "url"];
-var GHES_V3_SUFFIX_REGEX$2 = /\/api\/v3\/?$/;
-function graphql$2(request2, query, options) {
-  if (options) {
-    if (typeof query === "string" && "query" in options) {
-      return Promise.reject(
-        new Error(`[@octokit/graphql] "query" cannot be used as variable name`)
-      );
-    }
-    for (const key in options) {
-      if (!FORBIDDEN_VARIABLE_OPTIONS$2.includes(key))
-        continue;
-      return Promise.reject(
-        new Error(
-          `[@octokit/graphql] "${key}" cannot be used as variable name`
-        )
-      );
-    }
-  }
-  const parsedOptions = typeof query === "string" ? Object.assign({ query }, options) : query;
-  const requestOptions = Object.keys(
-    parsedOptions
-  ).reduce((result, key) => {
-    if (NON_VARIABLE_OPTIONS$2.includes(key)) {
-      result[key] = parsedOptions[key];
-      return result;
-    }
-    if (!result.variables) {
-      result.variables = {};
-    }
-    result.variables[key] = parsedOptions[key];
-    return result;
-  }, {});
-  const baseUrl = parsedOptions.baseUrl || request2.endpoint.DEFAULTS.baseUrl;
-  if (GHES_V3_SUFFIX_REGEX$2.test(baseUrl)) {
-    requestOptions.url = baseUrl.replace(GHES_V3_SUFFIX_REGEX$2, "/api/graphql");
-  }
-  return request2(requestOptions).then((response) => {
-    if (response.data.errors) {
-      const headers = {};
-      for (const key of Object.keys(response.headers)) {
-        headers[key] = response.headers[key];
-      }
-      throw new GraphqlResponseError$2(
-        requestOptions,
-        headers,
-        response.data
-      );
-    }
-    return response.data.data;
-  });
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$g(request2, newDefaults) {
-  const newRequest = request2.defaults(newDefaults);
-  const newApi = (query, options) => {
-    return graphql$2(newRequest, query, options);
-  };
-  return Object.assign(newApi, {
-    defaults: withDefaults$g.bind(null, newRequest),
-    endpoint: newRequest.endpoint
-  });
-}
-
-// pkg/dist-src/index.js
-withDefaults$g(request$7, {
-  headers: {
-    "user-agent": `octokit-graphql.js/${VERSION$v} ${getUserAgent$7()}`
-  },
-  method: "POST",
-  url: "/graphql"
-});
-function withCustomRequest$2(customRequest) {
-  return withDefaults$g(customRequest, {
-    method: "POST",
-    url: "/graphql"
-  });
-}
-
-// pkg/dist-src/auth.js
-var REGEX_IS_INSTALLATION_LEGACY$2 = /^v1\./;
-var REGEX_IS_INSTALLATION$2 = /^ghs_/;
-var REGEX_IS_USER_TO_SERVER$2 = /^ghu_/;
-async function auth$7(token) {
-  const isApp = token.split(/\./).length === 3;
-  const isInstallation = REGEX_IS_INSTALLATION_LEGACY$2.test(token) || REGEX_IS_INSTALLATION$2.test(token);
-  const isUserToServer = REGEX_IS_USER_TO_SERVER$2.test(token);
-  const tokenType = isApp ? "app" : isInstallation ? "installation" : isUserToServer ? "user-to-server" : "oauth";
-  return {
-    type: "token",
-    token,
-    tokenType
-  };
-}
-
-// pkg/dist-src/with-authorization-prefix.js
-function withAuthorizationPrefix$2(token) {
-  if (token.split(/\./).length === 3) {
-    return `bearer ${token}`;
-  }
-  return `token ${token}`;
-}
-
-// pkg/dist-src/hook.js
-async function hook$7(token, request, route, parameters) {
-  const endpoint = request.endpoint.merge(
-    route,
-    parameters
-  );
-  endpoint.headers.authorization = withAuthorizationPrefix$2(token);
-  return request(endpoint);
-}
-
-// pkg/dist-src/index.js
-var createTokenAuth$2 = function createTokenAuth2(token) {
-  if (!token) {
-    throw new Error("[@octokit/auth-token] No token passed to createTokenAuth");
-  }
-  if (typeof token !== "string") {
-    throw new Error(
-      "[@octokit/auth-token] Token passed to createTokenAuth is not a string"
-    );
-  }
-  token = token.replace(/^(token|bearer) +/i, "");
-  return Object.assign(auth$7.bind(null, token), {
-    hook: hook$7.bind(null, token)
-  });
-};
-
-const VERSION$u = "6.1.2";
-
-const noop$4 = () => {
-};
-const consoleWarn$2 = console.warn.bind(console);
-const consoleError$2 = console.error.bind(console);
-const userAgentTrail$2 = `octokit-core.js/${VERSION$u} ${getUserAgent$7()}`;
-class Octokit$3 {
-  static VERSION = VERSION$u;
-  static defaults(defaults) {
-    const OctokitWithDefaults = class extends this {
-      constructor(...args) {
-        const options = args[0] || {};
-        if (typeof defaults === "function") {
-          super(defaults(options));
-          return;
-        }
-        super(
-          Object.assign(
-            {},
-            defaults,
-            options,
-            options.userAgent && defaults.userAgent ? {
-              userAgent: `${options.userAgent} ${defaults.userAgent}`
-            } : null
-          )
-        );
-      }
-    };
-    return OctokitWithDefaults;
-  }
-  static plugins = [];
-  /**
-   * Attach a plugin (or many) to your Octokit instance.
-   *
-   * @example
-   * const API = Octokit.plugin(plugin1, plugin2, plugin3, ...)
-   */
-  static plugin(...newPlugins) {
-    const currentPlugins = this.plugins;
-    const NewOctokit = class extends this {
-      static plugins = currentPlugins.concat(
-        newPlugins.filter((plugin) => !currentPlugins.includes(plugin))
-      );
-    };
-    return NewOctokit;
-  }
-  constructor(options = {}) {
-    const hook = new Hook$2.Collection();
-    const requestDefaults = {
-      baseUrl: request$7.endpoint.DEFAULTS.baseUrl,
-      headers: {},
-      request: Object.assign({}, options.request, {
-        // @ts-ignore internal usage only, no need to type
-        hook: hook.bind(null, "request")
-      }),
-      mediaType: {
-        previews: [],
-        format: ""
-      }
-    };
-    requestDefaults.headers["user-agent"] = options.userAgent ? `${options.userAgent} ${userAgentTrail$2}` : userAgentTrail$2;
-    if (options.baseUrl) {
-      requestDefaults.baseUrl = options.baseUrl;
-    }
-    if (options.previews) {
-      requestDefaults.mediaType.previews = options.previews;
-    }
-    if (options.timeZone) {
-      requestDefaults.headers["time-zone"] = options.timeZone;
-    }
-    this.request = request$7.defaults(requestDefaults);
-    this.graphql = withCustomRequest$2(this.request).defaults(requestDefaults);
-    this.log = Object.assign(
-      {
-        debug: noop$4,
-        info: noop$4,
-        warn: consoleWarn$2,
-        error: consoleError$2
-      },
-      options.log
-    );
-    this.hook = hook;
-    if (!options.authStrategy) {
-      if (!options.auth) {
-        this.auth = async () => ({
-          type: "unauthenticated"
-        });
-      } else {
-        const auth = createTokenAuth$2(options.auth);
-        hook.wrap("request", auth.hook);
-        this.auth = auth;
-      }
-    } else {
-      const { authStrategy, ...otherOptions } = options;
-      const auth = authStrategy(
-        Object.assign(
-          {
-            request: this.request,
-            log: this.log,
-            // we pass the current octokit instance as well as its constructor options
-            // to allow for authentication strategies that return a new octokit instance
-            // that shares the same internal state as the current one. The original
-            // requirement for this was the "event-octokit" authentication strategy
-            // of https://github.com/probot/octokit-auth-probot.
-            octokit: this,
-            octokitOptions: otherOptions
-          },
-          options.auth
-        )
-      );
-      hook.wrap("request", auth.hook);
-      this.auth = auth;
-    }
-    const classConstructor = this.constructor;
-    for (let i = 0; i < classConstructor.plugins.length; ++i) {
-      Object.assign(this, classConstructor.plugins[i](this, options));
-    }
-  }
-  // assigned during constructor
-  request;
-  graphql;
-  log;
-  hook;
-  // TODO: type `octokit.auth` based on passed options.authStrategy
-  auth;
-}
-
-// pkg/dist-src/version.js
-var VERSION$t = "0.0.0-development";
-
-// pkg/dist-src/normalize-paginated-list-response.js
-function normalizePaginatedListResponse$1(response) {
-  if (!response.data) {
-    return {
-      ...response,
-      data: []
-    };
-  }
-  const responseNeedsNormalization = "total_count" in response.data && !("url" in response.data);
-  if (!responseNeedsNormalization)
-    return response;
-  const incompleteResults = response.data.incomplete_results;
-  const repositorySelection = response.data.repository_selection;
-  const totalCount = response.data.total_count;
-  delete response.data.incomplete_results;
-  delete response.data.repository_selection;
-  delete response.data.total_count;
-  const namespaceKey = Object.keys(response.data)[0];
-  const data = response.data[namespaceKey];
-  response.data = data;
-  if (typeof incompleteResults !== "undefined") {
-    response.data.incomplete_results = incompleteResults;
-  }
-  if (typeof repositorySelection !== "undefined") {
-    response.data.repository_selection = repositorySelection;
-  }
-  response.data.total_count = totalCount;
-  return response;
-}
-
-// pkg/dist-src/iterator.js
-function iterator$1(octokit, route, parameters) {
-  const options = typeof route === "function" ? route.endpoint(parameters) : octokit.request.endpoint(route, parameters);
-  const requestMethod = typeof route === "function" ? route : octokit.request;
-  const method = options.method;
-  const headers = options.headers;
-  let url = options.url;
-  return {
-    [Symbol.asyncIterator]: () => ({
-      async next() {
-        if (!url)
-          return { done: true };
-        try {
-          const response = await requestMethod({ method, url, headers });
-          const normalizedResponse = normalizePaginatedListResponse$1(response);
-          url = ((normalizedResponse.headers.link || "").match(
-            /<([^>]+)>;\s*rel="next"/
-          ) || [])[1];
-          return { value: normalizedResponse };
-        } catch (error) {
-          if (error.status !== 409)
-            throw error;
-          url = "";
-          return {
-            value: {
-              status: 200,
-              headers: {},
-              data: []
-            }
-          };
-        }
-      }
-    })
-  };
-}
-
-// pkg/dist-src/paginate.js
-function paginate$1(octokit, route, parameters, mapFn) {
-  if (typeof parameters === "function") {
-    mapFn = parameters;
-    parameters = void 0;
-  }
-  return gather$1(
-    octokit,
-    [],
-    iterator$1(octokit, route, parameters)[Symbol.asyncIterator](),
-    mapFn
-  );
-}
-function gather$1(octokit, results, iterator2, mapFn) {
-  return iterator2.next().then((result) => {
-    if (result.done) {
-      return results;
-    }
-    let earlyExit = false;
-    function done() {
-      earlyExit = true;
-    }
-    results = results.concat(
-      mapFn ? mapFn(result.value, done) : result.value.data
-    );
-    if (earlyExit) {
-      return results;
-    }
-    return gather$1(octokit, results, iterator2, mapFn);
-  });
-}
-
-// pkg/dist-src/compose-paginate.js
-Object.assign(paginate$1, {
-  iterator: iterator$1
-});
-
-// pkg/dist-src/index.js
-function paginateRest(octokit) {
-  return {
-    paginate: Object.assign(paginate$1.bind(null, octokit), {
-      iterator: iterator$1.bind(null, octokit)
-    })
-  };
-}
-paginateRest.VERSION = VERSION$t;
-
-// pkg/dist-src/errors.js
-var generateMessage = (path, cursorValue) => `The cursor at "${path.join(
-  ","
-)}" did not change its value "${cursorValue}" after a page transition. Please make sure your that your query is set up correctly.`;
-var MissingCursorChange = class extends Error {
-  constructor(pageInfo, cursorValue) {
-    super(generateMessage(pageInfo.pathInQuery, cursorValue));
-    this.pageInfo = pageInfo;
-    this.cursorValue = cursorValue;
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-  }
-  name = "MissingCursorChangeError";
-};
-var MissingPageInfo = class extends Error {
-  constructor(response) {
-    super(
-      `No pageInfo property found in response. Please make sure to specify the pageInfo in your query. Response-Data: ${JSON.stringify(
-        response,
-        null,
-        2
-      )}`
-    );
-    this.response = response;
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-  }
-  name = "MissingPageInfo";
-};
-
-// pkg/dist-src/object-helpers.js
-var isObject$2 = (value) => Object.prototype.toString.call(value) === "[object Object]";
-function findPaginatedResourcePath(responseData) {
-  const paginatedResourcePath = deepFindPathToProperty(
-    responseData,
-    "pageInfo"
-  );
-  if (paginatedResourcePath.length === 0) {
-    throw new MissingPageInfo(responseData);
-  }
-  return paginatedResourcePath;
-}
-var deepFindPathToProperty = (object, searchProp, path = []) => {
-  for (const key of Object.keys(object)) {
-    const currentPath = [...path, key];
-    const currentValue = object[key];
-    if (currentValue.hasOwnProperty(searchProp)) {
-      return currentPath;
-    }
-    if (isObject$2(currentValue)) {
-      const result = deepFindPathToProperty(
-        currentValue,
-        searchProp,
-        currentPath
-      );
-      if (result.length > 0) {
-        return result;
-      }
-    }
-  }
-  return [];
-};
-var get$1 = (object, path) => {
-  return path.reduce((current, nextProperty) => current[nextProperty], object);
-};
-var set$2 = (object, path, mutator) => {
-  const lastProperty = path[path.length - 1];
-  const parentPath = [...path].slice(0, -1);
-  const parent = get$1(object, parentPath);
-  if (typeof mutator === "function") {
-    parent[lastProperty] = mutator(parent[lastProperty]);
-  } else {
-    parent[lastProperty] = mutator;
-  }
-};
-
-// pkg/dist-src/extract-page-info.js
-var extractPageInfos = (responseData) => {
-  const pageInfoPath = findPaginatedResourcePath(responseData);
-  return {
-    pathInQuery: pageInfoPath,
-    pageInfo: get$1(responseData, [...pageInfoPath, "pageInfo"])
-  };
-};
-
-// pkg/dist-src/page-info.js
-var isForwardSearch = (givenPageInfo) => {
-  return givenPageInfo.hasOwnProperty("hasNextPage");
-};
-var getCursorFrom = (pageInfo) => isForwardSearch(pageInfo) ? pageInfo.endCursor : pageInfo.startCursor;
-var hasAnotherPage = (pageInfo) => isForwardSearch(pageInfo) ? pageInfo.hasNextPage : pageInfo.hasPreviousPage;
-
-// pkg/dist-src/iterator.js
-var createIterator = (octokit) => {
-  return (query, initialParameters = {}) => {
-    let nextPageExists = true;
-    let parameters = { ...initialParameters };
-    return {
-      [Symbol.asyncIterator]: () => ({
-        async next() {
-          if (!nextPageExists)
-            return { done: true, value: {} };
-          const response = await octokit.graphql(
-            query,
-            parameters
-          );
-          const pageInfoContext = extractPageInfos(response);
-          const nextCursorValue = getCursorFrom(pageInfoContext.pageInfo);
-          nextPageExists = hasAnotherPage(pageInfoContext.pageInfo);
-          if (nextPageExists && nextCursorValue === parameters.cursor) {
-            throw new MissingCursorChange(pageInfoContext, nextCursorValue);
-          }
-          parameters = {
-            ...parameters,
-            cursor: nextCursorValue
-          };
-          return { done: false, value: response };
-        }
-      })
-    };
-  };
-};
-
-// pkg/dist-src/merge-responses.js
-var mergeResponses = (response1, response2) => {
-  if (Object.keys(response1).length === 0) {
-    return Object.assign(response1, response2);
-  }
-  const path = findPaginatedResourcePath(response1);
-  const nodesPath = [...path, "nodes"];
-  const newNodes = get$1(response2, nodesPath);
-  if (newNodes) {
-    set$2(response1, nodesPath, (values) => {
-      return [...values, ...newNodes];
-    });
-  }
-  const edgesPath = [...path, "edges"];
-  const newEdges = get$1(response2, edgesPath);
-  if (newEdges) {
-    set$2(response1, edgesPath, (values) => {
-      return [...values, ...newEdges];
-    });
-  }
-  const pageInfoPath = [...path, "pageInfo"];
-  set$2(response1, pageInfoPath, get$1(response2, pageInfoPath));
-  return response1;
-};
-
-// pkg/dist-src/paginate.js
-var createPaginate = (octokit) => {
-  const iterator = createIterator(octokit);
-  return async (query, initialParameters = {}) => {
-    let mergedResponse = {};
-    for await (const response of iterator(
-      query,
-      initialParameters
-    )) {
-      mergedResponse = mergeResponses(mergedResponse, response);
-    }
-    return mergedResponse;
-  };
-};
-
-// pkg/dist-src/index.js
-function paginateGraphQL(octokit) {
-  return {
-    graphql: Object.assign(octokit.graphql, {
-      paginate: Object.assign(createPaginate(octokit), {
-        iterator: createIterator(octokit)
-      })
-    })
-  };
-}
-
-const VERSION$s = "13.2.1";
-
-const Endpoints = {
-  actions: {
-    addCustomLabelsToSelfHostedRunnerForOrg: [
-      "POST /orgs/{org}/actions/runners/{runner_id}/labels"
-    ],
-    addCustomLabelsToSelfHostedRunnerForRepo: [
-      "POST /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
-    ],
-    addSelectedRepoToOrgSecret: [
-      "PUT /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    addSelectedRepoToOrgVariable: [
-      "PUT /orgs/{org}/actions/variables/{name}/repositories/{repository_id}"
-    ],
-    approveWorkflowRun: [
-      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/approve"
-    ],
-    cancelWorkflowRun: [
-      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel"
-    ],
-    createEnvironmentVariable: [
-      "POST /repos/{owner}/{repo}/environments/{environment_name}/variables"
-    ],
-    createOrUpdateEnvironmentSecret: [
-      "PUT /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}"
-    ],
-    createOrUpdateOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}"],
-    createOrUpdateRepoSecret: [
-      "PUT /repos/{owner}/{repo}/actions/secrets/{secret_name}"
-    ],
-    createOrgVariable: ["POST /orgs/{org}/actions/variables"],
-    createRegistrationTokenForOrg: [
-      "POST /orgs/{org}/actions/runners/registration-token"
-    ],
-    createRegistrationTokenForRepo: [
-      "POST /repos/{owner}/{repo}/actions/runners/registration-token"
-    ],
-    createRemoveTokenForOrg: ["POST /orgs/{org}/actions/runners/remove-token"],
-    createRemoveTokenForRepo: [
-      "POST /repos/{owner}/{repo}/actions/runners/remove-token"
-    ],
-    createRepoVariable: ["POST /repos/{owner}/{repo}/actions/variables"],
-    createWorkflowDispatch: [
-      "POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches"
-    ],
-    deleteActionsCacheById: [
-      "DELETE /repos/{owner}/{repo}/actions/caches/{cache_id}"
-    ],
-    deleteActionsCacheByKey: [
-      "DELETE /repos/{owner}/{repo}/actions/caches{?key,ref}"
-    ],
-    deleteArtifact: [
-      "DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"
-    ],
-    deleteEnvironmentSecret: [
-      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}"
-    ],
-    deleteEnvironmentVariable: [
-      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}"
-    ],
-    deleteOrgSecret: ["DELETE /orgs/{org}/actions/secrets/{secret_name}"],
-    deleteOrgVariable: ["DELETE /orgs/{org}/actions/variables/{name}"],
-    deleteRepoSecret: [
-      "DELETE /repos/{owner}/{repo}/actions/secrets/{secret_name}"
-    ],
-    deleteRepoVariable: [
-      "DELETE /repos/{owner}/{repo}/actions/variables/{name}"
-    ],
-    deleteSelfHostedRunnerFromOrg: [
-      "DELETE /orgs/{org}/actions/runners/{runner_id}"
-    ],
-    deleteSelfHostedRunnerFromRepo: [
-      "DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}"
-    ],
-    deleteWorkflowRun: ["DELETE /repos/{owner}/{repo}/actions/runs/{run_id}"],
-    deleteWorkflowRunLogs: [
-      "DELETE /repos/{owner}/{repo}/actions/runs/{run_id}/logs"
-    ],
-    disableSelectedRepositoryGithubActionsOrganization: [
-      "DELETE /orgs/{org}/actions/permissions/repositories/{repository_id}"
-    ],
-    disableWorkflow: [
-      "PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/disable"
-    ],
-    downloadArtifact: [
-      "GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}"
-    ],
-    downloadJobLogsForWorkflowRun: [
-      "GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs"
-    ],
-    downloadWorkflowRunAttemptLogs: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}/logs"
-    ],
-    downloadWorkflowRunLogs: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs"
-    ],
-    enableSelectedRepositoryGithubActionsOrganization: [
-      "PUT /orgs/{org}/actions/permissions/repositories/{repository_id}"
-    ],
-    enableWorkflow: [
-      "PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/enable"
-    ],
-    forceCancelWorkflowRun: [
-      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/force-cancel"
-    ],
-    generateRunnerJitconfigForOrg: [
-      "POST /orgs/{org}/actions/runners/generate-jitconfig"
-    ],
-    generateRunnerJitconfigForRepo: [
-      "POST /repos/{owner}/{repo}/actions/runners/generate-jitconfig"
-    ],
-    getActionsCacheList: ["GET /repos/{owner}/{repo}/actions/caches"],
-    getActionsCacheUsage: ["GET /repos/{owner}/{repo}/actions/cache/usage"],
-    getActionsCacheUsageByRepoForOrg: [
-      "GET /orgs/{org}/actions/cache/usage-by-repository"
-    ],
-    getActionsCacheUsageForOrg: ["GET /orgs/{org}/actions/cache/usage"],
-    getAllowedActionsOrganization: [
-      "GET /orgs/{org}/actions/permissions/selected-actions"
-    ],
-    getAllowedActionsRepository: [
-      "GET /repos/{owner}/{repo}/actions/permissions/selected-actions"
-    ],
-    getArtifact: ["GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"],
-    getCustomOidcSubClaimForRepo: [
-      "GET /repos/{owner}/{repo}/actions/oidc/customization/sub"
-    ],
-    getEnvironmentPublicKey: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/secrets/public-key"
-    ],
-    getEnvironmentSecret: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}"
-    ],
-    getEnvironmentVariable: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}"
-    ],
-    getGithubActionsDefaultWorkflowPermissionsOrganization: [
-      "GET /orgs/{org}/actions/permissions/workflow"
-    ],
-    getGithubActionsDefaultWorkflowPermissionsRepository: [
-      "GET /repos/{owner}/{repo}/actions/permissions/workflow"
-    ],
-    getGithubActionsPermissionsOrganization: [
-      "GET /orgs/{org}/actions/permissions"
-    ],
-    getGithubActionsPermissionsRepository: [
-      "GET /repos/{owner}/{repo}/actions/permissions"
-    ],
-    getJobForWorkflowRun: ["GET /repos/{owner}/{repo}/actions/jobs/{job_id}"],
-    getOrgPublicKey: ["GET /orgs/{org}/actions/secrets/public-key"],
-    getOrgSecret: ["GET /orgs/{org}/actions/secrets/{secret_name}"],
-    getOrgVariable: ["GET /orgs/{org}/actions/variables/{name}"],
-    getPendingDeploymentsForRun: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/pending_deployments"
-    ],
-    getRepoPermissions: [
-      "GET /repos/{owner}/{repo}/actions/permissions",
-      {},
-      { renamed: ["actions", "getGithubActionsPermissionsRepository"] }
-    ],
-    getRepoPublicKey: ["GET /repos/{owner}/{repo}/actions/secrets/public-key"],
-    getRepoSecret: ["GET /repos/{owner}/{repo}/actions/secrets/{secret_name}"],
-    getRepoVariable: ["GET /repos/{owner}/{repo}/actions/variables/{name}"],
-    getReviewsForRun: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/approvals"
-    ],
-    getSelfHostedRunnerForOrg: ["GET /orgs/{org}/actions/runners/{runner_id}"],
-    getSelfHostedRunnerForRepo: [
-      "GET /repos/{owner}/{repo}/actions/runners/{runner_id}"
-    ],
-    getWorkflow: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}"],
-    getWorkflowAccessToRepository: [
-      "GET /repos/{owner}/{repo}/actions/permissions/access"
-    ],
-    getWorkflowRun: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}"],
-    getWorkflowRunAttempt: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}"
-    ],
-    getWorkflowRunUsage: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/timing"
-    ],
-    getWorkflowUsage: [
-      "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/timing"
-    ],
-    listArtifactsForRepo: ["GET /repos/{owner}/{repo}/actions/artifacts"],
-    listEnvironmentSecrets: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/secrets"
-    ],
-    listEnvironmentVariables: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/variables"
-    ],
-    listJobsForWorkflowRun: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs"
-    ],
-    listJobsForWorkflowRunAttempt: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}/jobs"
-    ],
-    listLabelsForSelfHostedRunnerForOrg: [
-      "GET /orgs/{org}/actions/runners/{runner_id}/labels"
-    ],
-    listLabelsForSelfHostedRunnerForRepo: [
-      "GET /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
-    ],
-    listOrgSecrets: ["GET /orgs/{org}/actions/secrets"],
-    listOrgVariables: ["GET /orgs/{org}/actions/variables"],
-    listRepoOrganizationSecrets: [
-      "GET /repos/{owner}/{repo}/actions/organization-secrets"
-    ],
-    listRepoOrganizationVariables: [
-      "GET /repos/{owner}/{repo}/actions/organization-variables"
-    ],
-    listRepoSecrets: ["GET /repos/{owner}/{repo}/actions/secrets"],
-    listRepoVariables: ["GET /repos/{owner}/{repo}/actions/variables"],
-    listRepoWorkflows: ["GET /repos/{owner}/{repo}/actions/workflows"],
-    listRunnerApplicationsForOrg: ["GET /orgs/{org}/actions/runners/downloads"],
-    listRunnerApplicationsForRepo: [
-      "GET /repos/{owner}/{repo}/actions/runners/downloads"
-    ],
-    listSelectedReposForOrgSecret: [
-      "GET /orgs/{org}/actions/secrets/{secret_name}/repositories"
-    ],
-    listSelectedReposForOrgVariable: [
-      "GET /orgs/{org}/actions/variables/{name}/repositories"
-    ],
-    listSelectedRepositoriesEnabledGithubActionsOrganization: [
-      "GET /orgs/{org}/actions/permissions/repositories"
-    ],
-    listSelfHostedRunnersForOrg: ["GET /orgs/{org}/actions/runners"],
-    listSelfHostedRunnersForRepo: ["GET /repos/{owner}/{repo}/actions/runners"],
-    listWorkflowRunArtifacts: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts"
-    ],
-    listWorkflowRuns: [
-      "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs"
-    ],
-    listWorkflowRunsForRepo: ["GET /repos/{owner}/{repo}/actions/runs"],
-    reRunJobForWorkflowRun: [
-      "POST /repos/{owner}/{repo}/actions/jobs/{job_id}/rerun"
-    ],
-    reRunWorkflow: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun"],
-    reRunWorkflowFailedJobs: [
-      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun-failed-jobs"
-    ],
-    removeAllCustomLabelsFromSelfHostedRunnerForOrg: [
-      "DELETE /orgs/{org}/actions/runners/{runner_id}/labels"
-    ],
-    removeAllCustomLabelsFromSelfHostedRunnerForRepo: [
-      "DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
-    ],
-    removeCustomLabelFromSelfHostedRunnerForOrg: [
-      "DELETE /orgs/{org}/actions/runners/{runner_id}/labels/{name}"
-    ],
-    removeCustomLabelFromSelfHostedRunnerForRepo: [
-      "DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}/labels/{name}"
-    ],
-    removeSelectedRepoFromOrgSecret: [
-      "DELETE /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    removeSelectedRepoFromOrgVariable: [
-      "DELETE /orgs/{org}/actions/variables/{name}/repositories/{repository_id}"
-    ],
-    reviewCustomGatesForRun: [
-      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/deployment_protection_rule"
-    ],
-    reviewPendingDeploymentsForRun: [
-      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/pending_deployments"
-    ],
-    setAllowedActionsOrganization: [
-      "PUT /orgs/{org}/actions/permissions/selected-actions"
-    ],
-    setAllowedActionsRepository: [
-      "PUT /repos/{owner}/{repo}/actions/permissions/selected-actions"
-    ],
-    setCustomLabelsForSelfHostedRunnerForOrg: [
-      "PUT /orgs/{org}/actions/runners/{runner_id}/labels"
-    ],
-    setCustomLabelsForSelfHostedRunnerForRepo: [
-      "PUT /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
-    ],
-    setCustomOidcSubClaimForRepo: [
-      "PUT /repos/{owner}/{repo}/actions/oidc/customization/sub"
-    ],
-    setGithubActionsDefaultWorkflowPermissionsOrganization: [
-      "PUT /orgs/{org}/actions/permissions/workflow"
-    ],
-    setGithubActionsDefaultWorkflowPermissionsRepository: [
-      "PUT /repos/{owner}/{repo}/actions/permissions/workflow"
-    ],
-    setGithubActionsPermissionsOrganization: [
-      "PUT /orgs/{org}/actions/permissions"
-    ],
-    setGithubActionsPermissionsRepository: [
-      "PUT /repos/{owner}/{repo}/actions/permissions"
-    ],
-    setSelectedReposForOrgSecret: [
-      "PUT /orgs/{org}/actions/secrets/{secret_name}/repositories"
-    ],
-    setSelectedReposForOrgVariable: [
-      "PUT /orgs/{org}/actions/variables/{name}/repositories"
-    ],
-    setSelectedRepositoriesEnabledGithubActionsOrganization: [
-      "PUT /orgs/{org}/actions/permissions/repositories"
-    ],
-    setWorkflowAccessToRepository: [
-      "PUT /repos/{owner}/{repo}/actions/permissions/access"
-    ],
-    updateEnvironmentVariable: [
-      "PATCH /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}"
-    ],
-    updateOrgVariable: ["PATCH /orgs/{org}/actions/variables/{name}"],
-    updateRepoVariable: [
-      "PATCH /repos/{owner}/{repo}/actions/variables/{name}"
-    ]
-  },
-  activity: {
-    checkRepoIsStarredByAuthenticatedUser: ["GET /user/starred/{owner}/{repo}"],
-    deleteRepoSubscription: ["DELETE /repos/{owner}/{repo}/subscription"],
-    deleteThreadSubscription: [
-      "DELETE /notifications/threads/{thread_id}/subscription"
-    ],
-    getFeeds: ["GET /feeds"],
-    getRepoSubscription: ["GET /repos/{owner}/{repo}/subscription"],
-    getThread: ["GET /notifications/threads/{thread_id}"],
-    getThreadSubscriptionForAuthenticatedUser: [
-      "GET /notifications/threads/{thread_id}/subscription"
-    ],
-    listEventsForAuthenticatedUser: ["GET /users/{username}/events"],
-    listNotificationsForAuthenticatedUser: ["GET /notifications"],
-    listOrgEventsForAuthenticatedUser: [
-      "GET /users/{username}/events/orgs/{org}"
-    ],
-    listPublicEvents: ["GET /events"],
-    listPublicEventsForRepoNetwork: ["GET /networks/{owner}/{repo}/events"],
-    listPublicEventsForUser: ["GET /users/{username}/events/public"],
-    listPublicOrgEvents: ["GET /orgs/{org}/events"],
-    listReceivedEventsForUser: ["GET /users/{username}/received_events"],
-    listReceivedPublicEventsForUser: [
-      "GET /users/{username}/received_events/public"
-    ],
-    listRepoEvents: ["GET /repos/{owner}/{repo}/events"],
-    listRepoNotificationsForAuthenticatedUser: [
-      "GET /repos/{owner}/{repo}/notifications"
-    ],
-    listReposStarredByAuthenticatedUser: ["GET /user/starred"],
-    listReposStarredByUser: ["GET /users/{username}/starred"],
-    listReposWatchedByUser: ["GET /users/{username}/subscriptions"],
-    listStargazersForRepo: ["GET /repos/{owner}/{repo}/stargazers"],
-    listWatchedReposForAuthenticatedUser: ["GET /user/subscriptions"],
-    listWatchersForRepo: ["GET /repos/{owner}/{repo}/subscribers"],
-    markNotificationsAsRead: ["PUT /notifications"],
-    markRepoNotificationsAsRead: ["PUT /repos/{owner}/{repo}/notifications"],
-    markThreadAsDone: ["DELETE /notifications/threads/{thread_id}"],
-    markThreadAsRead: ["PATCH /notifications/threads/{thread_id}"],
-    setRepoSubscription: ["PUT /repos/{owner}/{repo}/subscription"],
-    setThreadSubscription: [
-      "PUT /notifications/threads/{thread_id}/subscription"
-    ],
-    starRepoForAuthenticatedUser: ["PUT /user/starred/{owner}/{repo}"],
-    unstarRepoForAuthenticatedUser: ["DELETE /user/starred/{owner}/{repo}"]
-  },
-  apps: {
-    addRepoToInstallation: [
-      "PUT /user/installations/{installation_id}/repositories/{repository_id}",
-      {},
-      { renamed: ["apps", "addRepoToInstallationForAuthenticatedUser"] }
-    ],
-    addRepoToInstallationForAuthenticatedUser: [
-      "PUT /user/installations/{installation_id}/repositories/{repository_id}"
-    ],
-    checkToken: ["POST /applications/{client_id}/token"],
-    createFromManifest: ["POST /app-manifests/{code}/conversions"],
-    createInstallationAccessToken: [
-      "POST /app/installations/{installation_id}/access_tokens"
-    ],
-    deleteAuthorization: ["DELETE /applications/{client_id}/grant"],
-    deleteInstallation: ["DELETE /app/installations/{installation_id}"],
-    deleteToken: ["DELETE /applications/{client_id}/token"],
-    getAuthenticated: ["GET /app"],
-    getBySlug: ["GET /apps/{app_slug}"],
-    getInstallation: ["GET /app/installations/{installation_id}"],
-    getOrgInstallation: ["GET /orgs/{org}/installation"],
-    getRepoInstallation: ["GET /repos/{owner}/{repo}/installation"],
-    getSubscriptionPlanForAccount: [
-      "GET /marketplace_listing/accounts/{account_id}"
-    ],
-    getSubscriptionPlanForAccountStubbed: [
-      "GET /marketplace_listing/stubbed/accounts/{account_id}"
-    ],
-    getUserInstallation: ["GET /users/{username}/installation"],
-    getWebhookConfigForApp: ["GET /app/hook/config"],
-    getWebhookDelivery: ["GET /app/hook/deliveries/{delivery_id}"],
-    listAccountsForPlan: ["GET /marketplace_listing/plans/{plan_id}/accounts"],
-    listAccountsForPlanStubbed: [
-      "GET /marketplace_listing/stubbed/plans/{plan_id}/accounts"
-    ],
-    listInstallationReposForAuthenticatedUser: [
-      "GET /user/installations/{installation_id}/repositories"
-    ],
-    listInstallationRequestsForAuthenticatedApp: [
-      "GET /app/installation-requests"
-    ],
-    listInstallations: ["GET /app/installations"],
-    listInstallationsForAuthenticatedUser: ["GET /user/installations"],
-    listPlans: ["GET /marketplace_listing/plans"],
-    listPlansStubbed: ["GET /marketplace_listing/stubbed/plans"],
-    listReposAccessibleToInstallation: ["GET /installation/repositories"],
-    listSubscriptionsForAuthenticatedUser: ["GET /user/marketplace_purchases"],
-    listSubscriptionsForAuthenticatedUserStubbed: [
-      "GET /user/marketplace_purchases/stubbed"
-    ],
-    listWebhookDeliveries: ["GET /app/hook/deliveries"],
-    redeliverWebhookDelivery: [
-      "POST /app/hook/deliveries/{delivery_id}/attempts"
-    ],
-    removeRepoFromInstallation: [
-      "DELETE /user/installations/{installation_id}/repositories/{repository_id}",
-      {},
-      { renamed: ["apps", "removeRepoFromInstallationForAuthenticatedUser"] }
-    ],
-    removeRepoFromInstallationForAuthenticatedUser: [
-      "DELETE /user/installations/{installation_id}/repositories/{repository_id}"
-    ],
-    resetToken: ["PATCH /applications/{client_id}/token"],
-    revokeInstallationAccessToken: ["DELETE /installation/token"],
-    scopeToken: ["POST /applications/{client_id}/token/scoped"],
-    suspendInstallation: ["PUT /app/installations/{installation_id}/suspended"],
-    unsuspendInstallation: [
-      "DELETE /app/installations/{installation_id}/suspended"
-    ],
-    updateWebhookConfigForApp: ["PATCH /app/hook/config"]
-  },
-  billing: {
-    getGithubActionsBillingOrg: ["GET /orgs/{org}/settings/billing/actions"],
-    getGithubActionsBillingUser: [
-      "GET /users/{username}/settings/billing/actions"
-    ],
-    getGithubPackagesBillingOrg: ["GET /orgs/{org}/settings/billing/packages"],
-    getGithubPackagesBillingUser: [
-      "GET /users/{username}/settings/billing/packages"
-    ],
-    getSharedStorageBillingOrg: [
-      "GET /orgs/{org}/settings/billing/shared-storage"
-    ],
-    getSharedStorageBillingUser: [
-      "GET /users/{username}/settings/billing/shared-storage"
-    ]
-  },
-  checks: {
-    create: ["POST /repos/{owner}/{repo}/check-runs"],
-    createSuite: ["POST /repos/{owner}/{repo}/check-suites"],
-    get: ["GET /repos/{owner}/{repo}/check-runs/{check_run_id}"],
-    getSuite: ["GET /repos/{owner}/{repo}/check-suites/{check_suite_id}"],
-    listAnnotations: [
-      "GET /repos/{owner}/{repo}/check-runs/{check_run_id}/annotations"
-    ],
-    listForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/check-runs"],
-    listForSuite: [
-      "GET /repos/{owner}/{repo}/check-suites/{check_suite_id}/check-runs"
-    ],
-    listSuitesForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/check-suites"],
-    rerequestRun: [
-      "POST /repos/{owner}/{repo}/check-runs/{check_run_id}/rerequest"
-    ],
-    rerequestSuite: [
-      "POST /repos/{owner}/{repo}/check-suites/{check_suite_id}/rerequest"
-    ],
-    setSuitesPreferences: [
-      "PATCH /repos/{owner}/{repo}/check-suites/preferences"
-    ],
-    update: ["PATCH /repos/{owner}/{repo}/check-runs/{check_run_id}"]
-  },
-  codeScanning: {
-    deleteAnalysis: [
-      "DELETE /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}{?confirm_delete}"
-    ],
-    getAlert: [
-      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}",
-      {},
-      { renamedParameters: { alert_id: "alert_number" } }
-    ],
-    getAnalysis: [
-      "GET /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}"
-    ],
-    getCodeqlDatabase: [
-      "GET /repos/{owner}/{repo}/code-scanning/codeql/databases/{language}"
-    ],
-    getDefaultSetup: ["GET /repos/{owner}/{repo}/code-scanning/default-setup"],
-    getSarif: ["GET /repos/{owner}/{repo}/code-scanning/sarifs/{sarif_id}"],
-    listAlertInstances: [
-      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances"
-    ],
-    listAlertsForOrg: ["GET /orgs/{org}/code-scanning/alerts"],
-    listAlertsForRepo: ["GET /repos/{owner}/{repo}/code-scanning/alerts"],
-    listAlertsInstances: [
-      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances",
-      {},
-      { renamed: ["codeScanning", "listAlertInstances"] }
-    ],
-    listCodeqlDatabases: [
-      "GET /repos/{owner}/{repo}/code-scanning/codeql/databases"
-    ],
-    listRecentAnalyses: ["GET /repos/{owner}/{repo}/code-scanning/analyses"],
-    updateAlert: [
-      "PATCH /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}"
-    ],
-    updateDefaultSetup: [
-      "PATCH /repos/{owner}/{repo}/code-scanning/default-setup"
-    ],
-    uploadSarif: ["POST /repos/{owner}/{repo}/code-scanning/sarifs"]
-  },
-  codesOfConduct: {
-    getAllCodesOfConduct: ["GET /codes_of_conduct"],
-    getConductCode: ["GET /codes_of_conduct/{key}"]
-  },
-  codespaces: {
-    addRepositoryForSecretForAuthenticatedUser: [
-      "PUT /user/codespaces/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    addSelectedRepoToOrgSecret: [
-      "PUT /orgs/{org}/codespaces/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    checkPermissionsForDevcontainer: [
-      "GET /repos/{owner}/{repo}/codespaces/permissions_check"
-    ],
-    codespaceMachinesForAuthenticatedUser: [
-      "GET /user/codespaces/{codespace_name}/machines"
-    ],
-    createForAuthenticatedUser: ["POST /user/codespaces"],
-    createOrUpdateOrgSecret: [
-      "PUT /orgs/{org}/codespaces/secrets/{secret_name}"
-    ],
-    createOrUpdateRepoSecret: [
-      "PUT /repos/{owner}/{repo}/codespaces/secrets/{secret_name}"
-    ],
-    createOrUpdateSecretForAuthenticatedUser: [
-      "PUT /user/codespaces/secrets/{secret_name}"
-    ],
-    createWithPrForAuthenticatedUser: [
-      "POST /repos/{owner}/{repo}/pulls/{pull_number}/codespaces"
-    ],
-    createWithRepoForAuthenticatedUser: [
-      "POST /repos/{owner}/{repo}/codespaces"
-    ],
-    deleteForAuthenticatedUser: ["DELETE /user/codespaces/{codespace_name}"],
-    deleteFromOrganization: [
-      "DELETE /orgs/{org}/members/{username}/codespaces/{codespace_name}"
-    ],
-    deleteOrgSecret: ["DELETE /orgs/{org}/codespaces/secrets/{secret_name}"],
-    deleteRepoSecret: [
-      "DELETE /repos/{owner}/{repo}/codespaces/secrets/{secret_name}"
-    ],
-    deleteSecretForAuthenticatedUser: [
-      "DELETE /user/codespaces/secrets/{secret_name}"
-    ],
-    exportForAuthenticatedUser: [
-      "POST /user/codespaces/{codespace_name}/exports"
-    ],
-    getCodespacesForUserInOrg: [
-      "GET /orgs/{org}/members/{username}/codespaces"
-    ],
-    getExportDetailsForAuthenticatedUser: [
-      "GET /user/codespaces/{codespace_name}/exports/{export_id}"
-    ],
-    getForAuthenticatedUser: ["GET /user/codespaces/{codespace_name}"],
-    getOrgPublicKey: ["GET /orgs/{org}/codespaces/secrets/public-key"],
-    getOrgSecret: ["GET /orgs/{org}/codespaces/secrets/{secret_name}"],
-    getPublicKeyForAuthenticatedUser: [
-      "GET /user/codespaces/secrets/public-key"
-    ],
-    getRepoPublicKey: [
-      "GET /repos/{owner}/{repo}/codespaces/secrets/public-key"
-    ],
-    getRepoSecret: [
-      "GET /repos/{owner}/{repo}/codespaces/secrets/{secret_name}"
-    ],
-    getSecretForAuthenticatedUser: [
-      "GET /user/codespaces/secrets/{secret_name}"
-    ],
-    listDevcontainersInRepositoryForAuthenticatedUser: [
-      "GET /repos/{owner}/{repo}/codespaces/devcontainers"
-    ],
-    listForAuthenticatedUser: ["GET /user/codespaces"],
-    listInOrganization: [
-      "GET /orgs/{org}/codespaces",
-      {},
-      { renamedParameters: { org_id: "org" } }
-    ],
-    listInRepositoryForAuthenticatedUser: [
-      "GET /repos/{owner}/{repo}/codespaces"
-    ],
-    listOrgSecrets: ["GET /orgs/{org}/codespaces/secrets"],
-    listRepoSecrets: ["GET /repos/{owner}/{repo}/codespaces/secrets"],
-    listRepositoriesForSecretForAuthenticatedUser: [
-      "GET /user/codespaces/secrets/{secret_name}/repositories"
-    ],
-    listSecretsForAuthenticatedUser: ["GET /user/codespaces/secrets"],
-    listSelectedReposForOrgSecret: [
-      "GET /orgs/{org}/codespaces/secrets/{secret_name}/repositories"
-    ],
-    preFlightWithRepoForAuthenticatedUser: [
-      "GET /repos/{owner}/{repo}/codespaces/new"
-    ],
-    publishForAuthenticatedUser: [
-      "POST /user/codespaces/{codespace_name}/publish"
-    ],
-    removeRepositoryForSecretForAuthenticatedUser: [
-      "DELETE /user/codespaces/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    removeSelectedRepoFromOrgSecret: [
-      "DELETE /orgs/{org}/codespaces/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    repoMachinesForAuthenticatedUser: [
-      "GET /repos/{owner}/{repo}/codespaces/machines"
-    ],
-    setRepositoriesForSecretForAuthenticatedUser: [
-      "PUT /user/codespaces/secrets/{secret_name}/repositories"
-    ],
-    setSelectedReposForOrgSecret: [
-      "PUT /orgs/{org}/codespaces/secrets/{secret_name}/repositories"
-    ],
-    startForAuthenticatedUser: ["POST /user/codespaces/{codespace_name}/start"],
-    stopForAuthenticatedUser: ["POST /user/codespaces/{codespace_name}/stop"],
-    stopInOrganization: [
-      "POST /orgs/{org}/members/{username}/codespaces/{codespace_name}/stop"
-    ],
-    updateForAuthenticatedUser: ["PATCH /user/codespaces/{codespace_name}"]
-  },
-  copilot: {
-    addCopilotSeatsForTeams: [
-      "POST /orgs/{org}/copilot/billing/selected_teams"
-    ],
-    addCopilotSeatsForUsers: [
-      "POST /orgs/{org}/copilot/billing/selected_users"
-    ],
-    cancelCopilotSeatAssignmentForTeams: [
-      "DELETE /orgs/{org}/copilot/billing/selected_teams"
-    ],
-    cancelCopilotSeatAssignmentForUsers: [
-      "DELETE /orgs/{org}/copilot/billing/selected_users"
-    ],
-    getCopilotOrganizationDetails: ["GET /orgs/{org}/copilot/billing"],
-    getCopilotSeatDetailsForUser: [
-      "GET /orgs/{org}/members/{username}/copilot"
-    ],
-    listCopilotSeats: ["GET /orgs/{org}/copilot/billing/seats"],
-    usageMetricsForEnterprise: ["GET /enterprises/{enterprise}/copilot/usage"],
-    usageMetricsForOrg: ["GET /orgs/{org}/copilot/usage"],
-    usageMetricsForTeam: ["GET /orgs/{org}/team/{team_slug}/copilot/usage"]
-  },
-  dependabot: {
-    addSelectedRepoToOrgSecret: [
-      "PUT /orgs/{org}/dependabot/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    createOrUpdateOrgSecret: [
-      "PUT /orgs/{org}/dependabot/secrets/{secret_name}"
-    ],
-    createOrUpdateRepoSecret: [
-      "PUT /repos/{owner}/{repo}/dependabot/secrets/{secret_name}"
-    ],
-    deleteOrgSecret: ["DELETE /orgs/{org}/dependabot/secrets/{secret_name}"],
-    deleteRepoSecret: [
-      "DELETE /repos/{owner}/{repo}/dependabot/secrets/{secret_name}"
-    ],
-    getAlert: ["GET /repos/{owner}/{repo}/dependabot/alerts/{alert_number}"],
-    getOrgPublicKey: ["GET /orgs/{org}/dependabot/secrets/public-key"],
-    getOrgSecret: ["GET /orgs/{org}/dependabot/secrets/{secret_name}"],
-    getRepoPublicKey: [
-      "GET /repos/{owner}/{repo}/dependabot/secrets/public-key"
-    ],
-    getRepoSecret: [
-      "GET /repos/{owner}/{repo}/dependabot/secrets/{secret_name}"
-    ],
-    listAlertsForEnterprise: [
-      "GET /enterprises/{enterprise}/dependabot/alerts"
-    ],
-    listAlertsForOrg: ["GET /orgs/{org}/dependabot/alerts"],
-    listAlertsForRepo: ["GET /repos/{owner}/{repo}/dependabot/alerts"],
-    listOrgSecrets: ["GET /orgs/{org}/dependabot/secrets"],
-    listRepoSecrets: ["GET /repos/{owner}/{repo}/dependabot/secrets"],
-    listSelectedReposForOrgSecret: [
-      "GET /orgs/{org}/dependabot/secrets/{secret_name}/repositories"
-    ],
-    removeSelectedRepoFromOrgSecret: [
-      "DELETE /orgs/{org}/dependabot/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    setSelectedReposForOrgSecret: [
-      "PUT /orgs/{org}/dependabot/secrets/{secret_name}/repositories"
-    ],
-    updateAlert: [
-      "PATCH /repos/{owner}/{repo}/dependabot/alerts/{alert_number}"
-    ]
-  },
-  dependencyGraph: {
-    createRepositorySnapshot: [
-      "POST /repos/{owner}/{repo}/dependency-graph/snapshots"
-    ],
-    diffRange: [
-      "GET /repos/{owner}/{repo}/dependency-graph/compare/{basehead}"
-    ],
-    exportSbom: ["GET /repos/{owner}/{repo}/dependency-graph/sbom"]
-  },
-  emojis: { get: ["GET /emojis"] },
-  gists: {
-    checkIsStarred: ["GET /gists/{gist_id}/star"],
-    create: ["POST /gists"],
-    createComment: ["POST /gists/{gist_id}/comments"],
-    delete: ["DELETE /gists/{gist_id}"],
-    deleteComment: ["DELETE /gists/{gist_id}/comments/{comment_id}"],
-    fork: ["POST /gists/{gist_id}/forks"],
-    get: ["GET /gists/{gist_id}"],
-    getComment: ["GET /gists/{gist_id}/comments/{comment_id}"],
-    getRevision: ["GET /gists/{gist_id}/{sha}"],
-    list: ["GET /gists"],
-    listComments: ["GET /gists/{gist_id}/comments"],
-    listCommits: ["GET /gists/{gist_id}/commits"],
-    listForUser: ["GET /users/{username}/gists"],
-    listForks: ["GET /gists/{gist_id}/forks"],
-    listPublic: ["GET /gists/public"],
-    listStarred: ["GET /gists/starred"],
-    star: ["PUT /gists/{gist_id}/star"],
-    unstar: ["DELETE /gists/{gist_id}/star"],
-    update: ["PATCH /gists/{gist_id}"],
-    updateComment: ["PATCH /gists/{gist_id}/comments/{comment_id}"]
-  },
-  git: {
-    createBlob: ["POST /repos/{owner}/{repo}/git/blobs"],
-    createCommit: ["POST /repos/{owner}/{repo}/git/commits"],
-    createRef: ["POST /repos/{owner}/{repo}/git/refs"],
-    createTag: ["POST /repos/{owner}/{repo}/git/tags"],
-    createTree: ["POST /repos/{owner}/{repo}/git/trees"],
-    deleteRef: ["DELETE /repos/{owner}/{repo}/git/refs/{ref}"],
-    getBlob: ["GET /repos/{owner}/{repo}/git/blobs/{file_sha}"],
-    getCommit: ["GET /repos/{owner}/{repo}/git/commits/{commit_sha}"],
-    getRef: ["GET /repos/{owner}/{repo}/git/ref/{ref}"],
-    getTag: ["GET /repos/{owner}/{repo}/git/tags/{tag_sha}"],
-    getTree: ["GET /repos/{owner}/{repo}/git/trees/{tree_sha}"],
-    listMatchingRefs: ["GET /repos/{owner}/{repo}/git/matching-refs/{ref}"],
-    updateRef: ["PATCH /repos/{owner}/{repo}/git/refs/{ref}"]
-  },
-  gitignore: {
-    getAllTemplates: ["GET /gitignore/templates"],
-    getTemplate: ["GET /gitignore/templates/{name}"]
-  },
-  interactions: {
-    getRestrictionsForAuthenticatedUser: ["GET /user/interaction-limits"],
-    getRestrictionsForOrg: ["GET /orgs/{org}/interaction-limits"],
-    getRestrictionsForRepo: ["GET /repos/{owner}/{repo}/interaction-limits"],
-    getRestrictionsForYourPublicRepos: [
-      "GET /user/interaction-limits",
-      {},
-      { renamed: ["interactions", "getRestrictionsForAuthenticatedUser"] }
-    ],
-    removeRestrictionsForAuthenticatedUser: ["DELETE /user/interaction-limits"],
-    removeRestrictionsForOrg: ["DELETE /orgs/{org}/interaction-limits"],
-    removeRestrictionsForRepo: [
-      "DELETE /repos/{owner}/{repo}/interaction-limits"
-    ],
-    removeRestrictionsForYourPublicRepos: [
-      "DELETE /user/interaction-limits",
-      {},
-      { renamed: ["interactions", "removeRestrictionsForAuthenticatedUser"] }
-    ],
-    setRestrictionsForAuthenticatedUser: ["PUT /user/interaction-limits"],
-    setRestrictionsForOrg: ["PUT /orgs/{org}/interaction-limits"],
-    setRestrictionsForRepo: ["PUT /repos/{owner}/{repo}/interaction-limits"],
-    setRestrictionsForYourPublicRepos: [
-      "PUT /user/interaction-limits",
-      {},
-      { renamed: ["interactions", "setRestrictionsForAuthenticatedUser"] }
-    ]
-  },
-  issues: {
-    addAssignees: [
-      "POST /repos/{owner}/{repo}/issues/{issue_number}/assignees"
-    ],
-    addLabels: ["POST /repos/{owner}/{repo}/issues/{issue_number}/labels"],
-    checkUserCanBeAssigned: ["GET /repos/{owner}/{repo}/assignees/{assignee}"],
-    checkUserCanBeAssignedToIssue: [
-      "GET /repos/{owner}/{repo}/issues/{issue_number}/assignees/{assignee}"
-    ],
-    create: ["POST /repos/{owner}/{repo}/issues"],
-    createComment: [
-      "POST /repos/{owner}/{repo}/issues/{issue_number}/comments"
-    ],
-    createLabel: ["POST /repos/{owner}/{repo}/labels"],
-    createMilestone: ["POST /repos/{owner}/{repo}/milestones"],
-    deleteComment: [
-      "DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}"
-    ],
-    deleteLabel: ["DELETE /repos/{owner}/{repo}/labels/{name}"],
-    deleteMilestone: [
-      "DELETE /repos/{owner}/{repo}/milestones/{milestone_number}"
-    ],
-    get: ["GET /repos/{owner}/{repo}/issues/{issue_number}"],
-    getComment: ["GET /repos/{owner}/{repo}/issues/comments/{comment_id}"],
-    getEvent: ["GET /repos/{owner}/{repo}/issues/events/{event_id}"],
-    getLabel: ["GET /repos/{owner}/{repo}/labels/{name}"],
-    getMilestone: ["GET /repos/{owner}/{repo}/milestones/{milestone_number}"],
-    list: ["GET /issues"],
-    listAssignees: ["GET /repos/{owner}/{repo}/assignees"],
-    listComments: ["GET /repos/{owner}/{repo}/issues/{issue_number}/comments"],
-    listCommentsForRepo: ["GET /repos/{owner}/{repo}/issues/comments"],
-    listEvents: ["GET /repos/{owner}/{repo}/issues/{issue_number}/events"],
-    listEventsForRepo: ["GET /repos/{owner}/{repo}/issues/events"],
-    listEventsForTimeline: [
-      "GET /repos/{owner}/{repo}/issues/{issue_number}/timeline"
-    ],
-    listForAuthenticatedUser: ["GET /user/issues"],
-    listForOrg: ["GET /orgs/{org}/issues"],
-    listForRepo: ["GET /repos/{owner}/{repo}/issues"],
-    listLabelsForMilestone: [
-      "GET /repos/{owner}/{repo}/milestones/{milestone_number}/labels"
-    ],
-    listLabelsForRepo: ["GET /repos/{owner}/{repo}/labels"],
-    listLabelsOnIssue: [
-      "GET /repos/{owner}/{repo}/issues/{issue_number}/labels"
-    ],
-    listMilestones: ["GET /repos/{owner}/{repo}/milestones"],
-    lock: ["PUT /repos/{owner}/{repo}/issues/{issue_number}/lock"],
-    removeAllLabels: [
-      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels"
-    ],
-    removeAssignees: [
-      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/assignees"
-    ],
-    removeLabel: [
-      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}"
-    ],
-    setLabels: ["PUT /repos/{owner}/{repo}/issues/{issue_number}/labels"],
-    unlock: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/lock"],
-    update: ["PATCH /repos/{owner}/{repo}/issues/{issue_number}"],
-    updateComment: ["PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}"],
-    updateLabel: ["PATCH /repos/{owner}/{repo}/labels/{name}"],
-    updateMilestone: [
-      "PATCH /repos/{owner}/{repo}/milestones/{milestone_number}"
-    ]
-  },
-  licenses: {
-    get: ["GET /licenses/{license}"],
-    getAllCommonlyUsed: ["GET /licenses"],
-    getForRepo: ["GET /repos/{owner}/{repo}/license"]
-  },
-  markdown: {
-    render: ["POST /markdown"],
-    renderRaw: [
-      "POST /markdown/raw",
-      { headers: { "content-type": "text/plain; charset=utf-8" } }
-    ]
-  },
-  meta: {
-    get: ["GET /meta"],
-    getAllVersions: ["GET /versions"],
-    getOctocat: ["GET /octocat"],
-    getZen: ["GET /zen"],
-    root: ["GET /"]
-  },
-  migrations: {
-    deleteArchiveForAuthenticatedUser: [
-      "DELETE /user/migrations/{migration_id}/archive"
-    ],
-    deleteArchiveForOrg: [
-      "DELETE /orgs/{org}/migrations/{migration_id}/archive"
-    ],
-    downloadArchiveForOrg: [
-      "GET /orgs/{org}/migrations/{migration_id}/archive"
-    ],
-    getArchiveForAuthenticatedUser: [
-      "GET /user/migrations/{migration_id}/archive"
-    ],
-    getStatusForAuthenticatedUser: ["GET /user/migrations/{migration_id}"],
-    getStatusForOrg: ["GET /orgs/{org}/migrations/{migration_id}"],
-    listForAuthenticatedUser: ["GET /user/migrations"],
-    listForOrg: ["GET /orgs/{org}/migrations"],
-    listReposForAuthenticatedUser: [
-      "GET /user/migrations/{migration_id}/repositories"
-    ],
-    listReposForOrg: ["GET /orgs/{org}/migrations/{migration_id}/repositories"],
-    listReposForUser: [
-      "GET /user/migrations/{migration_id}/repositories",
-      {},
-      { renamed: ["migrations", "listReposForAuthenticatedUser"] }
-    ],
-    startForAuthenticatedUser: ["POST /user/migrations"],
-    startForOrg: ["POST /orgs/{org}/migrations"],
-    unlockRepoForAuthenticatedUser: [
-      "DELETE /user/migrations/{migration_id}/repos/{repo_name}/lock"
-    ],
-    unlockRepoForOrg: [
-      "DELETE /orgs/{org}/migrations/{migration_id}/repos/{repo_name}/lock"
-    ]
-  },
-  oidc: {
-    getOidcCustomSubTemplateForOrg: [
-      "GET /orgs/{org}/actions/oidc/customization/sub"
-    ],
-    updateOidcCustomSubTemplateForOrg: [
-      "PUT /orgs/{org}/actions/oidc/customization/sub"
-    ]
-  },
-  orgs: {
-    addSecurityManagerTeam: [
-      "PUT /orgs/{org}/security-managers/teams/{team_slug}"
-    ],
-    assignTeamToOrgRole: [
-      "PUT /orgs/{org}/organization-roles/teams/{team_slug}/{role_id}"
-    ],
-    assignUserToOrgRole: [
-      "PUT /orgs/{org}/organization-roles/users/{username}/{role_id}"
-    ],
-    blockUser: ["PUT /orgs/{org}/blocks/{username}"],
-    cancelInvitation: ["DELETE /orgs/{org}/invitations/{invitation_id}"],
-    checkBlockedUser: ["GET /orgs/{org}/blocks/{username}"],
-    checkMembershipForUser: ["GET /orgs/{org}/members/{username}"],
-    checkPublicMembershipForUser: ["GET /orgs/{org}/public_members/{username}"],
-    convertMemberToOutsideCollaborator: [
-      "PUT /orgs/{org}/outside_collaborators/{username}"
-    ],
-    createCustomOrganizationRole: ["POST /orgs/{org}/organization-roles"],
-    createInvitation: ["POST /orgs/{org}/invitations"],
-    createOrUpdateCustomProperties: ["PATCH /orgs/{org}/properties/schema"],
-    createOrUpdateCustomPropertiesValuesForRepos: [
-      "PATCH /orgs/{org}/properties/values"
-    ],
-    createOrUpdateCustomProperty: [
-      "PUT /orgs/{org}/properties/schema/{custom_property_name}"
-    ],
-    createWebhook: ["POST /orgs/{org}/hooks"],
-    delete: ["DELETE /orgs/{org}"],
-    deleteCustomOrganizationRole: [
-      "DELETE /orgs/{org}/organization-roles/{role_id}"
-    ],
-    deleteWebhook: ["DELETE /orgs/{org}/hooks/{hook_id}"],
-    enableOrDisableSecurityProductOnAllOrgRepos: [
-      "POST /orgs/{org}/{security_product}/{enablement}"
-    ],
-    get: ["GET /orgs/{org}"],
-    getAllCustomProperties: ["GET /orgs/{org}/properties/schema"],
-    getCustomProperty: [
-      "GET /orgs/{org}/properties/schema/{custom_property_name}"
-    ],
-    getMembershipForAuthenticatedUser: ["GET /user/memberships/orgs/{org}"],
-    getMembershipForUser: ["GET /orgs/{org}/memberships/{username}"],
-    getOrgRole: ["GET /orgs/{org}/organization-roles/{role_id}"],
-    getWebhook: ["GET /orgs/{org}/hooks/{hook_id}"],
-    getWebhookConfigForOrg: ["GET /orgs/{org}/hooks/{hook_id}/config"],
-    getWebhookDelivery: [
-      "GET /orgs/{org}/hooks/{hook_id}/deliveries/{delivery_id}"
-    ],
-    list: ["GET /organizations"],
-    listAppInstallations: ["GET /orgs/{org}/installations"],
-    listBlockedUsers: ["GET /orgs/{org}/blocks"],
-    listCustomPropertiesValuesForRepos: ["GET /orgs/{org}/properties/values"],
-    listFailedInvitations: ["GET /orgs/{org}/failed_invitations"],
-    listForAuthenticatedUser: ["GET /user/orgs"],
-    listForUser: ["GET /users/{username}/orgs"],
-    listInvitationTeams: ["GET /orgs/{org}/invitations/{invitation_id}/teams"],
-    listMembers: ["GET /orgs/{org}/members"],
-    listMembershipsForAuthenticatedUser: ["GET /user/memberships/orgs"],
-    listOrgRoleTeams: ["GET /orgs/{org}/organization-roles/{role_id}/teams"],
-    listOrgRoleUsers: ["GET /orgs/{org}/organization-roles/{role_id}/users"],
-    listOrgRoles: ["GET /orgs/{org}/organization-roles"],
-    listOrganizationFineGrainedPermissions: [
-      "GET /orgs/{org}/organization-fine-grained-permissions"
-    ],
-    listOutsideCollaborators: ["GET /orgs/{org}/outside_collaborators"],
-    listPatGrantRepositories: [
-      "GET /orgs/{org}/personal-access-tokens/{pat_id}/repositories"
-    ],
-    listPatGrantRequestRepositories: [
-      "GET /orgs/{org}/personal-access-token-requests/{pat_request_id}/repositories"
-    ],
-    listPatGrantRequests: ["GET /orgs/{org}/personal-access-token-requests"],
-    listPatGrants: ["GET /orgs/{org}/personal-access-tokens"],
-    listPendingInvitations: ["GET /orgs/{org}/invitations"],
-    listPublicMembers: ["GET /orgs/{org}/public_members"],
-    listSecurityManagerTeams: ["GET /orgs/{org}/security-managers"],
-    listWebhookDeliveries: ["GET /orgs/{org}/hooks/{hook_id}/deliveries"],
-    listWebhooks: ["GET /orgs/{org}/hooks"],
-    patchCustomOrganizationRole: [
-      "PATCH /orgs/{org}/organization-roles/{role_id}"
-    ],
-    pingWebhook: ["POST /orgs/{org}/hooks/{hook_id}/pings"],
-    redeliverWebhookDelivery: [
-      "POST /orgs/{org}/hooks/{hook_id}/deliveries/{delivery_id}/attempts"
-    ],
-    removeCustomProperty: [
-      "DELETE /orgs/{org}/properties/schema/{custom_property_name}"
-    ],
-    removeMember: ["DELETE /orgs/{org}/members/{username}"],
-    removeMembershipForUser: ["DELETE /orgs/{org}/memberships/{username}"],
-    removeOutsideCollaborator: [
-      "DELETE /orgs/{org}/outside_collaborators/{username}"
-    ],
-    removePublicMembershipForAuthenticatedUser: [
-      "DELETE /orgs/{org}/public_members/{username}"
-    ],
-    removeSecurityManagerTeam: [
-      "DELETE /orgs/{org}/security-managers/teams/{team_slug}"
-    ],
-    reviewPatGrantRequest: [
-      "POST /orgs/{org}/personal-access-token-requests/{pat_request_id}"
-    ],
-    reviewPatGrantRequestsInBulk: [
-      "POST /orgs/{org}/personal-access-token-requests"
-    ],
-    revokeAllOrgRolesTeam: [
-      "DELETE /orgs/{org}/organization-roles/teams/{team_slug}"
-    ],
-    revokeAllOrgRolesUser: [
-      "DELETE /orgs/{org}/organization-roles/users/{username}"
-    ],
-    revokeOrgRoleTeam: [
-      "DELETE /orgs/{org}/organization-roles/teams/{team_slug}/{role_id}"
-    ],
-    revokeOrgRoleUser: [
-      "DELETE /orgs/{org}/organization-roles/users/{username}/{role_id}"
-    ],
-    setMembershipForUser: ["PUT /orgs/{org}/memberships/{username}"],
-    setPublicMembershipForAuthenticatedUser: [
-      "PUT /orgs/{org}/public_members/{username}"
-    ],
-    unblockUser: ["DELETE /orgs/{org}/blocks/{username}"],
-    update: ["PATCH /orgs/{org}"],
-    updateMembershipForAuthenticatedUser: [
-      "PATCH /user/memberships/orgs/{org}"
-    ],
-    updatePatAccess: ["POST /orgs/{org}/personal-access-tokens/{pat_id}"],
-    updatePatAccesses: ["POST /orgs/{org}/personal-access-tokens"],
-    updateWebhook: ["PATCH /orgs/{org}/hooks/{hook_id}"],
-    updateWebhookConfigForOrg: ["PATCH /orgs/{org}/hooks/{hook_id}/config"]
-  },
-  packages: {
-    deletePackageForAuthenticatedUser: [
-      "DELETE /user/packages/{package_type}/{package_name}"
-    ],
-    deletePackageForOrg: [
-      "DELETE /orgs/{org}/packages/{package_type}/{package_name}"
-    ],
-    deletePackageForUser: [
-      "DELETE /users/{username}/packages/{package_type}/{package_name}"
-    ],
-    deletePackageVersionForAuthenticatedUser: [
-      "DELETE /user/packages/{package_type}/{package_name}/versions/{package_version_id}"
-    ],
-    deletePackageVersionForOrg: [
-      "DELETE /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}"
-    ],
-    deletePackageVersionForUser: [
-      "DELETE /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}"
-    ],
-    getAllPackageVersionsForAPackageOwnedByAnOrg: [
-      "GET /orgs/{org}/packages/{package_type}/{package_name}/versions",
-      {},
-      { renamed: ["packages", "getAllPackageVersionsForPackageOwnedByOrg"] }
-    ],
-    getAllPackageVersionsForAPackageOwnedByTheAuthenticatedUser: [
-      "GET /user/packages/{package_type}/{package_name}/versions",
-      {},
-      {
-        renamed: [
-          "packages",
-          "getAllPackageVersionsForPackageOwnedByAuthenticatedUser"
-        ]
-      }
-    ],
-    getAllPackageVersionsForPackageOwnedByAuthenticatedUser: [
-      "GET /user/packages/{package_type}/{package_name}/versions"
-    ],
-    getAllPackageVersionsForPackageOwnedByOrg: [
-      "GET /orgs/{org}/packages/{package_type}/{package_name}/versions"
-    ],
-    getAllPackageVersionsForPackageOwnedByUser: [
-      "GET /users/{username}/packages/{package_type}/{package_name}/versions"
-    ],
-    getPackageForAuthenticatedUser: [
-      "GET /user/packages/{package_type}/{package_name}"
-    ],
-    getPackageForOrganization: [
-      "GET /orgs/{org}/packages/{package_type}/{package_name}"
-    ],
-    getPackageForUser: [
-      "GET /users/{username}/packages/{package_type}/{package_name}"
-    ],
-    getPackageVersionForAuthenticatedUser: [
-      "GET /user/packages/{package_type}/{package_name}/versions/{package_version_id}"
-    ],
-    getPackageVersionForOrganization: [
-      "GET /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}"
-    ],
-    getPackageVersionForUser: [
-      "GET /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}"
-    ],
-    listDockerMigrationConflictingPackagesForAuthenticatedUser: [
-      "GET /user/docker/conflicts"
-    ],
-    listDockerMigrationConflictingPackagesForOrganization: [
-      "GET /orgs/{org}/docker/conflicts"
-    ],
-    listDockerMigrationConflictingPackagesForUser: [
-      "GET /users/{username}/docker/conflicts"
-    ],
-    listPackagesForAuthenticatedUser: ["GET /user/packages"],
-    listPackagesForOrganization: ["GET /orgs/{org}/packages"],
-    listPackagesForUser: ["GET /users/{username}/packages"],
-    restorePackageForAuthenticatedUser: [
-      "POST /user/packages/{package_type}/{package_name}/restore{?token}"
-    ],
-    restorePackageForOrg: [
-      "POST /orgs/{org}/packages/{package_type}/{package_name}/restore{?token}"
-    ],
-    restorePackageForUser: [
-      "POST /users/{username}/packages/{package_type}/{package_name}/restore{?token}"
-    ],
-    restorePackageVersionForAuthenticatedUser: [
-      "POST /user/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"
-    ],
-    restorePackageVersionForOrg: [
-      "POST /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"
-    ],
-    restorePackageVersionForUser: [
-      "POST /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"
-    ]
-  },
-  projects: {
-    addCollaborator: ["PUT /projects/{project_id}/collaborators/{username}"],
-    createCard: ["POST /projects/columns/{column_id}/cards"],
-    createColumn: ["POST /projects/{project_id}/columns"],
-    createForAuthenticatedUser: ["POST /user/projects"],
-    createForOrg: ["POST /orgs/{org}/projects"],
-    createForRepo: ["POST /repos/{owner}/{repo}/projects"],
-    delete: ["DELETE /projects/{project_id}"],
-    deleteCard: ["DELETE /projects/columns/cards/{card_id}"],
-    deleteColumn: ["DELETE /projects/columns/{column_id}"],
-    get: ["GET /projects/{project_id}"],
-    getCard: ["GET /projects/columns/cards/{card_id}"],
-    getColumn: ["GET /projects/columns/{column_id}"],
-    getPermissionForUser: [
-      "GET /projects/{project_id}/collaborators/{username}/permission"
-    ],
-    listCards: ["GET /projects/columns/{column_id}/cards"],
-    listCollaborators: ["GET /projects/{project_id}/collaborators"],
-    listColumns: ["GET /projects/{project_id}/columns"],
-    listForOrg: ["GET /orgs/{org}/projects"],
-    listForRepo: ["GET /repos/{owner}/{repo}/projects"],
-    listForUser: ["GET /users/{username}/projects"],
-    moveCard: ["POST /projects/columns/cards/{card_id}/moves"],
-    moveColumn: ["POST /projects/columns/{column_id}/moves"],
-    removeCollaborator: [
-      "DELETE /projects/{project_id}/collaborators/{username}"
-    ],
-    update: ["PATCH /projects/{project_id}"],
-    updateCard: ["PATCH /projects/columns/cards/{card_id}"],
-    updateColumn: ["PATCH /projects/columns/{column_id}"]
-  },
-  pulls: {
-    checkIfMerged: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
-    create: ["POST /repos/{owner}/{repo}/pulls"],
-    createReplyForReviewComment: [
-      "POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies"
-    ],
-    createReview: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews"],
-    createReviewComment: [
-      "POST /repos/{owner}/{repo}/pulls/{pull_number}/comments"
-    ],
-    deletePendingReview: [
-      "DELETE /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"
-    ],
-    deleteReviewComment: [
-      "DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}"
-    ],
-    dismissReview: [
-      "PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/dismissals"
-    ],
-    get: ["GET /repos/{owner}/{repo}/pulls/{pull_number}"],
-    getReview: [
-      "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"
-    ],
-    getReviewComment: ["GET /repos/{owner}/{repo}/pulls/comments/{comment_id}"],
-    list: ["GET /repos/{owner}/{repo}/pulls"],
-    listCommentsForReview: [
-      "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments"
-    ],
-    listCommits: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/commits"],
-    listFiles: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/files"],
-    listRequestedReviewers: [
-      "GET /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"
-    ],
-    listReviewComments: [
-      "GET /repos/{owner}/{repo}/pulls/{pull_number}/comments"
-    ],
-    listReviewCommentsForRepo: ["GET /repos/{owner}/{repo}/pulls/comments"],
-    listReviews: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews"],
-    merge: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
-    removeRequestedReviewers: [
-      "DELETE /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"
-    ],
-    requestReviewers: [
-      "POST /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"
-    ],
-    submitReview: [
-      "POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/events"
-    ],
-    update: ["PATCH /repos/{owner}/{repo}/pulls/{pull_number}"],
-    updateBranch: [
-      "PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch"
-    ],
-    updateReview: [
-      "PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"
-    ],
-    updateReviewComment: [
-      "PATCH /repos/{owner}/{repo}/pulls/comments/{comment_id}"
-    ]
-  },
-  rateLimit: { get: ["GET /rate_limit"] },
-  reactions: {
-    createForCommitComment: [
-      "POST /repos/{owner}/{repo}/comments/{comment_id}/reactions"
-    ],
-    createForIssue: [
-      "POST /repos/{owner}/{repo}/issues/{issue_number}/reactions"
-    ],
-    createForIssueComment: [
-      "POST /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions"
-    ],
-    createForPullRequestReviewComment: [
-      "POST /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions"
-    ],
-    createForRelease: [
-      "POST /repos/{owner}/{repo}/releases/{release_id}/reactions"
-    ],
-    createForTeamDiscussionCommentInOrg: [
-      "POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions"
-    ],
-    createForTeamDiscussionInOrg: [
-      "POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions"
-    ],
-    deleteForCommitComment: [
-      "DELETE /repos/{owner}/{repo}/comments/{comment_id}/reactions/{reaction_id}"
-    ],
-    deleteForIssue: [
-      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/reactions/{reaction_id}"
-    ],
-    deleteForIssueComment: [
-      "DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions/{reaction_id}"
-    ],
-    deleteForPullRequestComment: [
-      "DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions/{reaction_id}"
-    ],
-    deleteForRelease: [
-      "DELETE /repos/{owner}/{repo}/releases/{release_id}/reactions/{reaction_id}"
-    ],
-    deleteForTeamDiscussion: [
-      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions/{reaction_id}"
-    ],
-    deleteForTeamDiscussionComment: [
-      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions/{reaction_id}"
-    ],
-    listForCommitComment: [
-      "GET /repos/{owner}/{repo}/comments/{comment_id}/reactions"
-    ],
-    listForIssue: ["GET /repos/{owner}/{repo}/issues/{issue_number}/reactions"],
-    listForIssueComment: [
-      "GET /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions"
-    ],
-    listForPullRequestReviewComment: [
-      "GET /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions"
-    ],
-    listForRelease: [
-      "GET /repos/{owner}/{repo}/releases/{release_id}/reactions"
-    ],
-    listForTeamDiscussionCommentInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions"
-    ],
-    listForTeamDiscussionInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions"
-    ]
-  },
-  repos: {
-    acceptInvitation: [
-      "PATCH /user/repository_invitations/{invitation_id}",
-      {},
-      { renamed: ["repos", "acceptInvitationForAuthenticatedUser"] }
-    ],
-    acceptInvitationForAuthenticatedUser: [
-      "PATCH /user/repository_invitations/{invitation_id}"
-    ],
-    addAppAccessRestrictions: [
-      "POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps",
-      {},
-      { mapToData: "apps" }
-    ],
-    addCollaborator: ["PUT /repos/{owner}/{repo}/collaborators/{username}"],
-    addStatusCheckContexts: [
-      "POST /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts",
-      {},
-      { mapToData: "contexts" }
-    ],
-    addTeamAccessRestrictions: [
-      "POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams",
-      {},
-      { mapToData: "teams" }
-    ],
-    addUserAccessRestrictions: [
-      "POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users",
-      {},
-      { mapToData: "users" }
-    ],
-    cancelPagesDeployment: [
-      "POST /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}/cancel"
-    ],
-    checkAutomatedSecurityFixes: [
-      "GET /repos/{owner}/{repo}/automated-security-fixes"
-    ],
-    checkCollaborator: ["GET /repos/{owner}/{repo}/collaborators/{username}"],
-    checkPrivateVulnerabilityReporting: [
-      "GET /repos/{owner}/{repo}/private-vulnerability-reporting"
-    ],
-    checkVulnerabilityAlerts: [
-      "GET /repos/{owner}/{repo}/vulnerability-alerts"
-    ],
-    codeownersErrors: ["GET /repos/{owner}/{repo}/codeowners/errors"],
-    compareCommits: ["GET /repos/{owner}/{repo}/compare/{base}...{head}"],
-    compareCommitsWithBasehead: [
-      "GET /repos/{owner}/{repo}/compare/{basehead}"
-    ],
-    createAutolink: ["POST /repos/{owner}/{repo}/autolinks"],
-    createCommitComment: [
-      "POST /repos/{owner}/{repo}/commits/{commit_sha}/comments"
-    ],
-    createCommitSignatureProtection: [
-      "POST /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures"
-    ],
-    createCommitStatus: ["POST /repos/{owner}/{repo}/statuses/{sha}"],
-    createDeployKey: ["POST /repos/{owner}/{repo}/keys"],
-    createDeployment: ["POST /repos/{owner}/{repo}/deployments"],
-    createDeploymentBranchPolicy: [
-      "POST /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies"
-    ],
-    createDeploymentProtectionRule: [
-      "POST /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules"
-    ],
-    createDeploymentStatus: [
-      "POST /repos/{owner}/{repo}/deployments/{deployment_id}/statuses"
-    ],
-    createDispatchEvent: ["POST /repos/{owner}/{repo}/dispatches"],
-    createForAuthenticatedUser: ["POST /user/repos"],
-    createFork: ["POST /repos/{owner}/{repo}/forks"],
-    createInOrg: ["POST /orgs/{org}/repos"],
-    createOrUpdateCustomPropertiesValues: [
-      "PATCH /repos/{owner}/{repo}/properties/values"
-    ],
-    createOrUpdateEnvironment: [
-      "PUT /repos/{owner}/{repo}/environments/{environment_name}"
-    ],
-    createOrUpdateFileContents: ["PUT /repos/{owner}/{repo}/contents/{path}"],
-    createOrgRuleset: ["POST /orgs/{org}/rulesets"],
-    createPagesDeployment: ["POST /repos/{owner}/{repo}/pages/deployments"],
-    createPagesSite: ["POST /repos/{owner}/{repo}/pages"],
-    createRelease: ["POST /repos/{owner}/{repo}/releases"],
-    createRepoRuleset: ["POST /repos/{owner}/{repo}/rulesets"],
-    createTagProtection: ["POST /repos/{owner}/{repo}/tags/protection"],
-    createUsingTemplate: [
-      "POST /repos/{template_owner}/{template_repo}/generate"
-    ],
-    createWebhook: ["POST /repos/{owner}/{repo}/hooks"],
-    declineInvitation: [
-      "DELETE /user/repository_invitations/{invitation_id}",
-      {},
-      { renamed: ["repos", "declineInvitationForAuthenticatedUser"] }
-    ],
-    declineInvitationForAuthenticatedUser: [
-      "DELETE /user/repository_invitations/{invitation_id}"
-    ],
-    delete: ["DELETE /repos/{owner}/{repo}"],
-    deleteAccessRestrictions: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions"
-    ],
-    deleteAdminBranchProtection: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"
-    ],
-    deleteAnEnvironment: [
-      "DELETE /repos/{owner}/{repo}/environments/{environment_name}"
-    ],
-    deleteAutolink: ["DELETE /repos/{owner}/{repo}/autolinks/{autolink_id}"],
-    deleteBranchProtection: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection"
-    ],
-    deleteCommitComment: ["DELETE /repos/{owner}/{repo}/comments/{comment_id}"],
-    deleteCommitSignatureProtection: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures"
-    ],
-    deleteDeployKey: ["DELETE /repos/{owner}/{repo}/keys/{key_id}"],
-    deleteDeployment: [
-      "DELETE /repos/{owner}/{repo}/deployments/{deployment_id}"
-    ],
-    deleteDeploymentBranchPolicy: [
-      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}"
-    ],
-    deleteFile: ["DELETE /repos/{owner}/{repo}/contents/{path}"],
-    deleteInvitation: [
-      "DELETE /repos/{owner}/{repo}/invitations/{invitation_id}"
-    ],
-    deleteOrgRuleset: ["DELETE /orgs/{org}/rulesets/{ruleset_id}"],
-    deletePagesSite: ["DELETE /repos/{owner}/{repo}/pages"],
-    deletePullRequestReviewProtection: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"
-    ],
-    deleteRelease: ["DELETE /repos/{owner}/{repo}/releases/{release_id}"],
-    deleteReleaseAsset: [
-      "DELETE /repos/{owner}/{repo}/releases/assets/{asset_id}"
-    ],
-    deleteRepoRuleset: ["DELETE /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
-    deleteTagProtection: [
-      "DELETE /repos/{owner}/{repo}/tags/protection/{tag_protection_id}"
-    ],
-    deleteWebhook: ["DELETE /repos/{owner}/{repo}/hooks/{hook_id}"],
-    disableAutomatedSecurityFixes: [
-      "DELETE /repos/{owner}/{repo}/automated-security-fixes"
-    ],
-    disableDeploymentProtectionRule: [
-      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}"
-    ],
-    disablePrivateVulnerabilityReporting: [
-      "DELETE /repos/{owner}/{repo}/private-vulnerability-reporting"
-    ],
-    disableVulnerabilityAlerts: [
-      "DELETE /repos/{owner}/{repo}/vulnerability-alerts"
-    ],
-    downloadArchive: [
-      "GET /repos/{owner}/{repo}/zipball/{ref}",
-      {},
-      { renamed: ["repos", "downloadZipballArchive"] }
-    ],
-    downloadTarballArchive: ["GET /repos/{owner}/{repo}/tarball/{ref}"],
-    downloadZipballArchive: ["GET /repos/{owner}/{repo}/zipball/{ref}"],
-    enableAutomatedSecurityFixes: [
-      "PUT /repos/{owner}/{repo}/automated-security-fixes"
-    ],
-    enablePrivateVulnerabilityReporting: [
-      "PUT /repos/{owner}/{repo}/private-vulnerability-reporting"
-    ],
-    enableVulnerabilityAlerts: [
-      "PUT /repos/{owner}/{repo}/vulnerability-alerts"
-    ],
-    generateReleaseNotes: [
-      "POST /repos/{owner}/{repo}/releases/generate-notes"
-    ],
-    get: ["GET /repos/{owner}/{repo}"],
-    getAccessRestrictions: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions"
-    ],
-    getAdminBranchProtection: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"
-    ],
-    getAllDeploymentProtectionRules: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules"
-    ],
-    getAllEnvironments: ["GET /repos/{owner}/{repo}/environments"],
-    getAllStatusCheckContexts: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts"
-    ],
-    getAllTopics: ["GET /repos/{owner}/{repo}/topics"],
-    getAppsWithAccessToProtectedBranch: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps"
-    ],
-    getAutolink: ["GET /repos/{owner}/{repo}/autolinks/{autolink_id}"],
-    getBranch: ["GET /repos/{owner}/{repo}/branches/{branch}"],
-    getBranchProtection: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection"
-    ],
-    getBranchRules: ["GET /repos/{owner}/{repo}/rules/branches/{branch}"],
-    getClones: ["GET /repos/{owner}/{repo}/traffic/clones"],
-    getCodeFrequencyStats: ["GET /repos/{owner}/{repo}/stats/code_frequency"],
-    getCollaboratorPermissionLevel: [
-      "GET /repos/{owner}/{repo}/collaborators/{username}/permission"
-    ],
-    getCombinedStatusForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/status"],
-    getCommit: ["GET /repos/{owner}/{repo}/commits/{ref}"],
-    getCommitActivityStats: ["GET /repos/{owner}/{repo}/stats/commit_activity"],
-    getCommitComment: ["GET /repos/{owner}/{repo}/comments/{comment_id}"],
-    getCommitSignatureProtection: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures"
-    ],
-    getCommunityProfileMetrics: ["GET /repos/{owner}/{repo}/community/profile"],
-    getContent: ["GET /repos/{owner}/{repo}/contents/{path}"],
-    getContributorsStats: ["GET /repos/{owner}/{repo}/stats/contributors"],
-    getCustomDeploymentProtectionRule: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}"
-    ],
-    getCustomPropertiesValues: ["GET /repos/{owner}/{repo}/properties/values"],
-    getDeployKey: ["GET /repos/{owner}/{repo}/keys/{key_id}"],
-    getDeployment: ["GET /repos/{owner}/{repo}/deployments/{deployment_id}"],
-    getDeploymentBranchPolicy: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}"
-    ],
-    getDeploymentStatus: [
-      "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses/{status_id}"
-    ],
-    getEnvironment: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}"
-    ],
-    getLatestPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/latest"],
-    getLatestRelease: ["GET /repos/{owner}/{repo}/releases/latest"],
-    getOrgRuleSuite: ["GET /orgs/{org}/rulesets/rule-suites/{rule_suite_id}"],
-    getOrgRuleSuites: ["GET /orgs/{org}/rulesets/rule-suites"],
-    getOrgRuleset: ["GET /orgs/{org}/rulesets/{ruleset_id}"],
-    getOrgRulesets: ["GET /orgs/{org}/rulesets"],
-    getPages: ["GET /repos/{owner}/{repo}/pages"],
-    getPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/{build_id}"],
-    getPagesDeployment: [
-      "GET /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}"
-    ],
-    getPagesHealthCheck: ["GET /repos/{owner}/{repo}/pages/health"],
-    getParticipationStats: ["GET /repos/{owner}/{repo}/stats/participation"],
-    getPullRequestReviewProtection: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"
-    ],
-    getPunchCardStats: ["GET /repos/{owner}/{repo}/stats/punch_card"],
-    getReadme: ["GET /repos/{owner}/{repo}/readme"],
-    getReadmeInDirectory: ["GET /repos/{owner}/{repo}/readme/{dir}"],
-    getRelease: ["GET /repos/{owner}/{repo}/releases/{release_id}"],
-    getReleaseAsset: ["GET /repos/{owner}/{repo}/releases/assets/{asset_id}"],
-    getReleaseByTag: ["GET /repos/{owner}/{repo}/releases/tags/{tag}"],
-    getRepoRuleSuite: [
-      "GET /repos/{owner}/{repo}/rulesets/rule-suites/{rule_suite_id}"
-    ],
-    getRepoRuleSuites: ["GET /repos/{owner}/{repo}/rulesets/rule-suites"],
-    getRepoRuleset: ["GET /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
-    getRepoRulesets: ["GET /repos/{owner}/{repo}/rulesets"],
-    getStatusChecksProtection: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"
-    ],
-    getTeamsWithAccessToProtectedBranch: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams"
-    ],
-    getTopPaths: ["GET /repos/{owner}/{repo}/traffic/popular/paths"],
-    getTopReferrers: ["GET /repos/{owner}/{repo}/traffic/popular/referrers"],
-    getUsersWithAccessToProtectedBranch: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users"
-    ],
-    getViews: ["GET /repos/{owner}/{repo}/traffic/views"],
-    getWebhook: ["GET /repos/{owner}/{repo}/hooks/{hook_id}"],
-    getWebhookConfigForRepo: [
-      "GET /repos/{owner}/{repo}/hooks/{hook_id}/config"
-    ],
-    getWebhookDelivery: [
-      "GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries/{delivery_id}"
-    ],
-    listActivities: ["GET /repos/{owner}/{repo}/activity"],
-    listAutolinks: ["GET /repos/{owner}/{repo}/autolinks"],
-    listBranches: ["GET /repos/{owner}/{repo}/branches"],
-    listBranchesForHeadCommit: [
-      "GET /repos/{owner}/{repo}/commits/{commit_sha}/branches-where-head"
-    ],
-    listCollaborators: ["GET /repos/{owner}/{repo}/collaborators"],
-    listCommentsForCommit: [
-      "GET /repos/{owner}/{repo}/commits/{commit_sha}/comments"
-    ],
-    listCommitCommentsForRepo: ["GET /repos/{owner}/{repo}/comments"],
-    listCommitStatusesForRef: [
-      "GET /repos/{owner}/{repo}/commits/{ref}/statuses"
-    ],
-    listCommits: ["GET /repos/{owner}/{repo}/commits"],
-    listContributors: ["GET /repos/{owner}/{repo}/contributors"],
-    listCustomDeploymentRuleIntegrations: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/apps"
-    ],
-    listDeployKeys: ["GET /repos/{owner}/{repo}/keys"],
-    listDeploymentBranchPolicies: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies"
-    ],
-    listDeploymentStatuses: [
-      "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses"
-    ],
-    listDeployments: ["GET /repos/{owner}/{repo}/deployments"],
-    listForAuthenticatedUser: ["GET /user/repos"],
-    listForOrg: ["GET /orgs/{org}/repos"],
-    listForUser: ["GET /users/{username}/repos"],
-    listForks: ["GET /repos/{owner}/{repo}/forks"],
-    listInvitations: ["GET /repos/{owner}/{repo}/invitations"],
-    listInvitationsForAuthenticatedUser: ["GET /user/repository_invitations"],
-    listLanguages: ["GET /repos/{owner}/{repo}/languages"],
-    listPagesBuilds: ["GET /repos/{owner}/{repo}/pages/builds"],
-    listPublic: ["GET /repositories"],
-    listPullRequestsAssociatedWithCommit: [
-      "GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls"
-    ],
-    listReleaseAssets: [
-      "GET /repos/{owner}/{repo}/releases/{release_id}/assets"
-    ],
-    listReleases: ["GET /repos/{owner}/{repo}/releases"],
-    listTagProtection: ["GET /repos/{owner}/{repo}/tags/protection"],
-    listTags: ["GET /repos/{owner}/{repo}/tags"],
-    listTeams: ["GET /repos/{owner}/{repo}/teams"],
-    listWebhookDeliveries: [
-      "GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries"
-    ],
-    listWebhooks: ["GET /repos/{owner}/{repo}/hooks"],
-    merge: ["POST /repos/{owner}/{repo}/merges"],
-    mergeUpstream: ["POST /repos/{owner}/{repo}/merge-upstream"],
-    pingWebhook: ["POST /repos/{owner}/{repo}/hooks/{hook_id}/pings"],
-    redeliverWebhookDelivery: [
-      "POST /repos/{owner}/{repo}/hooks/{hook_id}/deliveries/{delivery_id}/attempts"
-    ],
-    removeAppAccessRestrictions: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps",
-      {},
-      { mapToData: "apps" }
-    ],
-    removeCollaborator: [
-      "DELETE /repos/{owner}/{repo}/collaborators/{username}"
-    ],
-    removeStatusCheckContexts: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts",
-      {},
-      { mapToData: "contexts" }
-    ],
-    removeStatusCheckProtection: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"
-    ],
-    removeTeamAccessRestrictions: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams",
-      {},
-      { mapToData: "teams" }
-    ],
-    removeUserAccessRestrictions: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users",
-      {},
-      { mapToData: "users" }
-    ],
-    renameBranch: ["POST /repos/{owner}/{repo}/branches/{branch}/rename"],
-    replaceAllTopics: ["PUT /repos/{owner}/{repo}/topics"],
-    requestPagesBuild: ["POST /repos/{owner}/{repo}/pages/builds"],
-    setAdminBranchProtection: [
-      "POST /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"
-    ],
-    setAppAccessRestrictions: [
-      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps",
-      {},
-      { mapToData: "apps" }
-    ],
-    setStatusCheckContexts: [
-      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts",
-      {},
-      { mapToData: "contexts" }
-    ],
-    setTeamAccessRestrictions: [
-      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams",
-      {},
-      { mapToData: "teams" }
-    ],
-    setUserAccessRestrictions: [
-      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users",
-      {},
-      { mapToData: "users" }
-    ],
-    testPushWebhook: ["POST /repos/{owner}/{repo}/hooks/{hook_id}/tests"],
-    transfer: ["POST /repos/{owner}/{repo}/transfer"],
-    update: ["PATCH /repos/{owner}/{repo}"],
-    updateBranchProtection: [
-      "PUT /repos/{owner}/{repo}/branches/{branch}/protection"
-    ],
-    updateCommitComment: ["PATCH /repos/{owner}/{repo}/comments/{comment_id}"],
-    updateDeploymentBranchPolicy: [
-      "PUT /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}"
-    ],
-    updateInformationAboutPagesSite: ["PUT /repos/{owner}/{repo}/pages"],
-    updateInvitation: [
-      "PATCH /repos/{owner}/{repo}/invitations/{invitation_id}"
-    ],
-    updateOrgRuleset: ["PUT /orgs/{org}/rulesets/{ruleset_id}"],
-    updatePullRequestReviewProtection: [
-      "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"
-    ],
-    updateRelease: ["PATCH /repos/{owner}/{repo}/releases/{release_id}"],
-    updateReleaseAsset: [
-      "PATCH /repos/{owner}/{repo}/releases/assets/{asset_id}"
-    ],
-    updateRepoRuleset: ["PUT /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
-    updateStatusCheckPotection: [
-      "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks",
-      {},
-      { renamed: ["repos", "updateStatusCheckProtection"] }
-    ],
-    updateStatusCheckProtection: [
-      "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"
-    ],
-    updateWebhook: ["PATCH /repos/{owner}/{repo}/hooks/{hook_id}"],
-    updateWebhookConfigForRepo: [
-      "PATCH /repos/{owner}/{repo}/hooks/{hook_id}/config"
-    ],
-    uploadReleaseAsset: [
-      "POST /repos/{owner}/{repo}/releases/{release_id}/assets{?name,label}",
-      { baseUrl: "https://uploads.github.com" }
-    ]
-  },
-  search: {
-    code: ["GET /search/code"],
-    commits: ["GET /search/commits"],
-    issuesAndPullRequests: ["GET /search/issues"],
-    labels: ["GET /search/labels"],
-    repos: ["GET /search/repositories"],
-    topics: ["GET /search/topics"],
-    users: ["GET /search/users"]
-  },
-  secretScanning: {
-    getAlert: [
-      "GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}"
-    ],
-    listAlertsForEnterprise: [
-      "GET /enterprises/{enterprise}/secret-scanning/alerts"
-    ],
-    listAlertsForOrg: ["GET /orgs/{org}/secret-scanning/alerts"],
-    listAlertsForRepo: ["GET /repos/{owner}/{repo}/secret-scanning/alerts"],
-    listLocationsForAlert: [
-      "GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}/locations"
-    ],
-    updateAlert: [
-      "PATCH /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}"
-    ]
-  },
-  securityAdvisories: {
-    createFork: [
-      "POST /repos/{owner}/{repo}/security-advisories/{ghsa_id}/forks"
-    ],
-    createPrivateVulnerabilityReport: [
-      "POST /repos/{owner}/{repo}/security-advisories/reports"
-    ],
-    createRepositoryAdvisory: [
-      "POST /repos/{owner}/{repo}/security-advisories"
-    ],
-    createRepositoryAdvisoryCveRequest: [
-      "POST /repos/{owner}/{repo}/security-advisories/{ghsa_id}/cve"
-    ],
-    getGlobalAdvisory: ["GET /advisories/{ghsa_id}"],
-    getRepositoryAdvisory: [
-      "GET /repos/{owner}/{repo}/security-advisories/{ghsa_id}"
-    ],
-    listGlobalAdvisories: ["GET /advisories"],
-    listOrgRepositoryAdvisories: ["GET /orgs/{org}/security-advisories"],
-    listRepositoryAdvisories: ["GET /repos/{owner}/{repo}/security-advisories"],
-    updateRepositoryAdvisory: [
-      "PATCH /repos/{owner}/{repo}/security-advisories/{ghsa_id}"
-    ]
-  },
-  teams: {
-    addOrUpdateMembershipForUserInOrg: [
-      "PUT /orgs/{org}/teams/{team_slug}/memberships/{username}"
-    ],
-    addOrUpdateProjectPermissionsInOrg: [
-      "PUT /orgs/{org}/teams/{team_slug}/projects/{project_id}"
-    ],
-    addOrUpdateRepoPermissionsInOrg: [
-      "PUT /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
-    ],
-    checkPermissionsForProjectInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/projects/{project_id}"
-    ],
-    checkPermissionsForRepoInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
-    ],
-    create: ["POST /orgs/{org}/teams"],
-    createDiscussionCommentInOrg: [
-      "POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments"
-    ],
-    createDiscussionInOrg: ["POST /orgs/{org}/teams/{team_slug}/discussions"],
-    deleteDiscussionCommentInOrg: [
-      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"
-    ],
-    deleteDiscussionInOrg: [
-      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"
-    ],
-    deleteInOrg: ["DELETE /orgs/{org}/teams/{team_slug}"],
-    getByName: ["GET /orgs/{org}/teams/{team_slug}"],
-    getDiscussionCommentInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"
-    ],
-    getDiscussionInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"
-    ],
-    getMembershipForUserInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/memberships/{username}"
-    ],
-    list: ["GET /orgs/{org}/teams"],
-    listChildInOrg: ["GET /orgs/{org}/teams/{team_slug}/teams"],
-    listDiscussionCommentsInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments"
-    ],
-    listDiscussionsInOrg: ["GET /orgs/{org}/teams/{team_slug}/discussions"],
-    listForAuthenticatedUser: ["GET /user/teams"],
-    listMembersInOrg: ["GET /orgs/{org}/teams/{team_slug}/members"],
-    listPendingInvitationsInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/invitations"
-    ],
-    listProjectsInOrg: ["GET /orgs/{org}/teams/{team_slug}/projects"],
-    listReposInOrg: ["GET /orgs/{org}/teams/{team_slug}/repos"],
-    removeMembershipForUserInOrg: [
-      "DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}"
-    ],
-    removeProjectInOrg: [
-      "DELETE /orgs/{org}/teams/{team_slug}/projects/{project_id}"
-    ],
-    removeRepoInOrg: [
-      "DELETE /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
-    ],
-    updateDiscussionCommentInOrg: [
-      "PATCH /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"
-    ],
-    updateDiscussionInOrg: [
-      "PATCH /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"
-    ],
-    updateInOrg: ["PATCH /orgs/{org}/teams/{team_slug}"]
-  },
-  users: {
-    addEmailForAuthenticated: [
-      "POST /user/emails",
-      {},
-      { renamed: ["users", "addEmailForAuthenticatedUser"] }
-    ],
-    addEmailForAuthenticatedUser: ["POST /user/emails"],
-    addSocialAccountForAuthenticatedUser: ["POST /user/social_accounts"],
-    block: ["PUT /user/blocks/{username}"],
-    checkBlocked: ["GET /user/blocks/{username}"],
-    checkFollowingForUser: ["GET /users/{username}/following/{target_user}"],
-    checkPersonIsFollowedByAuthenticated: ["GET /user/following/{username}"],
-    createGpgKeyForAuthenticated: [
-      "POST /user/gpg_keys",
-      {},
-      { renamed: ["users", "createGpgKeyForAuthenticatedUser"] }
-    ],
-    createGpgKeyForAuthenticatedUser: ["POST /user/gpg_keys"],
-    createPublicSshKeyForAuthenticated: [
-      "POST /user/keys",
-      {},
-      { renamed: ["users", "createPublicSshKeyForAuthenticatedUser"] }
-    ],
-    createPublicSshKeyForAuthenticatedUser: ["POST /user/keys"],
-    createSshSigningKeyForAuthenticatedUser: ["POST /user/ssh_signing_keys"],
-    deleteEmailForAuthenticated: [
-      "DELETE /user/emails",
-      {},
-      { renamed: ["users", "deleteEmailForAuthenticatedUser"] }
-    ],
-    deleteEmailForAuthenticatedUser: ["DELETE /user/emails"],
-    deleteGpgKeyForAuthenticated: [
-      "DELETE /user/gpg_keys/{gpg_key_id}",
-      {},
-      { renamed: ["users", "deleteGpgKeyForAuthenticatedUser"] }
-    ],
-    deleteGpgKeyForAuthenticatedUser: ["DELETE /user/gpg_keys/{gpg_key_id}"],
-    deletePublicSshKeyForAuthenticated: [
-      "DELETE /user/keys/{key_id}",
-      {},
-      { renamed: ["users", "deletePublicSshKeyForAuthenticatedUser"] }
-    ],
-    deletePublicSshKeyForAuthenticatedUser: ["DELETE /user/keys/{key_id}"],
-    deleteSocialAccountForAuthenticatedUser: ["DELETE /user/social_accounts"],
-    deleteSshSigningKeyForAuthenticatedUser: [
-      "DELETE /user/ssh_signing_keys/{ssh_signing_key_id}"
-    ],
-    follow: ["PUT /user/following/{username}"],
-    getAuthenticated: ["GET /user"],
-    getByUsername: ["GET /users/{username}"],
-    getContextForUser: ["GET /users/{username}/hovercard"],
-    getGpgKeyForAuthenticated: [
-      "GET /user/gpg_keys/{gpg_key_id}",
-      {},
-      { renamed: ["users", "getGpgKeyForAuthenticatedUser"] }
-    ],
-    getGpgKeyForAuthenticatedUser: ["GET /user/gpg_keys/{gpg_key_id}"],
-    getPublicSshKeyForAuthenticated: [
-      "GET /user/keys/{key_id}",
-      {},
-      { renamed: ["users", "getPublicSshKeyForAuthenticatedUser"] }
-    ],
-    getPublicSshKeyForAuthenticatedUser: ["GET /user/keys/{key_id}"],
-    getSshSigningKeyForAuthenticatedUser: [
-      "GET /user/ssh_signing_keys/{ssh_signing_key_id}"
-    ],
-    list: ["GET /users"],
-    listBlockedByAuthenticated: [
-      "GET /user/blocks",
-      {},
-      { renamed: ["users", "listBlockedByAuthenticatedUser"] }
-    ],
-    listBlockedByAuthenticatedUser: ["GET /user/blocks"],
-    listEmailsForAuthenticated: [
-      "GET /user/emails",
-      {},
-      { renamed: ["users", "listEmailsForAuthenticatedUser"] }
-    ],
-    listEmailsForAuthenticatedUser: ["GET /user/emails"],
-    listFollowedByAuthenticated: [
-      "GET /user/following",
-      {},
-      { renamed: ["users", "listFollowedByAuthenticatedUser"] }
-    ],
-    listFollowedByAuthenticatedUser: ["GET /user/following"],
-    listFollowersForAuthenticatedUser: ["GET /user/followers"],
-    listFollowersForUser: ["GET /users/{username}/followers"],
-    listFollowingForUser: ["GET /users/{username}/following"],
-    listGpgKeysForAuthenticated: [
-      "GET /user/gpg_keys",
-      {},
-      { renamed: ["users", "listGpgKeysForAuthenticatedUser"] }
-    ],
-    listGpgKeysForAuthenticatedUser: ["GET /user/gpg_keys"],
-    listGpgKeysForUser: ["GET /users/{username}/gpg_keys"],
-    listPublicEmailsForAuthenticated: [
-      "GET /user/public_emails",
-      {},
-      { renamed: ["users", "listPublicEmailsForAuthenticatedUser"] }
-    ],
-    listPublicEmailsForAuthenticatedUser: ["GET /user/public_emails"],
-    listPublicKeysForUser: ["GET /users/{username}/keys"],
-    listPublicSshKeysForAuthenticated: [
-      "GET /user/keys",
-      {},
-      { renamed: ["users", "listPublicSshKeysForAuthenticatedUser"] }
-    ],
-    listPublicSshKeysForAuthenticatedUser: ["GET /user/keys"],
-    listSocialAccountsForAuthenticatedUser: ["GET /user/social_accounts"],
-    listSocialAccountsForUser: ["GET /users/{username}/social_accounts"],
-    listSshSigningKeysForAuthenticatedUser: ["GET /user/ssh_signing_keys"],
-    listSshSigningKeysForUser: ["GET /users/{username}/ssh_signing_keys"],
-    setPrimaryEmailVisibilityForAuthenticated: [
-      "PATCH /user/email/visibility",
-      {},
-      { renamed: ["users", "setPrimaryEmailVisibilityForAuthenticatedUser"] }
-    ],
-    setPrimaryEmailVisibilityForAuthenticatedUser: [
-      "PATCH /user/email/visibility"
-    ],
-    unblock: ["DELETE /user/blocks/{username}"],
-    unfollow: ["DELETE /user/following/{username}"],
-    updateAuthenticated: ["PATCH /user"]
-  }
-};
-var endpoints_default = Endpoints;
-
-const endpointMethodsMap = /* @__PURE__ */ new Map();
-for (const [scope, endpoints] of Object.entries(endpoints_default)) {
-  for (const [methodName, endpoint] of Object.entries(endpoints)) {
-    const [route, defaults, decorations] = endpoint;
-    const [method, url] = route.split(/ /);
-    const endpointDefaults = Object.assign(
-      {
-        method,
-        url
-      },
-      defaults
-    );
-    if (!endpointMethodsMap.has(scope)) {
-      endpointMethodsMap.set(scope, /* @__PURE__ */ new Map());
-    }
-    endpointMethodsMap.get(scope).set(methodName, {
-      scope,
-      methodName,
-      endpointDefaults,
-      decorations
-    });
-  }
-}
-const handler = {
-  has({ scope }, methodName) {
-    return endpointMethodsMap.get(scope).has(methodName);
-  },
-  getOwnPropertyDescriptor(target, methodName) {
-    return {
-      value: this.get(target, methodName),
-      // ensures method is in the cache
-      configurable: true,
-      writable: true,
-      enumerable: true
-    };
-  },
-  defineProperty(target, methodName, descriptor) {
-    Object.defineProperty(target.cache, methodName, descriptor);
-    return true;
-  },
-  deleteProperty(target, methodName) {
-    delete target.cache[methodName];
-    return true;
-  },
-  ownKeys({ scope }) {
-    return [...endpointMethodsMap.get(scope).keys()];
-  },
-  set(target, methodName, value) {
-    return target.cache[methodName] = value;
-  },
-  get({ octokit, scope, cache }, methodName) {
-    if (cache[methodName]) {
-      return cache[methodName];
-    }
-    const method = endpointMethodsMap.get(scope).get(methodName);
-    if (!method) {
-      return void 0;
-    }
-    const { endpointDefaults, decorations } = method;
-    if (decorations) {
-      cache[methodName] = decorate(
-        octokit,
-        scope,
-        methodName,
-        endpointDefaults,
-        decorations
-      );
-    } else {
-      cache[methodName] = octokit.request.defaults(endpointDefaults);
-    }
-    return cache[methodName];
-  }
-};
-function endpointsToMethods(octokit) {
-  const newMethods = {};
-  for (const scope of endpointMethodsMap.keys()) {
-    newMethods[scope] = new Proxy({ octokit, scope, cache: {} }, handler);
-  }
-  return newMethods;
-}
-function decorate(octokit, scope, methodName, defaults, decorations) {
-  const requestWithDefaults = octokit.request.defaults(defaults);
-  function withDecorations(...args) {
-    let options = requestWithDefaults.endpoint.merge(...args);
-    if (decorations.mapToData) {
-      options = Object.assign({}, options, {
-        data: options[decorations.mapToData],
-        [decorations.mapToData]: void 0
-      });
-      return requestWithDefaults(options);
-    }
-    if (decorations.renamed) {
-      const [newScope, newMethodName] = decorations.renamed;
-      octokit.log.warn(
-        `octokit.${scope}.${methodName}() has been renamed to octokit.${newScope}.${newMethodName}()`
-      );
-    }
-    if (decorations.deprecated) {
-      octokit.log.warn(decorations.deprecated);
-    }
-    if (decorations.renamedParameters) {
-      const options2 = requestWithDefaults.endpoint.merge(...args);
-      for (const [name, alias] of Object.entries(
-        decorations.renamedParameters
-      )) {
-        if (name in options2) {
-          octokit.log.warn(
-            `"${name}" parameter is deprecated for "octokit.${scope}.${methodName}()". Use "${alias}" instead`
-          );
-          if (!(alias in options2)) {
-            options2[alias] = options2[name];
-          }
-          delete options2[name];
-        }
-      }
-      return requestWithDefaults(options2);
-    }
-    return requestWithDefaults(...args);
-  }
-  return Object.assign(withDecorations, requestWithDefaults);
-}
-
-function restEndpointMethods(octokit) {
-  const api = endpointsToMethods(octokit);
-  return {
-    rest: api
-  };
-}
-restEndpointMethods.VERSION = VERSION$s;
-VERSION$s;
-
-/**
-  * This file contains the Bottleneck library (MIT), compiled to ES2017, and without Clustering support.
-  * https://github.com/SGrondin/bottleneck
-  */
-
-var light = createCommonjsModule(function (module, exports) {
-(function (global, factory) {
-	module.exports = factory() ;
-}(commonjsGlobal, (function () {
-	var commonjsGlobal$1 = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof commonjsGlobal !== 'undefined' ? commonjsGlobal : typeof self !== 'undefined' ? self : {};
-
-	function getCjsExportFromNamespace (n) {
-		return n && n['default'] || n;
-	}
-
-	var load = function(received, defaults, onto = {}) {
-	  var k, ref, v;
-	  for (k in defaults) {
-	    v = defaults[k];
-	    onto[k] = (ref = received[k]) != null ? ref : v;
-	  }
-	  return onto;
-	};
-
-	var overwrite = function(received, defaults, onto = {}) {
-	  var k, v;
-	  for (k in received) {
-	    v = received[k];
-	    if (defaults[k] !== void 0) {
-	      onto[k] = v;
-	    }
-	  }
-	  return onto;
-	};
-
-	var parser = {
-		load: load,
-		overwrite: overwrite
-	};
-
-	var DLList;
-
-	DLList = class DLList {
-	  constructor(incr, decr) {
-	    this.incr = incr;
-	    this.decr = decr;
-	    this._first = null;
-	    this._last = null;
-	    this.length = 0;
-	  }
-
-	  push(value) {
-	    var node;
-	    this.length++;
-	    if (typeof this.incr === "function") {
-	      this.incr();
-	    }
-	    node = {
-	      value,
-	      prev: this._last,
-	      next: null
-	    };
-	    if (this._last != null) {
-	      this._last.next = node;
-	      this._last = node;
-	    } else {
-	      this._first = this._last = node;
-	    }
-	    return void 0;
-	  }
-
-	  shift() {
-	    var value;
-	    if (this._first == null) {
-	      return;
-	    } else {
-	      this.length--;
-	      if (typeof this.decr === "function") {
-	        this.decr();
-	      }
-	    }
-	    value = this._first.value;
-	    if ((this._first = this._first.next) != null) {
-	      this._first.prev = null;
-	    } else {
-	      this._last = null;
-	    }
-	    return value;
-	  }
-
-	  first() {
-	    if (this._first != null) {
-	      return this._first.value;
-	    }
-	  }
-
-	  getArray() {
-	    var node, ref, results;
-	    node = this._first;
-	    results = [];
-	    while (node != null) {
-	      results.push((ref = node, node = node.next, ref.value));
-	    }
-	    return results;
-	  }
-
-	  forEachShift(cb) {
-	    var node;
-	    node = this.shift();
-	    while (node != null) {
-	      (cb(node), node = this.shift());
-	    }
-	    return void 0;
-	  }
-
-	  debug() {
-	    var node, ref, ref1, ref2, results;
-	    node = this._first;
-	    results = [];
-	    while (node != null) {
-	      results.push((ref = node, node = node.next, {
-	        value: ref.value,
-	        prev: (ref1 = ref.prev) != null ? ref1.value : void 0,
-	        next: (ref2 = ref.next) != null ? ref2.value : void 0
-	      }));
-	    }
-	    return results;
-	  }
-
-	};
-
-	var DLList_1 = DLList;
-
-	var Events;
-
-	Events = class Events {
-	  constructor(instance) {
-	    this.instance = instance;
-	    this._events = {};
-	    if ((this.instance.on != null) || (this.instance.once != null) || (this.instance.removeAllListeners != null)) {
-	      throw new Error("An Emitter already exists for this object");
-	    }
-	    this.instance.on = (name, cb) => {
-	      return this._addListener(name, "many", cb);
-	    };
-	    this.instance.once = (name, cb) => {
-	      return this._addListener(name, "once", cb);
-	    };
-	    this.instance.removeAllListeners = (name = null) => {
-	      if (name != null) {
-	        return delete this._events[name];
-	      } else {
-	        return this._events = {};
-	      }
-	    };
-	  }
-
-	  _addListener(name, status, cb) {
-	    var base;
-	    if ((base = this._events)[name] == null) {
-	      base[name] = [];
-	    }
-	    this._events[name].push({cb, status});
-	    return this.instance;
-	  }
-
-	  listenerCount(name) {
-	    if (this._events[name] != null) {
-	      return this._events[name].length;
-	    } else {
-	      return 0;
-	    }
-	  }
-
-	  async trigger(name, ...args) {
-	    var e, promises;
-	    try {
-	      if (name !== "debug") {
-	        this.trigger("debug", `Event triggered: ${name}`, args);
-	      }
-	      if (this._events[name] == null) {
-	        return;
-	      }
-	      this._events[name] = this._events[name].filter(function(listener) {
-	        return listener.status !== "none";
-	      });
-	      promises = this._events[name].map(async(listener) => {
-	        var e, returned;
-	        if (listener.status === "none") {
-	          return;
-	        }
-	        if (listener.status === "once") {
-	          listener.status = "none";
-	        }
-	        try {
-	          returned = typeof listener.cb === "function" ? listener.cb(...args) : void 0;
-	          if (typeof (returned != null ? returned.then : void 0) === "function") {
-	            return (await returned);
-	          } else {
-	            return returned;
-	          }
-	        } catch (error) {
-	          e = error;
-	          {
-	            this.trigger("error", e);
-	          }
-	          return null;
-	        }
-	      });
-	      return ((await Promise.all(promises))).find(function(x) {
-	        return x != null;
-	      });
-	    } catch (error) {
-	      e = error;
-	      {
-	        this.trigger("error", e);
-	      }
-	      return null;
-	    }
-	  }
-
-	};
-
-	var Events_1 = Events;
-
-	var DLList$1, Events$1, Queues;
-
-	DLList$1 = DLList_1;
-
-	Events$1 = Events_1;
-
-	Queues = class Queues {
-	  constructor(num_priorities) {
-	    this.Events = new Events$1(this);
-	    this._length = 0;
-	    this._lists = (function() {
-	      var j, ref, results;
-	      results = [];
-	      for (j = 1, ref = num_priorities; (1 <= ref ? j <= ref : j >= ref); 1 <= ref ? ++j : --j) {
-	        results.push(new DLList$1((() => {
-	          return this.incr();
-	        }), (() => {
-	          return this.decr();
-	        })));
-	      }
-	      return results;
-	    }).call(this);
-	  }
-
-	  incr() {
-	    if (this._length++ === 0) {
-	      return this.Events.trigger("leftzero");
-	    }
-	  }
-
-	  decr() {
-	    if (--this._length === 0) {
-	      return this.Events.trigger("zero");
-	    }
-	  }
-
-	  push(job) {
-	    return this._lists[job.options.priority].push(job);
-	  }
-
-	  queued(priority) {
-	    if (priority != null) {
-	      return this._lists[priority].length;
-	    } else {
-	      return this._length;
-	    }
-	  }
-
-	  shiftAll(fn) {
-	    return this._lists.forEach(function(list) {
-	      return list.forEachShift(fn);
-	    });
-	  }
-
-	  getFirst(arr = this._lists) {
-	    var j, len, list;
-	    for (j = 0, len = arr.length; j < len; j++) {
-	      list = arr[j];
-	      if (list.length > 0) {
-	        return list;
-	      }
-	    }
-	    return [];
-	  }
-
-	  shiftLastFrom(priority) {
-	    return this.getFirst(this._lists.slice(priority).reverse()).shift();
-	  }
-
-	};
-
-	var Queues_1 = Queues;
-
-	var BottleneckError;
-
-	BottleneckError = class BottleneckError extends Error {};
-
-	var BottleneckError_1 = BottleneckError;
-
-	var BottleneckError$1, DEFAULT_PRIORITY, Job, NUM_PRIORITIES, parser$1;
-
-	NUM_PRIORITIES = 10;
-
-	DEFAULT_PRIORITY = 5;
-
-	parser$1 = parser;
-
-	BottleneckError$1 = BottleneckError_1;
-
-	Job = class Job {
-	  constructor(task, args, options, jobDefaults, rejectOnDrop, Events, _states, Promise) {
-	    this.task = task;
-	    this.args = args;
-	    this.rejectOnDrop = rejectOnDrop;
-	    this.Events = Events;
-	    this._states = _states;
-	    this.Promise = Promise;
-	    this.options = parser$1.load(options, jobDefaults);
-	    this.options.priority = this._sanitizePriority(this.options.priority);
-	    if (this.options.id === jobDefaults.id) {
-	      this.options.id = `${this.options.id}-${this._randomIndex()}`;
-	    }
-	    this.promise = new this.Promise((_resolve, _reject) => {
-	      this._resolve = _resolve;
-	      this._reject = _reject;
-	    });
-	    this.retryCount = 0;
-	  }
-
-	  _sanitizePriority(priority) {
-	    var sProperty;
-	    sProperty = ~~priority !== priority ? DEFAULT_PRIORITY : priority;
-	    if (sProperty < 0) {
-	      return 0;
-	    } else if (sProperty > NUM_PRIORITIES - 1) {
-	      return NUM_PRIORITIES - 1;
-	    } else {
-	      return sProperty;
-	    }
-	  }
-
-	  _randomIndex() {
-	    return Math.random().toString(36).slice(2);
-	  }
-
-	  doDrop({error, message = "This job has been dropped by Bottleneck"} = {}) {
-	    if (this._states.remove(this.options.id)) {
-	      if (this.rejectOnDrop) {
-	        this._reject(error != null ? error : new BottleneckError$1(message));
-	      }
-	      this.Events.trigger("dropped", {args: this.args, options: this.options, task: this.task, promise: this.promise});
-	      return true;
-	    } else {
-	      return false;
-	    }
-	  }
-
-	  _assertStatus(expected) {
-	    var status;
-	    status = this._states.jobStatus(this.options.id);
-	    if (!(status === expected || (expected === "DONE" && status === null))) {
-	      throw new BottleneckError$1(`Invalid job status ${status}, expected ${expected}. Please open an issue at https://github.com/SGrondin/bottleneck/issues`);
-	    }
-	  }
-
-	  doReceive() {
-	    this._states.start(this.options.id);
-	    return this.Events.trigger("received", {args: this.args, options: this.options});
-	  }
-
-	  doQueue(reachedHWM, blocked) {
-	    this._assertStatus("RECEIVED");
-	    this._states.next(this.options.id);
-	    return this.Events.trigger("queued", {args: this.args, options: this.options, reachedHWM, blocked});
-	  }
-
-	  doRun() {
-	    if (this.retryCount === 0) {
-	      this._assertStatus("QUEUED");
-	      this._states.next(this.options.id);
-	    } else {
-	      this._assertStatus("EXECUTING");
-	    }
-	    return this.Events.trigger("scheduled", {args: this.args, options: this.options});
-	  }
-
-	  async doExecute(chained, clearGlobalState, run, free) {
-	    var error, eventInfo, passed;
-	    if (this.retryCount === 0) {
-	      this._assertStatus("RUNNING");
-	      this._states.next(this.options.id);
-	    } else {
-	      this._assertStatus("EXECUTING");
-	    }
-	    eventInfo = {args: this.args, options: this.options, retryCount: this.retryCount};
-	    this.Events.trigger("executing", eventInfo);
-	    try {
-	      passed = (await (chained != null ? chained.schedule(this.options, this.task, ...this.args) : this.task(...this.args)));
-	      if (clearGlobalState()) {
-	        this.doDone(eventInfo);
-	        await free(this.options, eventInfo);
-	        this._assertStatus("DONE");
-	        return this._resolve(passed);
-	      }
-	    } catch (error1) {
-	      error = error1;
-	      return this._onFailure(error, eventInfo, clearGlobalState, run, free);
-	    }
-	  }
-
-	  doExpire(clearGlobalState, run, free) {
-	    var error, eventInfo;
-	    if (this._states.jobStatus(this.options.id === "RUNNING")) {
-	      this._states.next(this.options.id);
-	    }
-	    this._assertStatus("EXECUTING");
-	    eventInfo = {args: this.args, options: this.options, retryCount: this.retryCount};
-	    error = new BottleneckError$1(`This job timed out after ${this.options.expiration} ms.`);
-	    return this._onFailure(error, eventInfo, clearGlobalState, run, free);
-	  }
-
-	  async _onFailure(error, eventInfo, clearGlobalState, run, free) {
-	    var retry, retryAfter;
-	    if (clearGlobalState()) {
-	      retry = (await this.Events.trigger("failed", error, eventInfo));
-	      if (retry != null) {
-	        retryAfter = ~~retry;
-	        this.Events.trigger("retry", `Retrying ${this.options.id} after ${retryAfter} ms`, eventInfo);
-	        this.retryCount++;
-	        return run(retryAfter);
-	      } else {
-	        this.doDone(eventInfo);
-	        await free(this.options, eventInfo);
-	        this._assertStatus("DONE");
-	        return this._reject(error);
-	      }
-	    }
-	  }
-
-	  doDone(eventInfo) {
-	    this._assertStatus("EXECUTING");
-	    this._states.next(this.options.id);
-	    return this.Events.trigger("done", eventInfo);
-	  }
-
-	};
-
-	var Job_1 = Job;
-
-	var BottleneckError$2, LocalDatastore, parser$2;
-
-	parser$2 = parser;
-
-	BottleneckError$2 = BottleneckError_1;
-
-	LocalDatastore = class LocalDatastore {
-	  constructor(instance, storeOptions, storeInstanceOptions) {
-	    this.instance = instance;
-	    this.storeOptions = storeOptions;
-	    this.clientId = this.instance._randomIndex();
-	    parser$2.load(storeInstanceOptions, storeInstanceOptions, this);
-	    this._nextRequest = this._lastReservoirRefresh = this._lastReservoirIncrease = Date.now();
-	    this._running = 0;
-	    this._done = 0;
-	    this._unblockTime = 0;
-	    this.ready = this.Promise.resolve();
-	    this.clients = {};
-	    this._startHeartbeat();
-	  }
-
-	  _startHeartbeat() {
-	    var base;
-	    if ((this.heartbeat == null) && (((this.storeOptions.reservoirRefreshInterval != null) && (this.storeOptions.reservoirRefreshAmount != null)) || ((this.storeOptions.reservoirIncreaseInterval != null) && (this.storeOptions.reservoirIncreaseAmount != null)))) {
-	      return typeof (base = (this.heartbeat = setInterval(() => {
-	        var amount, incr, maximum, now, reservoir;
-	        now = Date.now();
-	        if ((this.storeOptions.reservoirRefreshInterval != null) && now >= this._lastReservoirRefresh + this.storeOptions.reservoirRefreshInterval) {
-	          this._lastReservoirRefresh = now;
-	          this.storeOptions.reservoir = this.storeOptions.reservoirRefreshAmount;
-	          this.instance._drainAll(this.computeCapacity());
-	        }
-	        if ((this.storeOptions.reservoirIncreaseInterval != null) && now >= this._lastReservoirIncrease + this.storeOptions.reservoirIncreaseInterval) {
-	          ({
-	            reservoirIncreaseAmount: amount,
-	            reservoirIncreaseMaximum: maximum,
-	            reservoir
-	          } = this.storeOptions);
-	          this._lastReservoirIncrease = now;
-	          incr = maximum != null ? Math.min(amount, maximum - reservoir) : amount;
-	          if (incr > 0) {
-	            this.storeOptions.reservoir += incr;
-	            return this.instance._drainAll(this.computeCapacity());
-	          }
-	        }
-	      }, this.heartbeatInterval))).unref === "function" ? base.unref() : void 0;
-	    } else {
-	      return clearInterval(this.heartbeat);
-	    }
-	  }
-
-	  async __publish__(message) {
-	    await this.yieldLoop();
-	    return this.instance.Events.trigger("message", message.toString());
-	  }
-
-	  async __disconnect__(flush) {
-	    await this.yieldLoop();
-	    clearInterval(this.heartbeat);
-	    return this.Promise.resolve();
-	  }
-
-	  yieldLoop(t = 0) {
-	    return new this.Promise(function(resolve, reject) {
-	      return setTimeout(resolve, t);
-	    });
-	  }
-
-	  computePenalty() {
-	    var ref;
-	    return (ref = this.storeOptions.penalty) != null ? ref : (15 * this.storeOptions.minTime) || 5000;
-	  }
-
-	  async __updateSettings__(options) {
-	    await this.yieldLoop();
-	    parser$2.overwrite(options, options, this.storeOptions);
-	    this._startHeartbeat();
-	    this.instance._drainAll(this.computeCapacity());
-	    return true;
-	  }
-
-	  async __running__() {
-	    await this.yieldLoop();
-	    return this._running;
-	  }
-
-	  async __queued__() {
-	    await this.yieldLoop();
-	    return this.instance.queued();
-	  }
-
-	  async __done__() {
-	    await this.yieldLoop();
-	    return this._done;
-	  }
-
-	  async __groupCheck__(time) {
-	    await this.yieldLoop();
-	    return (this._nextRequest + this.timeout) < time;
-	  }
-
-	  computeCapacity() {
-	    var maxConcurrent, reservoir;
-	    ({maxConcurrent, reservoir} = this.storeOptions);
-	    if ((maxConcurrent != null) && (reservoir != null)) {
-	      return Math.min(maxConcurrent - this._running, reservoir);
-	    } else if (maxConcurrent != null) {
-	      return maxConcurrent - this._running;
-	    } else if (reservoir != null) {
-	      return reservoir;
-	    } else {
-	      return null;
-	    }
-	  }
-
-	  conditionsCheck(weight) {
-	    var capacity;
-	    capacity = this.computeCapacity();
-	    return (capacity == null) || weight <= capacity;
-	  }
-
-	  async __incrementReservoir__(incr) {
-	    var reservoir;
-	    await this.yieldLoop();
-	    reservoir = this.storeOptions.reservoir += incr;
-	    this.instance._drainAll(this.computeCapacity());
-	    return reservoir;
-	  }
-
-	  async __currentReservoir__() {
-	    await this.yieldLoop();
-	    return this.storeOptions.reservoir;
-	  }
-
-	  isBlocked(now) {
-	    return this._unblockTime >= now;
-	  }
-
-	  check(weight, now) {
-	    return this.conditionsCheck(weight) && (this._nextRequest - now) <= 0;
-	  }
-
-	  async __check__(weight) {
-	    var now;
-	    await this.yieldLoop();
-	    now = Date.now();
-	    return this.check(weight, now);
-	  }
-
-	  async __register__(index, weight, expiration) {
-	    var now, wait;
-	    await this.yieldLoop();
-	    now = Date.now();
-	    if (this.conditionsCheck(weight)) {
-	      this._running += weight;
-	      if (this.storeOptions.reservoir != null) {
-	        this.storeOptions.reservoir -= weight;
-	      }
-	      wait = Math.max(this._nextRequest - now, 0);
-	      this._nextRequest = now + wait + this.storeOptions.minTime;
-	      return {
-	        success: true,
-	        wait,
-	        reservoir: this.storeOptions.reservoir
-	      };
-	    } else {
-	      return {
-	        success: false
-	      };
-	    }
-	  }
-
-	  strategyIsBlock() {
-	    return this.storeOptions.strategy === 3;
-	  }
-
-	  async __submit__(queueLength, weight) {
-	    var blocked, now, reachedHWM;
-	    await this.yieldLoop();
-	    if ((this.storeOptions.maxConcurrent != null) && weight > this.storeOptions.maxConcurrent) {
-	      throw new BottleneckError$2(`Impossible to add a job having a weight of ${weight} to a limiter having a maxConcurrent setting of ${this.storeOptions.maxConcurrent}`);
-	    }
-	    now = Date.now();
-	    reachedHWM = (this.storeOptions.highWater != null) && queueLength === this.storeOptions.highWater && !this.check(weight, now);
-	    blocked = this.strategyIsBlock() && (reachedHWM || this.isBlocked(now));
-	    if (blocked) {
-	      this._unblockTime = now + this.computePenalty();
-	      this._nextRequest = this._unblockTime + this.storeOptions.minTime;
-	      this.instance._dropAllQueued();
-	    }
-	    return {
-	      reachedHWM,
-	      blocked,
-	      strategy: this.storeOptions.strategy
-	    };
-	  }
-
-	  async __free__(index, weight) {
-	    await this.yieldLoop();
-	    this._running -= weight;
-	    this._done += weight;
-	    this.instance._drainAll(this.computeCapacity());
-	    return {
-	      running: this._running
-	    };
-	  }
-
-	};
-
-	var LocalDatastore_1 = LocalDatastore;
-
-	var BottleneckError$3, States;
-
-	BottleneckError$3 = BottleneckError_1;
-
-	States = class States {
-	  constructor(status1) {
-	    this.status = status1;
-	    this._jobs = {};
-	    this.counts = this.status.map(function() {
-	      return 0;
-	    });
-	  }
-
-	  next(id) {
-	    var current, next;
-	    current = this._jobs[id];
-	    next = current + 1;
-	    if ((current != null) && next < this.status.length) {
-	      this.counts[current]--;
-	      this.counts[next]++;
-	      return this._jobs[id]++;
-	    } else if (current != null) {
-	      this.counts[current]--;
-	      return delete this._jobs[id];
-	    }
-	  }
-
-	  start(id) {
-	    var initial;
-	    initial = 0;
-	    this._jobs[id] = initial;
-	    return this.counts[initial]++;
-	  }
-
-	  remove(id) {
-	    var current;
-	    current = this._jobs[id];
-	    if (current != null) {
-	      this.counts[current]--;
-	      delete this._jobs[id];
-	    }
-	    return current != null;
-	  }
-
-	  jobStatus(id) {
-	    var ref;
-	    return (ref = this.status[this._jobs[id]]) != null ? ref : null;
-	  }
-
-	  statusJobs(status) {
-	    var k, pos, ref, results, v;
-	    if (status != null) {
-	      pos = this.status.indexOf(status);
-	      if (pos < 0) {
-	        throw new BottleneckError$3(`status must be one of ${this.status.join(', ')}`);
-	      }
-	      ref = this._jobs;
-	      results = [];
-	      for (k in ref) {
-	        v = ref[k];
-	        if (v === pos) {
-	          results.push(k);
-	        }
-	      }
-	      return results;
-	    } else {
-	      return Object.keys(this._jobs);
-	    }
-	  }
-
-	  statusCounts() {
-	    return this.counts.reduce(((acc, v, i) => {
-	      acc[this.status[i]] = v;
-	      return acc;
-	    }), {});
-	  }
-
-	};
-
-	var States_1 = States;
-
-	var DLList$2, Sync;
-
-	DLList$2 = DLList_1;
-
-	Sync = class Sync {
-	  constructor(name, Promise) {
-	    this.schedule = this.schedule.bind(this);
-	    this.name = name;
-	    this.Promise = Promise;
-	    this._running = 0;
-	    this._queue = new DLList$2();
-	  }
-
-	  isEmpty() {
-	    return this._queue.length === 0;
-	  }
-
-	  async _tryToRun() {
-	    var args, cb, error, reject, resolve, returned, task;
-	    if ((this._running < 1) && this._queue.length > 0) {
-	      this._running++;
-	      ({task, args, resolve, reject} = this._queue.shift());
-	      cb = (await (async function() {
-	        try {
-	          returned = (await task(...args));
-	          return function() {
-	            return resolve(returned);
-	          };
-	        } catch (error1) {
-	          error = error1;
-	          return function() {
-	            return reject(error);
-	          };
-	        }
-	      })());
-	      this._running--;
-	      this._tryToRun();
-	      return cb();
-	    }
-	  }
-
-	  schedule(task, ...args) {
-	    var promise, reject, resolve;
-	    resolve = reject = null;
-	    promise = new this.Promise(function(_resolve, _reject) {
-	      resolve = _resolve;
-	      return reject = _reject;
-	    });
-	    this._queue.push({task, args, resolve, reject});
-	    this._tryToRun();
-	    return promise;
-	  }
-
-	};
-
-	var Sync_1 = Sync;
-
-	var version = "2.19.5";
-	var version$1 = {
-		version: version
-	};
-
-	var version$2 = /*#__PURE__*/Object.freeze({
-		version: version,
-		default: version$1
-	});
-
-	var require$$2 = () => console.log('You must import the full version of Bottleneck in order to use this feature.');
-
-	var require$$3 = () => console.log('You must import the full version of Bottleneck in order to use this feature.');
-
-	var require$$4 = () => console.log('You must import the full version of Bottleneck in order to use this feature.');
-
-	var Events$2, Group, IORedisConnection$1, RedisConnection$1, Scripts$1, parser$3;
-
-	parser$3 = parser;
-
-	Events$2 = Events_1;
-
-	RedisConnection$1 = require$$2;
-
-	IORedisConnection$1 = require$$3;
-
-	Scripts$1 = require$$4;
-
-	Group = (function() {
-	  class Group {
-	    constructor(limiterOptions = {}) {
-	      this.deleteKey = this.deleteKey.bind(this);
-	      this.limiterOptions = limiterOptions;
-	      parser$3.load(this.limiterOptions, this.defaults, this);
-	      this.Events = new Events$2(this);
-	      this.instances = {};
-	      this.Bottleneck = Bottleneck_1;
-	      this._startAutoCleanup();
-	      this.sharedConnection = this.connection != null;
-	      if (this.connection == null) {
-	        if (this.limiterOptions.datastore === "redis") {
-	          this.connection = new RedisConnection$1(Object.assign({}, this.limiterOptions, {Events: this.Events}));
-	        } else if (this.limiterOptions.datastore === "ioredis") {
-	          this.connection = new IORedisConnection$1(Object.assign({}, this.limiterOptions, {Events: this.Events}));
-	        }
-	      }
-	    }
-
-	    key(key = "") {
-	      var ref;
-	      return (ref = this.instances[key]) != null ? ref : (() => {
-	        var limiter;
-	        limiter = this.instances[key] = new this.Bottleneck(Object.assign(this.limiterOptions, {
-	          id: `${this.id}-${key}`,
-	          timeout: this.timeout,
-	          connection: this.connection
-	        }));
-	        this.Events.trigger("created", limiter, key);
-	        return limiter;
-	      })();
-	    }
-
-	    async deleteKey(key = "") {
-	      var deleted, instance;
-	      instance = this.instances[key];
-	      if (this.connection) {
-	        deleted = (await this.connection.__runCommand__(['del', ...Scripts$1.allKeys(`${this.id}-${key}`)]));
-	      }
-	      if (instance != null) {
-	        delete this.instances[key];
-	        await instance.disconnect();
-	      }
-	      return (instance != null) || deleted > 0;
-	    }
-
-	    limiters() {
-	      var k, ref, results, v;
-	      ref = this.instances;
-	      results = [];
-	      for (k in ref) {
-	        v = ref[k];
-	        results.push({
-	          key: k,
-	          limiter: v
-	        });
-	      }
-	      return results;
-	    }
-
-	    keys() {
-	      return Object.keys(this.instances);
-	    }
-
-	    async clusterKeys() {
-	      var cursor, end, found, i, k, keys, len, next, start;
-	      if (this.connection == null) {
-	        return this.Promise.resolve(this.keys());
-	      }
-	      keys = [];
-	      cursor = null;
-	      start = `b_${this.id}-`.length;
-	      end = "_settings".length;
-	      while (cursor !== 0) {
-	        [next, found] = (await this.connection.__runCommand__(["scan", cursor != null ? cursor : 0, "match", `b_${this.id}-*_settings`, "count", 10000]));
-	        cursor = ~~next;
-	        for (i = 0, len = found.length; i < len; i++) {
-	          k = found[i];
-	          keys.push(k.slice(start, -end));
-	        }
-	      }
-	      return keys;
-	    }
-
-	    _startAutoCleanup() {
-	      var base;
-	      clearInterval(this.interval);
-	      return typeof (base = (this.interval = setInterval(async() => {
-	        var e, k, ref, results, time, v;
-	        time = Date.now();
-	        ref = this.instances;
-	        results = [];
-	        for (k in ref) {
-	          v = ref[k];
-	          try {
-	            if ((await v._store.__groupCheck__(time))) {
-	              results.push(this.deleteKey(k));
-	            } else {
-	              results.push(void 0);
-	            }
-	          } catch (error) {
-	            e = error;
-	            results.push(v.Events.trigger("error", e));
-	          }
-	        }
-	        return results;
-	      }, this.timeout / 2))).unref === "function" ? base.unref() : void 0;
-	    }
-
-	    updateSettings(options = {}) {
-	      parser$3.overwrite(options, this.defaults, this);
-	      parser$3.overwrite(options, options, this.limiterOptions);
-	      if (options.timeout != null) {
-	        return this._startAutoCleanup();
-	      }
-	    }
-
-	    disconnect(flush = true) {
-	      var ref;
-	      if (!this.sharedConnection) {
-	        return (ref = this.connection) != null ? ref.disconnect(flush) : void 0;
-	      }
-	    }
-
-	  }
-	  Group.prototype.defaults = {
-	    timeout: 1000 * 60 * 5,
-	    connection: null,
-	    Promise: Promise,
-	    id: "group-key"
-	  };
-
-	  return Group;
-
-	}).call(commonjsGlobal$1);
-
-	var Group_1 = Group;
-
-	var Batcher, Events$3, parser$4;
-
-	parser$4 = parser;
-
-	Events$3 = Events_1;
-
-	Batcher = (function() {
-	  class Batcher {
-	    constructor(options = {}) {
-	      this.options = options;
-	      parser$4.load(this.options, this.defaults, this);
-	      this.Events = new Events$3(this);
-	      this._arr = [];
-	      this._resetPromise();
-	      this._lastFlush = Date.now();
-	    }
-
-	    _resetPromise() {
-	      return this._promise = new this.Promise((res, rej) => {
-	        return this._resolve = res;
-	      });
-	    }
-
-	    _flush() {
-	      clearTimeout(this._timeout);
-	      this._lastFlush = Date.now();
-	      this._resolve();
-	      this.Events.trigger("batch", this._arr);
-	      this._arr = [];
-	      return this._resetPromise();
-	    }
-
-	    add(data) {
-	      var ret;
-	      this._arr.push(data);
-	      ret = this._promise;
-	      if (this._arr.length === this.maxSize) {
-	        this._flush();
-	      } else if ((this.maxTime != null) && this._arr.length === 1) {
-	        this._timeout = setTimeout(() => {
-	          return this._flush();
-	        }, this.maxTime);
-	      }
-	      return ret;
-	    }
-
-	  }
-	  Batcher.prototype.defaults = {
-	    maxTime: null,
-	    maxSize: null,
-	    Promise: Promise
-	  };
-
-	  return Batcher;
-
-	}).call(commonjsGlobal$1);
-
-	var Batcher_1 = Batcher;
-
-	var require$$4$1 = () => console.log('You must import the full version of Bottleneck in order to use this feature.');
-
-	var require$$8 = getCjsExportFromNamespace(version$2);
-
-	var Bottleneck, DEFAULT_PRIORITY$1, Events$4, Job$1, LocalDatastore$1, NUM_PRIORITIES$1, Queues$1, RedisDatastore$1, States$1, Sync$1, parser$5,
-	  splice = [].splice;
-
-	NUM_PRIORITIES$1 = 10;
-
-	DEFAULT_PRIORITY$1 = 5;
-
-	parser$5 = parser;
-
-	Queues$1 = Queues_1;
-
-	Job$1 = Job_1;
-
-	LocalDatastore$1 = LocalDatastore_1;
-
-	RedisDatastore$1 = require$$4$1;
-
-	Events$4 = Events_1;
-
-	States$1 = States_1;
-
-	Sync$1 = Sync_1;
-
-	Bottleneck = (function() {
-	  class Bottleneck {
-	    constructor(options = {}, ...invalid) {
-	      var storeInstanceOptions, storeOptions;
-	      this._addToQueue = this._addToQueue.bind(this);
-	      this._validateOptions(options, invalid);
-	      parser$5.load(options, this.instanceDefaults, this);
-	      this._queues = new Queues$1(NUM_PRIORITIES$1);
-	      this._scheduled = {};
-	      this._states = new States$1(["RECEIVED", "QUEUED", "RUNNING", "EXECUTING"].concat(this.trackDoneStatus ? ["DONE"] : []));
-	      this._limiter = null;
-	      this.Events = new Events$4(this);
-	      this._submitLock = new Sync$1("submit", this.Promise);
-	      this._registerLock = new Sync$1("register", this.Promise);
-	      storeOptions = parser$5.load(options, this.storeDefaults, {});
-	      this._store = (function() {
-	        if (this.datastore === "redis" || this.datastore === "ioredis" || (this.connection != null)) {
-	          storeInstanceOptions = parser$5.load(options, this.redisStoreDefaults, {});
-	          return new RedisDatastore$1(this, storeOptions, storeInstanceOptions);
-	        } else if (this.datastore === "local") {
-	          storeInstanceOptions = parser$5.load(options, this.localStoreDefaults, {});
-	          return new LocalDatastore$1(this, storeOptions, storeInstanceOptions);
-	        } else {
-	          throw new Bottleneck.prototype.BottleneckError(`Invalid datastore type: ${this.datastore}`);
-	        }
-	      }).call(this);
-	      this._queues.on("leftzero", () => {
-	        var ref;
-	        return (ref = this._store.heartbeat) != null ? typeof ref.ref === "function" ? ref.ref() : void 0 : void 0;
-	      });
-	      this._queues.on("zero", () => {
-	        var ref;
-	        return (ref = this._store.heartbeat) != null ? typeof ref.unref === "function" ? ref.unref() : void 0 : void 0;
-	      });
-	    }
-
-	    _validateOptions(options, invalid) {
-	      if (!((options != null) && typeof options === "object" && invalid.length === 0)) {
-	        throw new Bottleneck.prototype.BottleneckError("Bottleneck v2 takes a single object argument. Refer to https://github.com/SGrondin/bottleneck#upgrading-to-v2 if you're upgrading from Bottleneck v1.");
-	      }
-	    }
-
-	    ready() {
-	      return this._store.ready;
-	    }
-
-	    clients() {
-	      return this._store.clients;
-	    }
-
-	    channel() {
-	      return `b_${this.id}`;
-	    }
-
-	    channel_client() {
-	      return `b_${this.id}_${this._store.clientId}`;
-	    }
-
-	    publish(message) {
-	      return this._store.__publish__(message);
-	    }
-
-	    disconnect(flush = true) {
-	      return this._store.__disconnect__(flush);
-	    }
-
-	    chain(_limiter) {
-	      this._limiter = _limiter;
-	      return this;
-	    }
-
-	    queued(priority) {
-	      return this._queues.queued(priority);
-	    }
-
-	    clusterQueued() {
-	      return this._store.__queued__();
-	    }
-
-	    empty() {
-	      return this.queued() === 0 && this._submitLock.isEmpty();
-	    }
-
-	    running() {
-	      return this._store.__running__();
-	    }
-
-	    done() {
-	      return this._store.__done__();
-	    }
-
-	    jobStatus(id) {
-	      return this._states.jobStatus(id);
-	    }
-
-	    jobs(status) {
-	      return this._states.statusJobs(status);
-	    }
-
-	    counts() {
-	      return this._states.statusCounts();
-	    }
-
-	    _randomIndex() {
-	      return Math.random().toString(36).slice(2);
-	    }
-
-	    check(weight = 1) {
-	      return this._store.__check__(weight);
-	    }
-
-	    _clearGlobalState(index) {
-	      if (this._scheduled[index] != null) {
-	        clearTimeout(this._scheduled[index].expiration);
-	        delete this._scheduled[index];
-	        return true;
-	      } else {
-	        return false;
-	      }
-	    }
-
-	    async _free(index, job, options, eventInfo) {
-	      var e, running;
-	      try {
-	        ({running} = (await this._store.__free__(index, options.weight)));
-	        this.Events.trigger("debug", `Freed ${options.id}`, eventInfo);
-	        if (running === 0 && this.empty()) {
-	          return this.Events.trigger("idle");
-	        }
-	      } catch (error1) {
-	        e = error1;
-	        return this.Events.trigger("error", e);
-	      }
-	    }
-
-	    _run(index, job, wait) {
-	      var clearGlobalState, free, run;
-	      job.doRun();
-	      clearGlobalState = this._clearGlobalState.bind(this, index);
-	      run = this._run.bind(this, index, job);
-	      free = this._free.bind(this, index, job);
-	      return this._scheduled[index] = {
-	        timeout: setTimeout(() => {
-	          return job.doExecute(this._limiter, clearGlobalState, run, free);
-	        }, wait),
-	        expiration: job.options.expiration != null ? setTimeout(function() {
-	          return job.doExpire(clearGlobalState, run, free);
-	        }, wait + job.options.expiration) : void 0,
-	        job: job
-	      };
-	    }
-
-	    _drainOne(capacity) {
-	      return this._registerLock.schedule(() => {
-	        var args, index, next, options, queue;
-	        if (this.queued() === 0) {
-	          return this.Promise.resolve(null);
-	        }
-	        queue = this._queues.getFirst();
-	        ({options, args} = next = queue.first());
-	        if ((capacity != null) && options.weight > capacity) {
-	          return this.Promise.resolve(null);
-	        }
-	        this.Events.trigger("debug", `Draining ${options.id}`, {args, options});
-	        index = this._randomIndex();
-	        return this._store.__register__(index, options.weight, options.expiration).then(({success, wait, reservoir}) => {
-	          var empty;
-	          this.Events.trigger("debug", `Drained ${options.id}`, {success, args, options});
-	          if (success) {
-	            queue.shift();
-	            empty = this.empty();
-	            if (empty) {
-	              this.Events.trigger("empty");
-	            }
-	            if (reservoir === 0) {
-	              this.Events.trigger("depleted", empty);
-	            }
-	            this._run(index, next, wait);
-	            return this.Promise.resolve(options.weight);
-	          } else {
-	            return this.Promise.resolve(null);
-	          }
-	        });
-	      });
-	    }
-
-	    _drainAll(capacity, total = 0) {
-	      return this._drainOne(capacity).then((drained) => {
-	        var newCapacity;
-	        if (drained != null) {
-	          newCapacity = capacity != null ? capacity - drained : capacity;
-	          return this._drainAll(newCapacity, total + drained);
-	        } else {
-	          return this.Promise.resolve(total);
-	        }
-	      }).catch((e) => {
-	        return this.Events.trigger("error", e);
-	      });
-	    }
-
-	    _dropAllQueued(message) {
-	      return this._queues.shiftAll(function(job) {
-	        return job.doDrop({message});
-	      });
-	    }
-
-	    stop(options = {}) {
-	      var done, waitForExecuting;
-	      options = parser$5.load(options, this.stopDefaults);
-	      waitForExecuting = (at) => {
-	        var finished;
-	        finished = () => {
-	          var counts;
-	          counts = this._states.counts;
-	          return (counts[0] + counts[1] + counts[2] + counts[3]) === at;
-	        };
-	        return new this.Promise((resolve, reject) => {
-	          if (finished()) {
-	            return resolve();
-	          } else {
-	            return this.on("done", () => {
-	              if (finished()) {
-	                this.removeAllListeners("done");
-	                return resolve();
-	              }
-	            });
-	          }
-	        });
-	      };
-	      done = options.dropWaitingJobs ? (this._run = function(index, next) {
-	        return next.doDrop({
-	          message: options.dropErrorMessage
-	        });
-	      }, this._drainOne = () => {
-	        return this.Promise.resolve(null);
-	      }, this._registerLock.schedule(() => {
-	        return this._submitLock.schedule(() => {
-	          var k, ref, v;
-	          ref = this._scheduled;
-	          for (k in ref) {
-	            v = ref[k];
-	            if (this.jobStatus(v.job.options.id) === "RUNNING") {
-	              clearTimeout(v.timeout);
-	              clearTimeout(v.expiration);
-	              v.job.doDrop({
-	                message: options.dropErrorMessage
-	              });
-	            }
-	          }
-	          this._dropAllQueued(options.dropErrorMessage);
-	          return waitForExecuting(0);
-	        });
-	      })) : this.schedule({
-	        priority: NUM_PRIORITIES$1 - 1,
-	        weight: 0
-	      }, () => {
-	        return waitForExecuting(1);
-	      });
-	      this._receive = function(job) {
-	        return job._reject(new Bottleneck.prototype.BottleneckError(options.enqueueErrorMessage));
-	      };
-	      this.stop = () => {
-	        return this.Promise.reject(new Bottleneck.prototype.BottleneckError("stop() has already been called"));
-	      };
-	      return done;
-	    }
-
-	    async _addToQueue(job) {
-	      var args, blocked, error, options, reachedHWM, shifted, strategy;
-	      ({args, options} = job);
-	      try {
-	        ({reachedHWM, blocked, strategy} = (await this._store.__submit__(this.queued(), options.weight)));
-	      } catch (error1) {
-	        error = error1;
-	        this.Events.trigger("debug", `Could not queue ${options.id}`, {args, options, error});
-	        job.doDrop({error});
-	        return false;
-	      }
-	      if (blocked) {
-	        job.doDrop();
-	        return true;
-	      } else if (reachedHWM) {
-	        shifted = strategy === Bottleneck.prototype.strategy.LEAK ? this._queues.shiftLastFrom(options.priority) : strategy === Bottleneck.prototype.strategy.OVERFLOW_PRIORITY ? this._queues.shiftLastFrom(options.priority + 1) : strategy === Bottleneck.prototype.strategy.OVERFLOW ? job : void 0;
-	        if (shifted != null) {
-	          shifted.doDrop();
-	        }
-	        if ((shifted == null) || strategy === Bottleneck.prototype.strategy.OVERFLOW) {
-	          if (shifted == null) {
-	            job.doDrop();
-	          }
-	          return reachedHWM;
-	        }
-	      }
-	      job.doQueue(reachedHWM, blocked);
-	      this._queues.push(job);
-	      await this._drainAll();
-	      return reachedHWM;
-	    }
-
-	    _receive(job) {
-	      if (this._states.jobStatus(job.options.id) != null) {
-	        job._reject(new Bottleneck.prototype.BottleneckError(`A job with the same id already exists (id=${job.options.id})`));
-	        return false;
-	      } else {
-	        job.doReceive();
-	        return this._submitLock.schedule(this._addToQueue, job);
-	      }
-	    }
-
-	    submit(...args) {
-	      var cb, fn, job, options, ref, ref1, task;
-	      if (typeof args[0] === "function") {
-	        ref = args, [fn, ...args] = ref, [cb] = splice.call(args, -1);
-	        options = parser$5.load({}, this.jobDefaults);
-	      } else {
-	        ref1 = args, [options, fn, ...args] = ref1, [cb] = splice.call(args, -1);
-	        options = parser$5.load(options, this.jobDefaults);
-	      }
-	      task = (...args) => {
-	        return new this.Promise(function(resolve, reject) {
-	          return fn(...args, function(...args) {
-	            return (args[0] != null ? reject : resolve)(args);
-	          });
-	        });
-	      };
-	      job = new Job$1(task, args, options, this.jobDefaults, this.rejectOnDrop, this.Events, this._states, this.Promise);
-	      job.promise.then(function(args) {
-	        return typeof cb === "function" ? cb(...args) : void 0;
-	      }).catch(function(args) {
-	        if (Array.isArray(args)) {
-	          return typeof cb === "function" ? cb(...args) : void 0;
-	        } else {
-	          return typeof cb === "function" ? cb(args) : void 0;
-	        }
-	      });
-	      return this._receive(job);
-	    }
-
-	    schedule(...args) {
-	      var job, options, task;
-	      if (typeof args[0] === "function") {
-	        [task, ...args] = args;
-	        options = {};
-	      } else {
-	        [options, task, ...args] = args;
-	      }
-	      job = new Job$1(task, args, options, this.jobDefaults, this.rejectOnDrop, this.Events, this._states, this.Promise);
-	      this._receive(job);
-	      return job.promise;
-	    }
-
-	    wrap(fn) {
-	      var schedule, wrapped;
-	      schedule = this.schedule.bind(this);
-	      wrapped = function(...args) {
-	        return schedule(fn.bind(this), ...args);
-	      };
-	      wrapped.withOptions = function(options, ...args) {
-	        return schedule(options, fn, ...args);
-	      };
-	      return wrapped;
-	    }
-
-	    async updateSettings(options = {}) {
-	      await this._store.__updateSettings__(parser$5.overwrite(options, this.storeDefaults));
-	      parser$5.overwrite(options, this.instanceDefaults, this);
-	      return this;
-	    }
-
-	    currentReservoir() {
-	      return this._store.__currentReservoir__();
-	    }
-
-	    incrementReservoir(incr = 0) {
-	      return this._store.__incrementReservoir__(incr);
-	    }
-
-	  }
-	  Bottleneck.default = Bottleneck;
-
-	  Bottleneck.Events = Events$4;
-
-	  Bottleneck.version = Bottleneck.prototype.version = require$$8.version;
-
-	  Bottleneck.strategy = Bottleneck.prototype.strategy = {
-	    LEAK: 1,
-	    OVERFLOW: 2,
-	    OVERFLOW_PRIORITY: 4,
-	    BLOCK: 3
-	  };
-
-	  Bottleneck.BottleneckError = Bottleneck.prototype.BottleneckError = BottleneckError_1;
-
-	  Bottleneck.Group = Bottleneck.prototype.Group = Group_1;
-
-	  Bottleneck.RedisConnection = Bottleneck.prototype.RedisConnection = require$$2;
-
-	  Bottleneck.IORedisConnection = Bottleneck.prototype.IORedisConnection = require$$3;
-
-	  Bottleneck.Batcher = Bottleneck.prototype.Batcher = Batcher_1;
-
-	  Bottleneck.prototype.jobDefaults = {
-	    priority: DEFAULT_PRIORITY$1,
-	    weight: 1,
-	    expiration: null,
-	    id: "<no-id>"
-	  };
-
-	  Bottleneck.prototype.storeDefaults = {
-	    maxConcurrent: null,
-	    minTime: 0,
-	    highWater: null,
-	    strategy: Bottleneck.prototype.strategy.LEAK,
-	    penalty: null,
-	    reservoir: null,
-	    reservoirRefreshInterval: null,
-	    reservoirRefreshAmount: null,
-	    reservoirIncreaseInterval: null,
-	    reservoirIncreaseAmount: null,
-	    reservoirIncreaseMaximum: null
-	  };
-
-	  Bottleneck.prototype.localStoreDefaults = {
-	    Promise: Promise,
-	    timeout: null,
-	    heartbeatInterval: 250
-	  };
-
-	  Bottleneck.prototype.redisStoreDefaults = {
-	    Promise: Promise,
-	    timeout: null,
-	    heartbeatInterval: 5000,
-	    clientTimeout: 10000,
-	    Redis: null,
-	    clientOptions: {},
-	    clusterNodes: null,
-	    clearDatastore: false,
-	    connection: null
-	  };
-
-	  Bottleneck.prototype.instanceDefaults = {
-	    datastore: "local",
-	    connection: null,
-	    id: "<no-id>",
-	    rejectOnDrop: true,
-	    trackDoneStatus: false,
-	    Promise: Promise
-	  };
-
-	  Bottleneck.prototype.stopDefaults = {
-	    enqueueErrorMessage: "This limiter has been stopped and cannot accept new jobs.",
-	    dropWaitingJobs: true,
-	    dropErrorMessage: "This limiter has been stopped."
-	  };
-
-	  return Bottleneck;
-
-	}).call(commonjsGlobal$1);
-
-	var Bottleneck_1 = Bottleneck;
-
-	var lib = Bottleneck_1;
-
-	return lib;
-
-})));
-});
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/error-request.js
-async function errorRequest(state, octokit, error, options) {
-  if (!error.request || !error.request.request) {
-    throw error;
-  }
-  if (error.status >= 400 && !state.doNotRetry.includes(error.status)) {
-    const retries = options.request.retries != null ? options.request.retries : state.retries;
-    const retryAfter = Math.pow((options.request.retryCount || 0) + 1, 2);
-    throw octokit.retry.retryRequest(error, retries, retryAfter);
-  }
-  throw error;
-}
-async function wrapRequest$1(state, octokit, request, options) {
-  const limiter = new light();
-  limiter.on("failed", function(error, info) {
-    const maxRetries = ~~error.request.request.retries;
-    const after = ~~error.request.request.retryAfter;
-    options.request.retryCount = info.retryCount + 1;
-    if (maxRetries > info.retryCount) {
-      return after * state.retryAfterBaseValue;
-    }
-  });
-  return limiter.schedule(
-    requestWithGraphqlErrorHandling.bind(null, state, octokit, request),
-    options
-  );
-}
-async function requestWithGraphqlErrorHandling(state, octokit, request, options) {
-  const response = await request(request, options);
-  if (response.data && response.data.errors && /Something went wrong while executing your query/.test(
-    response.data.errors[0].message
-  )) {
-    const error = new RequestError$7(response.data.errors[0].message, 500, {
-      request: options,
-      response
-    });
-    return errorRequest(state, octokit, error, options);
-  }
-  return response;
-}
-
-// pkg/dist-src/index.js
-var VERSION$r = "0.0.0-development";
-function retry(octokit, octokitOptions) {
-  const state = Object.assign(
-    {
-      enabled: true,
-      retryAfterBaseValue: 1e3,
-      doNotRetry: [400, 401, 403, 404, 422, 451],
-      retries: 3
-    },
-    octokitOptions.retry
-  );
-  if (state.enabled) {
-    octokit.hook.error("request", errorRequest.bind(null, state, octokit));
-    octokit.hook.wrap("request", wrapRequest$1.bind(null, state, octokit));
-  }
-  return {
-    retry: {
-      retryRequest: (error, retries, retryAfter) => {
-        error.request.request = Object.assign({}, error.request.request, {
-          retries,
-          retryAfter
-        });
-        return error;
-      }
-    }
-  };
-}
-retry.VERSION = VERSION$r;
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$q = "0.0.0-development";
-
-// pkg/dist-src/wrap-request.js
-var noop$3 = () => Promise.resolve();
-function wrapRequest(state, request, options) {
-  return state.retryLimiter.schedule(doRequest, state, request, options);
-}
-async function doRequest(state, request, options) {
-  const isWrite = options.method !== "GET" && options.method !== "HEAD";
-  const { pathname } = new URL(options.url, "http://github.test");
-  const isSearch = options.method === "GET" && pathname.startsWith("/search/");
-  const isGraphQL = pathname.startsWith("/graphql");
-  const retryCount = ~~request.retryCount;
-  const jobOptions = retryCount > 0 ? { priority: 0, weight: 0 } : {};
-  if (state.clustering) {
-    jobOptions.expiration = 1e3 * 60;
-  }
-  if (isWrite || isGraphQL) {
-    await state.write.key(state.id).schedule(jobOptions, noop$3);
-  }
-  if (isWrite && state.triggersNotification(pathname)) {
-    await state.notifications.key(state.id).schedule(jobOptions, noop$3);
-  }
-  if (isSearch) {
-    await state.search.key(state.id).schedule(jobOptions, noop$3);
-  }
-  const req = state.global.key(state.id).schedule(jobOptions, request, options);
-  if (isGraphQL) {
-    const res = await req;
-    if (res.data.errors != null && res.data.errors.some((error) => error.type === "RATE_LIMITED")) {
-      const error = Object.assign(new Error("GraphQL Rate Limit Exceeded"), {
-        response: res,
-        data: res.data
-      });
-      throw error;
-    }
-  }
-  return req;
-}
-
-// pkg/dist-src/generated/triggers-notification-paths.js
-var triggers_notification_paths_default = [
-  "/orgs/{org}/invitations",
-  "/orgs/{org}/invitations/{invitation_id}",
-  "/orgs/{org}/teams/{team_slug}/discussions",
-  "/orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments",
-  "/repos/{owner}/{repo}/collaborators/{username}",
-  "/repos/{owner}/{repo}/commits/{commit_sha}/comments",
-  "/repos/{owner}/{repo}/issues",
-  "/repos/{owner}/{repo}/issues/{issue_number}/comments",
-  "/repos/{owner}/{repo}/pulls",
-  "/repos/{owner}/{repo}/pulls/{pull_number}/comments",
-  "/repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies",
-  "/repos/{owner}/{repo}/pulls/{pull_number}/merge",
-  "/repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers",
-  "/repos/{owner}/{repo}/pulls/{pull_number}/reviews",
-  "/repos/{owner}/{repo}/releases",
-  "/teams/{team_id}/discussions",
-  "/teams/{team_id}/discussions/{discussion_number}/comments"
-];
-
-// pkg/dist-src/route-matcher.js
-function routeMatcher$1(paths) {
-  const regexes = paths.map(
-    (path) => path.split("/").map((c) => c.startsWith("{") ? "(?:.+?)" : c).join("/")
-  );
-  const regex2 = `^(?:${regexes.map((r) => `(?:${r})`).join("|")})[^/]*$`;
-  return new RegExp(regex2, "i");
-}
-
-// pkg/dist-src/index.js
-var regex = routeMatcher$1(triggers_notification_paths_default);
-var triggersNotification = regex.test.bind(regex);
-var groups = {};
-var createGroups = function(Bottleneck, common) {
-  groups.global = new Bottleneck.Group({
-    id: "octokit-global",
-    maxConcurrent: 10,
-    ...common
-  });
-  groups.search = new Bottleneck.Group({
-    id: "octokit-search",
-    maxConcurrent: 1,
-    minTime: 2e3,
-    ...common
-  });
-  groups.write = new Bottleneck.Group({
-    id: "octokit-write",
-    maxConcurrent: 1,
-    minTime: 1e3,
-    ...common
-  });
-  groups.notifications = new Bottleneck.Group({
-    id: "octokit-notifications",
-    maxConcurrent: 1,
-    minTime: 3e3,
-    ...common
-  });
-};
-function throttling(octokit, octokitOptions) {
-  const {
-    enabled = true,
-    Bottleneck = light,
-    id = "no-id",
-    timeout = 1e3 * 60 * 2,
-    // Redis TTL: 2 minutes
-    connection
-  } = octokitOptions.throttle || {};
-  if (!enabled) {
-    return {};
-  }
-  const common = { connection, timeout };
-  if (groups.global == null) {
-    createGroups(Bottleneck, common);
-  }
-  const state = Object.assign(
-    {
-      clustering: connection != null,
-      triggersNotification,
-      fallbackSecondaryRateRetryAfter: 60,
-      retryAfterBaseValue: 1e3,
-      retryLimiter: new Bottleneck(),
-      id,
-      ...groups
-    },
-    octokitOptions.throttle
-  );
-  if (typeof state.onSecondaryRateLimit !== "function" || typeof state.onRateLimit !== "function") {
-    throw new Error(`octokit/plugin-throttling error:
-        You must pass the onSecondaryRateLimit and onRateLimit error handlers.
-        See https://octokit.github.io/rest.js/#throttling
-
-        const octokit = new Octokit({
-          throttle: {
-            onSecondaryRateLimit: (retryAfter, options) => {/* ... */},
-            onRateLimit: (retryAfter, options) => {/* ... */}
-          }
-        })
-    `);
-  }
-  const events = {};
-  const emitter = new Bottleneck.Events(events);
-  events.on("secondary-limit", state.onSecondaryRateLimit);
-  events.on("rate-limit", state.onRateLimit);
-  events.on(
-    "error",
-    (e) => octokit.log.warn("Error in throttling-plugin limit handler", e)
-  );
-  state.retryLimiter.on("failed", async function(error, info) {
-    const [state2, request, options] = info.args;
-    const { pathname } = new URL(options.url, "http://github.test");
-    const shouldRetryGraphQL = pathname.startsWith("/graphql") && error.status !== 401;
-    if (!(shouldRetryGraphQL || error.status === 403)) {
-      return;
-    }
-    const retryCount = ~~request.retryCount;
-    request.retryCount = retryCount;
-    options.request.retryCount = retryCount;
-    const { wantRetry, retryAfter = 0 } = await async function() {
-      if (/\bsecondary rate\b/i.test(error.message)) {
-        const retryAfter2 = Number(error.response.headers["retry-after"]) || state2.fallbackSecondaryRateRetryAfter;
-        const wantRetry2 = await emitter.trigger(
-          "secondary-limit",
-          retryAfter2,
-          options,
-          octokit,
-          retryCount
-        );
-        return { wantRetry: wantRetry2, retryAfter: retryAfter2 };
-      }
-      if (error.response.headers != null && error.response.headers["x-ratelimit-remaining"] === "0" || (error.response.data?.errors ?? []).some(
-        (error2) => error2.type === "RATE_LIMITED"
-      )) {
-        const rateLimitReset = new Date(
-          ~~error.response.headers["x-ratelimit-reset"] * 1e3
-        ).getTime();
-        const retryAfter2 = Math.max(
-          // Add one second so we retry _after_ the reset time
-          // https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#exceeding-the-rate-limit
-          Math.ceil((rateLimitReset - Date.now()) / 1e3) + 1,
-          0
-        );
-        const wantRetry2 = await emitter.trigger(
-          "rate-limit",
-          retryAfter2,
-          options,
-          octokit,
-          retryCount
-        );
-        return { wantRetry: wantRetry2, retryAfter: retryAfter2 };
-      }
-      return {};
-    }();
-    if (wantRetry) {
-      request.retryCount++;
-      return retryAfter * state2.retryAfterBaseValue;
-    }
-  });
-  octokit.hook.wrap("request", wrapRequest.bind(null, state));
-  return {};
-}
-throttling.VERSION = VERSION$q;
-throttling.triggersNotification = triggersNotification;
-
-function getUserAgent$6() {
-  if (typeof navigator === "object" && "userAgent" in navigator) {
-    return navigator.userAgent;
-  }
-
-  if (typeof process === "object" && process.version !== undefined) {
-    return `Node.js/${process.version.substr(1)} (${process.platform}; ${
-      process.arch
-    })`;
-  }
-
-  return "<environment undetectable>";
-}
-
-// @ts-check
-
-function register$1(state, name, method, options) {
-  if (typeof method !== "function") {
-    throw new Error("method for before hook must be a function");
-  }
-
-  if (!options) {
-    options = {};
-  }
-
-  if (Array.isArray(name)) {
-    return name.reverse().reduce((callback, name) => {
-      return register$1.bind(null, state, name, callback, options);
-    }, method)();
-  }
-
-  return Promise.resolve().then(() => {
-    if (!state.registry[name]) {
-      return method(options);
-    }
-
-    return state.registry[name].reduce((method, registered) => {
-      return registered.hook.bind(null, method, options);
-    }, method)();
-  });
-}
-
-// @ts-check
-
-function addHook$1(state, kind, name, hook) {
-  const orig = hook;
-  if (!state.registry[name]) {
-    state.registry[name] = [];
-  }
-
-  if (kind === "before") {
-    hook = (method, options) => {
-      return Promise.resolve()
-        .then(orig.bind(null, options))
-        .then(method.bind(null, options));
-    };
-  }
-
-  if (kind === "after") {
-    hook = (method, options) => {
-      let result;
-      return Promise.resolve()
-        .then(method.bind(null, options))
-        .then((result_) => {
-          result = result_;
-          return orig(result, options);
-        })
-        .then(() => {
-          return result;
-        });
-    };
-  }
-
-  if (kind === "error") {
-    hook = (method, options) => {
-      return Promise.resolve()
-        .then(method.bind(null, options))
-        .catch((error) => {
-          return orig(error, options);
-        });
-    };
-  }
-
-  state.registry[name].push({
-    hook: hook,
-    orig: orig,
-  });
-}
-
-// @ts-check
-
-function removeHook$1(state, name, method) {
-  if (!state.registry[name]) {
-    return;
-  }
-
-  const index = state.registry[name]
-    .map((registered) => {
-      return registered.orig;
-    })
-    .indexOf(method);
-
-  if (index === -1) {
-    return;
-  }
-
-  state.registry[name].splice(index, 1);
-}
-
-// @ts-check
-
-// bind with array of arguments: https://stackoverflow.com/a/21792913
-const bind$1 = Function.bind;
-const bindable$1 = bind$1.bind(bind$1);
-
-function bindApi$1(hook, state, name) {
-  const removeHookRef = bindable$1(removeHook$1, null).apply(
-    null,
-    name ? [state, name] : [state]
-  );
-  hook.api = { remove: removeHookRef };
-  hook.remove = removeHookRef;
-  ["before", "error", "after", "wrap"].forEach((kind) => {
-    const args = name ? [state, kind, name] : [state, kind];
-    hook[kind] = hook.api[kind] = bindable$1(addHook$1, null).apply(null, args);
-  });
-}
-
-function Singular$1() {
-  const singularHookName = Symbol("Singular");
-  const singularHookState = {
-    registry: {},
-  };
-  const singularHook = register$1.bind(null, singularHookState, singularHookName);
-  bindApi$1(singularHook, singularHookState, singularHookName);
-  return singularHook;
-}
-
-function Collection$2() {
-  const state = {
-    registry: {},
-  };
-
-  const hook = register$1.bind(null, state);
-  bindApi$1(hook, state);
-
-  return hook;
-}
-
-var Hook$1 = { Singular: Singular$1, Collection: Collection$2 };
-
-// pkg/dist-src/defaults.js
-
-// pkg/dist-src/version.js
-var VERSION$p = "0.0.0-development";
-
-// pkg/dist-src/defaults.js
-var userAgent$6 = `octokit-endpoint.js/${VERSION$p} ${getUserAgent$6()}`;
-var DEFAULTS$6 = {
-  method: "GET",
-  baseUrl: "https://api.github.com",
-  headers: {
-    accept: "application/vnd.github.v3+json",
-    "user-agent": userAgent$6
-  },
-  mediaType: {
-    format: ""
-  }
-};
-
-// pkg/dist-src/util/lowercase-keys.js
-function lowercaseKeys$6(object) {
-  if (!object) {
-    return {};
-  }
-  return Object.keys(object).reduce((newObj, key) => {
-    newObj[key.toLowerCase()] = object[key];
-    return newObj;
-  }, {});
-}
-
-// pkg/dist-src/util/is-plain-object.js
-function isPlainObject$d(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/util/merge-deep.js
-function mergeDeep$6(defaults, options) {
-  const result = Object.assign({}, defaults);
-  Object.keys(options).forEach((key) => {
-    if (isPlainObject$d(options[key])) {
-      if (!(key in defaults))
-        Object.assign(result, { [key]: options[key] });
-      else
-        result[key] = mergeDeep$6(defaults[key], options[key]);
-    } else {
-      Object.assign(result, { [key]: options[key] });
-    }
-  });
-  return result;
-}
-
-// pkg/dist-src/util/remove-undefined-properties.js
-function removeUndefinedProperties$6(obj) {
-  for (const key in obj) {
-    if (obj[key] === void 0) {
-      delete obj[key];
-    }
-  }
-  return obj;
-}
-
-// pkg/dist-src/merge.js
-function merge$6(defaults, route, options) {
-  if (typeof route === "string") {
-    let [method, url] = route.split(" ");
-    options = Object.assign(url ? { method, url } : { url: method }, options);
-  } else {
-    options = Object.assign({}, route);
-  }
-  options.headers = lowercaseKeys$6(options.headers);
-  removeUndefinedProperties$6(options);
-  removeUndefinedProperties$6(options.headers);
-  const mergedOptions = mergeDeep$6(defaults || {}, options);
-  if (options.url === "/graphql") {
-    if (defaults && defaults.mediaType.previews?.length) {
-      mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(
-        (preview) => !mergedOptions.mediaType.previews.includes(preview)
-      ).concat(mergedOptions.mediaType.previews);
-    }
-    mergedOptions.mediaType.previews = (mergedOptions.mediaType.previews || []).map((preview) => preview.replace(/-preview/, ""));
-  }
-  return mergedOptions;
-}
-
-// pkg/dist-src/util/add-query-parameters.js
-function addQueryParameters$6(url, parameters) {
-  const separator = /\?/.test(url) ? "&" : "?";
-  const names = Object.keys(parameters);
-  if (names.length === 0) {
-    return url;
-  }
-  return url + separator + names.map((name) => {
-    if (name === "q") {
-      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
-    }
-    return `${name}=${encodeURIComponent(parameters[name])}`;
-  }).join("&");
-}
-
-// pkg/dist-src/util/extract-url-variable-names.js
-var urlVariableRegex$6 = /\{[^}]+\}/g;
-function removeNonChars$6(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
-}
-function extractUrlVariableNames$6(url) {
-  const matches = url.match(urlVariableRegex$6);
-  if (!matches) {
-    return [];
-  }
-  return matches.map(removeNonChars$6).reduce((a, b) => a.concat(b), []);
-}
-
-// pkg/dist-src/util/omit.js
-function omit$6(object, keysToOmit) {
-  const result = { __proto__: null };
-  for (const key of Object.keys(object)) {
-    if (keysToOmit.indexOf(key) === -1) {
-      result[key] = object[key];
-    }
-  }
-  return result;
-}
-
-// pkg/dist-src/util/url-template.js
-function encodeReserved$6(str) {
-  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function(part) {
-    if (!/%[0-9A-Fa-f]/.test(part)) {
-      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
-    }
-    return part;
-  }).join("");
-}
-function encodeUnreserved$6(str) {
-  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
-    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
-  });
-}
-function encodeValue$6(operator, value, key) {
-  value = operator === "+" || operator === "#" ? encodeReserved$6(value) : encodeUnreserved$6(value);
-  if (key) {
-    return encodeUnreserved$6(key) + "=" + value;
-  } else {
-    return value;
-  }
-}
-function isDefined$6(value) {
-  return value !== void 0 && value !== null;
-}
-function isKeyOperator$6(operator) {
-  return operator === ";" || operator === "&" || operator === "?";
-}
-function getValues$6(context, operator, key, modifier) {
-  var value = context[key], result = [];
-  if (isDefined$6(value) && value !== "") {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      value = value.toString();
-      if (modifier && modifier !== "*") {
-        value = value.substring(0, parseInt(modifier, 10));
-      }
-      result.push(
-        encodeValue$6(operator, value, isKeyOperator$6(operator) ? key : "")
-      );
-    } else {
-      if (modifier === "*") {
-        if (Array.isArray(value)) {
-          value.filter(isDefined$6).forEach(function(value2) {
-            result.push(
-              encodeValue$6(operator, value2, isKeyOperator$6(operator) ? key : "")
-            );
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$6(value[k])) {
-              result.push(encodeValue$6(operator, value[k], k));
-            }
-          });
-        }
-      } else {
-        const tmp = [];
-        if (Array.isArray(value)) {
-          value.filter(isDefined$6).forEach(function(value2) {
-            tmp.push(encodeValue$6(operator, value2));
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$6(value[k])) {
-              tmp.push(encodeUnreserved$6(k));
-              tmp.push(encodeValue$6(operator, value[k].toString()));
-            }
-          });
-        }
-        if (isKeyOperator$6(operator)) {
-          result.push(encodeUnreserved$6(key) + "=" + tmp.join(","));
-        } else if (tmp.length !== 0) {
-          result.push(tmp.join(","));
-        }
-      }
-    }
-  } else {
-    if (operator === ";") {
-      if (isDefined$6(value)) {
-        result.push(encodeUnreserved$6(key));
-      }
-    } else if (value === "" && (operator === "&" || operator === "?")) {
-      result.push(encodeUnreserved$6(key) + "=");
-    } else if (value === "") {
-      result.push("");
-    }
-  }
-  return result;
-}
-function parseUrl$6(template) {
-  return {
-    expand: expand$7.bind(null, template)
-  };
-}
-function expand$7(template, context) {
-  var operators = ["+", "#", ".", "/", ";", "?", "&"];
-  template = template.replace(
-    /\{([^\{\}]+)\}|([^\{\}]+)/g,
-    function(_, expression, literal) {
-      if (expression) {
-        let operator = "";
-        const values = [];
-        if (operators.indexOf(expression.charAt(0)) !== -1) {
-          operator = expression.charAt(0);
-          expression = expression.substr(1);
-        }
-        expression.split(/,/g).forEach(function(variable) {
-          var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-          values.push(getValues$6(context, operator, tmp[1], tmp[2] || tmp[3]));
-        });
-        if (operator && operator !== "+") {
-          var separator = ",";
-          if (operator === "?") {
-            separator = "&";
-          } else if (operator !== "#") {
-            separator = operator;
-          }
-          return (values.length !== 0 ? operator : "") + values.join(separator);
-        } else {
-          return values.join(",");
-        }
-      } else {
-        return encodeReserved$6(literal);
-      }
-    }
-  );
-  if (template === "/") {
-    return template;
-  } else {
-    return template.replace(/\/$/, "");
-  }
-}
-
-// pkg/dist-src/parse.js
-function parse$a(options) {
-  let method = options.method.toUpperCase();
-  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
-  let headers = Object.assign({}, options.headers);
-  let body;
-  let parameters = omit$6(options, [
-    "method",
-    "baseUrl",
-    "url",
-    "headers",
-    "request",
-    "mediaType"
-  ]);
-  const urlVariableNames = extractUrlVariableNames$6(url);
-  url = parseUrl$6(url).expand(parameters);
-  if (!/^http/.test(url)) {
-    url = options.baseUrl + url;
-  }
-  const omittedParameters = Object.keys(options).filter((option) => urlVariableNames.includes(option)).concat("baseUrl");
-  const remainingParameters = omit$6(parameters, omittedParameters);
-  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
-  if (!isBinaryRequest) {
-    if (options.mediaType.format) {
-      headers.accept = headers.accept.split(/,/).map(
-        (format) => format.replace(
-          /application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/,
-          `application/vnd$1$2.${options.mediaType.format}`
-        )
-      ).join(",");
-    }
-    if (url.endsWith("/graphql")) {
-      if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
-        headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
-          const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
-          return `application/vnd.github.${preview}-preview${format}`;
-        }).join(",");
-      }
-    }
-  }
-  if (["GET", "HEAD"].includes(method)) {
-    url = addQueryParameters$6(url, remainingParameters);
-  } else {
-    if ("data" in remainingParameters) {
-      body = remainingParameters.data;
-    } else {
-      if (Object.keys(remainingParameters).length) {
-        body = remainingParameters;
-      }
-    }
-  }
-  if (!headers["content-type"] && typeof body !== "undefined") {
-    headers["content-type"] = "application/json; charset=utf-8";
-  }
-  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
-    body = "";
-  }
-  return Object.assign(
-    { method, url, headers },
-    typeof body !== "undefined" ? { body } : null,
-    options.request ? { request: options.request } : null
-  );
-}
-
-// pkg/dist-src/endpoint-with-defaults.js
-function endpointWithDefaults$6(defaults, route, options) {
-  return parse$a(merge$6(defaults, route, options));
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$f(oldDefaults, newDefaults) {
-  const DEFAULTS2 = merge$6(oldDefaults, newDefaults);
-  const endpoint2 = endpointWithDefaults$6.bind(null, DEFAULTS2);
-  return Object.assign(endpoint2, {
-    DEFAULTS: DEFAULTS2,
-    defaults: withDefaults$f.bind(null, DEFAULTS2),
-    merge: merge$6.bind(null, DEFAULTS2),
-    parse: parse$a
-  });
-}
-
-// pkg/dist-src/index.js
-var endpoint$6 = withDefaults$f(null, DEFAULTS$6);
-
-class RequestError$6 extends Error {
-  name;
-  /**
-   * http status code
-   */
-  status;
-  /**
-   * Request options that lead to the error.
-   */
-  request;
-  /**
-   * Response object if a response was received
-   */
-  response;
-  constructor(message, statusCode, options) {
-    super(message);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-    this.name = "HttpError";
-    this.status = statusCode;
-    if ("response" in options) {
-      this.response = options.response;
-    }
-    const requestCopy = Object.assign({}, options.request);
-    if (options.request.headers.authorization) {
-      requestCopy.headers = Object.assign({}, options.request.headers, {
-        authorization: options.request.headers.authorization.replace(
-          / .*$/,
-          " [REDACTED]"
-        )
-      });
-    }
-    requestCopy.url = requestCopy.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy;
-  }
-}
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$o = "0.0.0-development";
-
-// pkg/dist-src/is-plain-object.js
-function isPlainObject$c(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/get-buffer-response.js
-function getBufferResponse$6(response) {
-  return response.arrayBuffer();
-}
-
-// pkg/dist-src/fetch-wrapper.js
-function fetchWrapper$6(requestOptions) {
-  const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
-  const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  if (isPlainObject$c(requestOptions.body) || Array.isArray(requestOptions.body)) {
-    requestOptions.body = JSON.stringify(requestOptions.body);
-  }
-  let headers = {};
-  let status;
-  let url;
-  let { fetch } = globalThis;
-  if (requestOptions.request?.fetch) {
-    fetch = requestOptions.request.fetch;
-  }
-  if (!fetch) {
-    throw new Error(
-      "fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). Learn more at https://github.com/octokit/octokit.js/#fetch-missing"
-    );
-  }
-  return fetch(requestOptions.url, {
-    method: requestOptions.method,
-    body: requestOptions.body,
-    redirect: requestOptions.request?.redirect,
-    // Header values must be `string`
-    headers: Object.fromEntries(
-      Object.entries(requestOptions.headers).map(([name, value]) => [
-        name,
-        String(value)
-      ])
-    ),
-    signal: requestOptions.request?.signal,
-    // duplex must be set if request.body is ReadableStream or Async Iterables.
-    // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
-    ...requestOptions.body && { duplex: "half" }
-  }).then(async (response) => {
-    url = response.url;
-    status = response.status;
-    for (const keyAndValue of response.headers) {
-      headers[keyAndValue[0]] = keyAndValue[1];
-    }
-    if ("deprecation" in headers) {
-      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
-      const deprecationLink = matches && matches.pop();
-      log.warn(
-        `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
-      );
-    }
-    if (status === 204 || status === 205) {
-      return;
-    }
-    if (requestOptions.method === "HEAD") {
-      if (status < 400) {
-        return;
-      }
-      throw new RequestError$6(response.statusText, status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: void 0
-        },
-        request: requestOptions
-      });
-    }
-    if (status === 304) {
-      throw new RequestError$6("Not modified", status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: await getResponseData$6(response)
-        },
-        request: requestOptions
-      });
-    }
-    if (status >= 400) {
-      const data = await getResponseData$6(response);
-      const error = new RequestError$6(toErrorMessage$6(data), status, {
-        response: {
-          url,
-          status,
-          headers,
-          data
-        },
-        request: requestOptions
-      });
-      throw error;
-    }
-    return parseSuccessResponseBody ? await getResponseData$6(response) : response.body;
-  }).then((data) => {
-    return {
-      status,
-      url,
-      headers,
-      data
-    };
-  }).catch((error) => {
-    if (error instanceof RequestError$6)
-      throw error;
-    else if (error.name === "AbortError")
-      throw error;
-    let message = error.message;
-    if (error.name === "TypeError" && "cause" in error) {
-      if (error.cause instanceof Error) {
-        message = error.cause.message;
-      } else if (typeof error.cause === "string") {
-        message = error.cause;
-      }
-    }
-    throw new RequestError$6(message, 500, {
-      request: requestOptions
-    });
-  });
-}
-async function getResponseData$6(response) {
-  const contentType = response.headers.get("content-type");
-  if (/application\/json/.test(contentType)) {
-    return response.json().catch(() => response.text()).catch(() => "");
-  }
-  if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
-    return response.text();
-  }
-  return getBufferResponse$6(response);
-}
-function toErrorMessage$6(data) {
-  if (typeof data === "string")
-    return data;
-  let suffix;
-  if ("documentation_url" in data) {
-    suffix = ` - ${data.documentation_url}`;
-  } else {
-    suffix = "";
-  }
-  if ("message" in data) {
-    if (Array.isArray(data.errors)) {
-      return `${data.message}: ${data.errors.map(JSON.stringify).join(", ")}${suffix}`;
-    }
-    return `${data.message}${suffix}`;
-  }
-  return `Unknown error: ${JSON.stringify(data)}`;
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$e(oldEndpoint, newDefaults) {
-  const endpoint2 = oldEndpoint.defaults(newDefaults);
-  const newApi = function(route, parameters) {
-    const endpointOptions = endpoint2.merge(route, parameters);
-    if (!endpointOptions.request || !endpointOptions.request.hook) {
-      return fetchWrapper$6(endpoint2.parse(endpointOptions));
-    }
-    const request2 = (route2, parameters2) => {
-      return fetchWrapper$6(
-        endpoint2.parse(endpoint2.merge(route2, parameters2))
-      );
-    };
-    Object.assign(request2, {
-      endpoint: endpoint2,
-      defaults: withDefaults$e.bind(null, endpoint2)
-    });
-    return endpointOptions.request.hook(request2, endpointOptions);
-  };
-  return Object.assign(newApi, {
-    endpoint: endpoint2,
-    defaults: withDefaults$e.bind(null, endpoint2)
-  });
-}
-
-// pkg/dist-src/index.js
-var request$6 = withDefaults$e(endpoint$6, {
-  headers: {
-    "user-agent": `octokit-request.js/${VERSION$o} ${getUserAgent$6()}`
-  }
-});
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$n = "0.0.0-development";
-
-// pkg/dist-src/error.js
-function _buildMessageForResponseErrors$1(data) {
-  return `Request failed due to following response errors:
-` + data.errors.map((e) => ` - ${e.message}`).join("\n");
-}
-var GraphqlResponseError$1 = class extends Error {
-  constructor(request2, headers, response) {
-    super(_buildMessageForResponseErrors$1(response));
-    this.request = request2;
-    this.headers = headers;
-    this.response = response;
-    this.errors = response.errors;
-    this.data = response.data;
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-  }
-  name = "GraphqlResponseError";
-  errors;
-  data;
-};
-
-// pkg/dist-src/graphql.js
-var NON_VARIABLE_OPTIONS$1 = [
-  "method",
-  "baseUrl",
-  "url",
-  "headers",
-  "request",
-  "query",
-  "mediaType"
-];
-var FORBIDDEN_VARIABLE_OPTIONS$1 = ["query", "method", "url"];
-var GHES_V3_SUFFIX_REGEX$1 = /\/api\/v3\/?$/;
-function graphql$1(request2, query, options) {
-  if (options) {
-    if (typeof query === "string" && "query" in options) {
-      return Promise.reject(
-        new Error(`[@octokit/graphql] "query" cannot be used as variable name`)
-      );
-    }
-    for (const key in options) {
-      if (!FORBIDDEN_VARIABLE_OPTIONS$1.includes(key))
-        continue;
-      return Promise.reject(
-        new Error(
-          `[@octokit/graphql] "${key}" cannot be used as variable name`
-        )
-      );
-    }
-  }
-  const parsedOptions = typeof query === "string" ? Object.assign({ query }, options) : query;
-  const requestOptions = Object.keys(
-    parsedOptions
-  ).reduce((result, key) => {
-    if (NON_VARIABLE_OPTIONS$1.includes(key)) {
-      result[key] = parsedOptions[key];
-      return result;
-    }
-    if (!result.variables) {
-      result.variables = {};
-    }
-    result.variables[key] = parsedOptions[key];
-    return result;
-  }, {});
-  const baseUrl = parsedOptions.baseUrl || request2.endpoint.DEFAULTS.baseUrl;
-  if (GHES_V3_SUFFIX_REGEX$1.test(baseUrl)) {
-    requestOptions.url = baseUrl.replace(GHES_V3_SUFFIX_REGEX$1, "/api/graphql");
-  }
-  return request2(requestOptions).then((response) => {
-    if (response.data.errors) {
-      const headers = {};
-      for (const key of Object.keys(response.headers)) {
-        headers[key] = response.headers[key];
-      }
-      throw new GraphqlResponseError$1(
-        requestOptions,
-        headers,
-        response.data
-      );
-    }
-    return response.data.data;
-  });
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$d(request2, newDefaults) {
-  const newRequest = request2.defaults(newDefaults);
-  const newApi = (query, options) => {
-    return graphql$1(newRequest, query, options);
-  };
-  return Object.assign(newApi, {
-    defaults: withDefaults$d.bind(null, newRequest),
-    endpoint: newRequest.endpoint
-  });
-}
-
-// pkg/dist-src/index.js
-withDefaults$d(request$6, {
-  headers: {
-    "user-agent": `octokit-graphql.js/${VERSION$n} ${getUserAgent$6()}`
-  },
-  method: "POST",
-  url: "/graphql"
-});
-function withCustomRequest$1(customRequest) {
-  return withDefaults$d(customRequest, {
-    method: "POST",
-    url: "/graphql"
-  });
-}
-
-// pkg/dist-src/auth.js
-var REGEX_IS_INSTALLATION_LEGACY$1 = /^v1\./;
-var REGEX_IS_INSTALLATION$1 = /^ghs_/;
-var REGEX_IS_USER_TO_SERVER$1 = /^ghu_/;
-async function auth$6(token) {
-  const isApp = token.split(/\./).length === 3;
-  const isInstallation = REGEX_IS_INSTALLATION_LEGACY$1.test(token) || REGEX_IS_INSTALLATION$1.test(token);
-  const isUserToServer = REGEX_IS_USER_TO_SERVER$1.test(token);
-  const tokenType = isApp ? "app" : isInstallation ? "installation" : isUserToServer ? "user-to-server" : "oauth";
-  return {
-    type: "token",
-    token,
-    tokenType
-  };
-}
-
-// pkg/dist-src/with-authorization-prefix.js
-function withAuthorizationPrefix$1(token) {
-  if (token.split(/\./).length === 3) {
-    return `bearer ${token}`;
-  }
-  return `token ${token}`;
-}
-
-// pkg/dist-src/hook.js
-async function hook$6(token, request, route, parameters) {
-  const endpoint = request.endpoint.merge(
-    route,
-    parameters
-  );
-  endpoint.headers.authorization = withAuthorizationPrefix$1(token);
-  return request(endpoint);
-}
-
-// pkg/dist-src/index.js
-var createTokenAuth$1 = function createTokenAuth2(token) {
-  if (!token) {
-    throw new Error("[@octokit/auth-token] No token passed to createTokenAuth");
-  }
-  if (typeof token !== "string") {
-    throw new Error(
-      "[@octokit/auth-token] Token passed to createTokenAuth is not a string"
-    );
-  }
-  token = token.replace(/^(token|bearer) +/i, "");
-  return Object.assign(auth$6.bind(null, token), {
-    hook: hook$6.bind(null, token)
-  });
-};
-
-const VERSION$m = "6.1.2";
-
-const noop$2 = () => {
-};
-const consoleWarn$1 = console.warn.bind(console);
-const consoleError$1 = console.error.bind(console);
-const userAgentTrail$1 = `octokit-core.js/${VERSION$m} ${getUserAgent$6()}`;
-class Octokit$2 {
-  static VERSION = VERSION$m;
-  static defaults(defaults) {
-    const OctokitWithDefaults = class extends this {
-      constructor(...args) {
-        const options = args[0] || {};
-        if (typeof defaults === "function") {
-          super(defaults(options));
-          return;
-        }
-        super(
-          Object.assign(
-            {},
-            defaults,
-            options,
-            options.userAgent && defaults.userAgent ? {
-              userAgent: `${options.userAgent} ${defaults.userAgent}`
-            } : null
-          )
-        );
-      }
-    };
-    return OctokitWithDefaults;
-  }
-  static plugins = [];
-  /**
-   * Attach a plugin (or many) to your Octokit instance.
-   *
-   * @example
-   * const API = Octokit.plugin(plugin1, plugin2, plugin3, ...)
-   */
-  static plugin(...newPlugins) {
-    const currentPlugins = this.plugins;
-    const NewOctokit = class extends this {
-      static plugins = currentPlugins.concat(
-        newPlugins.filter((plugin) => !currentPlugins.includes(plugin))
-      );
-    };
-    return NewOctokit;
-  }
-  constructor(options = {}) {
-    const hook = new Hook$1.Collection();
-    const requestDefaults = {
-      baseUrl: request$6.endpoint.DEFAULTS.baseUrl,
-      headers: {},
-      request: Object.assign({}, options.request, {
-        // @ts-ignore internal usage only, no need to type
-        hook: hook.bind(null, "request")
-      }),
-      mediaType: {
-        previews: [],
-        format: ""
-      }
-    };
-    requestDefaults.headers["user-agent"] = options.userAgent ? `${options.userAgent} ${userAgentTrail$1}` : userAgentTrail$1;
-    if (options.baseUrl) {
-      requestDefaults.baseUrl = options.baseUrl;
-    }
-    if (options.previews) {
-      requestDefaults.mediaType.previews = options.previews;
-    }
-    if (options.timeZone) {
-      requestDefaults.headers["time-zone"] = options.timeZone;
-    }
-    this.request = request$6.defaults(requestDefaults);
-    this.graphql = withCustomRequest$1(this.request).defaults(requestDefaults);
-    this.log = Object.assign(
-      {
-        debug: noop$2,
-        info: noop$2,
-        warn: consoleWarn$1,
-        error: consoleError$1
-      },
-      options.log
-    );
-    this.hook = hook;
-    if (!options.authStrategy) {
-      if (!options.auth) {
-        this.auth = async () => ({
-          type: "unauthenticated"
-        });
-      } else {
-        const auth = createTokenAuth$1(options.auth);
-        hook.wrap("request", auth.hook);
-        this.auth = auth;
-      }
-    } else {
-      const { authStrategy, ...otherOptions } = options;
-      const auth = authStrategy(
-        Object.assign(
-          {
-            request: this.request,
-            log: this.log,
-            // we pass the current octokit instance as well as its constructor options
-            // to allow for authentication strategies that return a new octokit instance
-            // that shares the same internal state as the current one. The original
-            // requirement for this was the "event-octokit" authentication strategy
-            // of https://github.com/probot/octokit-auth-probot.
-            octokit: this,
-            octokitOptions: otherOptions
-          },
-          options.auth
-        )
-      );
-      hook.wrap("request", auth.hook);
-      this.auth = auth;
-    }
-    const classConstructor = this.constructor;
-    for (let i = 0; i < classConstructor.plugins.length; ++i) {
-      Object.assign(this, classConstructor.plugins[i](this, options));
-    }
-  }
-  // assigned during constructor
-  request;
-  graphql;
-  log;
-  hook;
-  // TODO: type `octokit.auth` based on passed options.authStrategy
-  auth;
-}
-
-function getUserAgent$5() {
-  if (typeof navigator === "object" && "userAgent" in navigator) {
-    return navigator.userAgent;
-  }
-
-  if (typeof process === "object" && process.version !== undefined) {
-    return `Node.js/${process.version.substr(1)} (${process.platform}; ${
-      process.arch
-    })`;
-  }
-
-  return "<environment undetectable>";
-}
-
-// pkg/dist-src/defaults.js
-
-// pkg/dist-src/version.js
-var VERSION$l = "0.0.0-development";
-
-// pkg/dist-src/defaults.js
-var userAgent$5 = `octokit-endpoint.js/${VERSION$l} ${getUserAgent$5()}`;
-var DEFAULTS$5 = {
-  method: "GET",
-  baseUrl: "https://api.github.com",
-  headers: {
-    accept: "application/vnd.github.v3+json",
-    "user-agent": userAgent$5
-  },
-  mediaType: {
-    format: ""
-  }
-};
-
-// pkg/dist-src/util/lowercase-keys.js
-function lowercaseKeys$5(object) {
-  if (!object) {
-    return {};
-  }
-  return Object.keys(object).reduce((newObj, key) => {
-    newObj[key.toLowerCase()] = object[key];
-    return newObj;
-  }, {});
-}
-
-// pkg/dist-src/util/is-plain-object.js
-function isPlainObject$b(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/util/merge-deep.js
-function mergeDeep$5(defaults, options) {
-  const result = Object.assign({}, defaults);
-  Object.keys(options).forEach((key) => {
-    if (isPlainObject$b(options[key])) {
-      if (!(key in defaults))
-        Object.assign(result, { [key]: options[key] });
-      else
-        result[key] = mergeDeep$5(defaults[key], options[key]);
-    } else {
-      Object.assign(result, { [key]: options[key] });
-    }
-  });
-  return result;
-}
-
-// pkg/dist-src/util/remove-undefined-properties.js
-function removeUndefinedProperties$5(obj) {
-  for (const key in obj) {
-    if (obj[key] === void 0) {
-      delete obj[key];
-    }
-  }
-  return obj;
-}
-
-// pkg/dist-src/merge.js
-function merge$5(defaults, route, options) {
-  if (typeof route === "string") {
-    let [method, url] = route.split(" ");
-    options = Object.assign(url ? { method, url } : { url: method }, options);
-  } else {
-    options = Object.assign({}, route);
-  }
-  options.headers = lowercaseKeys$5(options.headers);
-  removeUndefinedProperties$5(options);
-  removeUndefinedProperties$5(options.headers);
-  const mergedOptions = mergeDeep$5(defaults || {}, options);
-  if (options.url === "/graphql") {
-    if (defaults && defaults.mediaType.previews?.length) {
-      mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(
-        (preview) => !mergedOptions.mediaType.previews.includes(preview)
-      ).concat(mergedOptions.mediaType.previews);
-    }
-    mergedOptions.mediaType.previews = (mergedOptions.mediaType.previews || []).map((preview) => preview.replace(/-preview/, ""));
-  }
-  return mergedOptions;
-}
-
-// pkg/dist-src/util/add-query-parameters.js
-function addQueryParameters$5(url, parameters) {
-  const separator = /\?/.test(url) ? "&" : "?";
-  const names = Object.keys(parameters);
-  if (names.length === 0) {
-    return url;
-  }
-  return url + separator + names.map((name) => {
-    if (name === "q") {
-      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
-    }
-    return `${name}=${encodeURIComponent(parameters[name])}`;
-  }).join("&");
-}
-
-// pkg/dist-src/util/extract-url-variable-names.js
-var urlVariableRegex$5 = /\{[^}]+\}/g;
-function removeNonChars$5(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
-}
-function extractUrlVariableNames$5(url) {
-  const matches = url.match(urlVariableRegex$5);
-  if (!matches) {
-    return [];
-  }
-  return matches.map(removeNonChars$5).reduce((a, b) => a.concat(b), []);
-}
-
-// pkg/dist-src/util/omit.js
-function omit$5(object, keysToOmit) {
-  const result = { __proto__: null };
-  for (const key of Object.keys(object)) {
-    if (keysToOmit.indexOf(key) === -1) {
-      result[key] = object[key];
-    }
-  }
-  return result;
-}
-
-// pkg/dist-src/util/url-template.js
-function encodeReserved$5(str) {
-  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function(part) {
-    if (!/%[0-9A-Fa-f]/.test(part)) {
-      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
-    }
-    return part;
-  }).join("");
-}
-function encodeUnreserved$5(str) {
-  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
-    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
-  });
-}
-function encodeValue$5(operator, value, key) {
-  value = operator === "+" || operator === "#" ? encodeReserved$5(value) : encodeUnreserved$5(value);
-  if (key) {
-    return encodeUnreserved$5(key) + "=" + value;
-  } else {
-    return value;
-  }
-}
-function isDefined$5(value) {
-  return value !== void 0 && value !== null;
-}
-function isKeyOperator$5(operator) {
-  return operator === ";" || operator === "&" || operator === "?";
-}
-function getValues$5(context, operator, key, modifier) {
-  var value = context[key], result = [];
-  if (isDefined$5(value) && value !== "") {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      value = value.toString();
-      if (modifier && modifier !== "*") {
-        value = value.substring(0, parseInt(modifier, 10));
-      }
-      result.push(
-        encodeValue$5(operator, value, isKeyOperator$5(operator) ? key : "")
-      );
-    } else {
-      if (modifier === "*") {
-        if (Array.isArray(value)) {
-          value.filter(isDefined$5).forEach(function(value2) {
-            result.push(
-              encodeValue$5(operator, value2, isKeyOperator$5(operator) ? key : "")
-            );
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$5(value[k])) {
-              result.push(encodeValue$5(operator, value[k], k));
-            }
-          });
-        }
-      } else {
-        const tmp = [];
-        if (Array.isArray(value)) {
-          value.filter(isDefined$5).forEach(function(value2) {
-            tmp.push(encodeValue$5(operator, value2));
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$5(value[k])) {
-              tmp.push(encodeUnreserved$5(k));
-              tmp.push(encodeValue$5(operator, value[k].toString()));
-            }
-          });
-        }
-        if (isKeyOperator$5(operator)) {
-          result.push(encodeUnreserved$5(key) + "=" + tmp.join(","));
-        } else if (tmp.length !== 0) {
-          result.push(tmp.join(","));
-        }
-      }
-    }
-  } else {
-    if (operator === ";") {
-      if (isDefined$5(value)) {
-        result.push(encodeUnreserved$5(key));
-      }
-    } else if (value === "" && (operator === "&" || operator === "?")) {
-      result.push(encodeUnreserved$5(key) + "=");
-    } else if (value === "") {
-      result.push("");
-    }
-  }
-  return result;
-}
-function parseUrl$5(template) {
-  return {
-    expand: expand$6.bind(null, template)
-  };
-}
-function expand$6(template, context) {
-  var operators = ["+", "#", ".", "/", ";", "?", "&"];
-  template = template.replace(
-    /\{([^\{\}]+)\}|([^\{\}]+)/g,
-    function(_, expression, literal) {
-      if (expression) {
-        let operator = "";
-        const values = [];
-        if (operators.indexOf(expression.charAt(0)) !== -1) {
-          operator = expression.charAt(0);
-          expression = expression.substr(1);
-        }
-        expression.split(/,/g).forEach(function(variable) {
-          var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-          values.push(getValues$5(context, operator, tmp[1], tmp[2] || tmp[3]));
-        });
-        if (operator && operator !== "+") {
-          var separator = ",";
-          if (operator === "?") {
-            separator = "&";
-          } else if (operator !== "#") {
-            separator = operator;
-          }
-          return (values.length !== 0 ? operator : "") + values.join(separator);
-        } else {
-          return values.join(",");
-        }
-      } else {
-        return encodeReserved$5(literal);
-      }
-    }
-  );
-  if (template === "/") {
-    return template;
-  } else {
-    return template.replace(/\/$/, "");
-  }
-}
-
-// pkg/dist-src/parse.js
-function parse$9(options) {
-  let method = options.method.toUpperCase();
-  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
-  let headers = Object.assign({}, options.headers);
-  let body;
-  let parameters = omit$5(options, [
-    "method",
-    "baseUrl",
-    "url",
-    "headers",
-    "request",
-    "mediaType"
-  ]);
-  const urlVariableNames = extractUrlVariableNames$5(url);
-  url = parseUrl$5(url).expand(parameters);
-  if (!/^http/.test(url)) {
-    url = options.baseUrl + url;
-  }
-  const omittedParameters = Object.keys(options).filter((option) => urlVariableNames.includes(option)).concat("baseUrl");
-  const remainingParameters = omit$5(parameters, omittedParameters);
-  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
-  if (!isBinaryRequest) {
-    if (options.mediaType.format) {
-      headers.accept = headers.accept.split(/,/).map(
-        (format) => format.replace(
-          /application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/,
-          `application/vnd$1$2.${options.mediaType.format}`
-        )
-      ).join(",");
-    }
-    if (url.endsWith("/graphql")) {
-      if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
-        headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
-          const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
-          return `application/vnd.github.${preview}-preview${format}`;
-        }).join(",");
-      }
-    }
-  }
-  if (["GET", "HEAD"].includes(method)) {
-    url = addQueryParameters$5(url, remainingParameters);
-  } else {
-    if ("data" in remainingParameters) {
-      body = remainingParameters.data;
-    } else {
-      if (Object.keys(remainingParameters).length) {
-        body = remainingParameters;
-      }
-    }
-  }
-  if (!headers["content-type"] && typeof body !== "undefined") {
-    headers["content-type"] = "application/json; charset=utf-8";
-  }
-  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
-    body = "";
-  }
-  return Object.assign(
-    { method, url, headers },
-    typeof body !== "undefined" ? { body } : null,
-    options.request ? { request: options.request } : null
-  );
-}
-
-// pkg/dist-src/endpoint-with-defaults.js
-function endpointWithDefaults$5(defaults, route, options) {
-  return parse$9(merge$5(defaults, route, options));
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$c(oldDefaults, newDefaults) {
-  const DEFAULTS2 = merge$5(oldDefaults, newDefaults);
-  const endpoint2 = endpointWithDefaults$5.bind(null, DEFAULTS2);
-  return Object.assign(endpoint2, {
-    DEFAULTS: DEFAULTS2,
-    defaults: withDefaults$c.bind(null, DEFAULTS2),
-    merge: merge$5.bind(null, DEFAULTS2),
-    parse: parse$9
-  });
-}
-
-// pkg/dist-src/index.js
-var endpoint$5 = withDefaults$c(null, DEFAULTS$5);
-
-class RequestError$5 extends Error {
-  name;
-  /**
-   * http status code
-   */
-  status;
-  /**
-   * Request options that lead to the error.
-   */
-  request;
-  /**
-   * Response object if a response was received
-   */
-  response;
-  constructor(message, statusCode, options) {
-    super(message);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-    this.name = "HttpError";
-    this.status = statusCode;
-    if ("response" in options) {
-      this.response = options.response;
-    }
-    const requestCopy = Object.assign({}, options.request);
-    if (options.request.headers.authorization) {
-      requestCopy.headers = Object.assign({}, options.request.headers, {
-        authorization: options.request.headers.authorization.replace(
-          / .*$/,
-          " [REDACTED]"
-        )
-      });
-    }
-    requestCopy.url = requestCopy.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy;
-  }
-}
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$k = "0.0.0-development";
-
-// pkg/dist-src/is-plain-object.js
-function isPlainObject$a(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/get-buffer-response.js
-function getBufferResponse$5(response) {
-  return response.arrayBuffer();
-}
-
-// pkg/dist-src/fetch-wrapper.js
-function fetchWrapper$5(requestOptions) {
-  const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
-  const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  if (isPlainObject$a(requestOptions.body) || Array.isArray(requestOptions.body)) {
-    requestOptions.body = JSON.stringify(requestOptions.body);
-  }
-  let headers = {};
-  let status;
-  let url;
-  let { fetch } = globalThis;
-  if (requestOptions.request?.fetch) {
-    fetch = requestOptions.request.fetch;
-  }
-  if (!fetch) {
-    throw new Error(
-      "fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). Learn more at https://github.com/octokit/octokit.js/#fetch-missing"
-    );
-  }
-  return fetch(requestOptions.url, {
-    method: requestOptions.method,
-    body: requestOptions.body,
-    redirect: requestOptions.request?.redirect,
-    // Header values must be `string`
-    headers: Object.fromEntries(
-      Object.entries(requestOptions.headers).map(([name, value]) => [
-        name,
-        String(value)
-      ])
-    ),
-    signal: requestOptions.request?.signal,
-    // duplex must be set if request.body is ReadableStream or Async Iterables.
-    // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
-    ...requestOptions.body && { duplex: "half" }
-  }).then(async (response) => {
-    url = response.url;
-    status = response.status;
-    for (const keyAndValue of response.headers) {
-      headers[keyAndValue[0]] = keyAndValue[1];
-    }
-    if ("deprecation" in headers) {
-      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
-      const deprecationLink = matches && matches.pop();
-      log.warn(
-        `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
-      );
-    }
-    if (status === 204 || status === 205) {
-      return;
-    }
-    if (requestOptions.method === "HEAD") {
-      if (status < 400) {
-        return;
-      }
-      throw new RequestError$5(response.statusText, status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: void 0
-        },
-        request: requestOptions
-      });
-    }
-    if (status === 304) {
-      throw new RequestError$5("Not modified", status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: await getResponseData$5(response)
-        },
-        request: requestOptions
-      });
-    }
-    if (status >= 400) {
-      const data = await getResponseData$5(response);
-      const error = new RequestError$5(toErrorMessage$5(data), status, {
-        response: {
-          url,
-          status,
-          headers,
-          data
-        },
-        request: requestOptions
-      });
-      throw error;
-    }
-    return parseSuccessResponseBody ? await getResponseData$5(response) : response.body;
-  }).then((data) => {
-    return {
-      status,
-      url,
-      headers,
-      data
-    };
-  }).catch((error) => {
-    if (error instanceof RequestError$5)
-      throw error;
-    else if (error.name === "AbortError")
-      throw error;
-    let message = error.message;
-    if (error.name === "TypeError" && "cause" in error) {
-      if (error.cause instanceof Error) {
-        message = error.cause.message;
-      } else if (typeof error.cause === "string") {
-        message = error.cause;
-      }
-    }
-    throw new RequestError$5(message, 500, {
-      request: requestOptions
-    });
-  });
-}
-async function getResponseData$5(response) {
-  const contentType = response.headers.get("content-type");
-  if (/application\/json/.test(contentType)) {
-    return response.json().catch(() => response.text()).catch(() => "");
-  }
-  if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
-    return response.text();
-  }
-  return getBufferResponse$5(response);
-}
-function toErrorMessage$5(data) {
-  if (typeof data === "string")
-    return data;
-  let suffix;
-  if ("documentation_url" in data) {
-    suffix = ` - ${data.documentation_url}`;
-  } else {
-    suffix = "";
-  }
-  if ("message" in data) {
-    if (Array.isArray(data.errors)) {
-      return `${data.message}: ${data.errors.map(JSON.stringify).join(", ")}${suffix}`;
-    }
-    return `${data.message}${suffix}`;
-  }
-  return `Unknown error: ${JSON.stringify(data)}`;
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$b(oldEndpoint, newDefaults) {
-  const endpoint2 = oldEndpoint.defaults(newDefaults);
-  const newApi = function(route, parameters) {
-    const endpointOptions = endpoint2.merge(route, parameters);
-    if (!endpointOptions.request || !endpointOptions.request.hook) {
-      return fetchWrapper$5(endpoint2.parse(endpointOptions));
-    }
-    const request2 = (route2, parameters2) => {
-      return fetchWrapper$5(
-        endpoint2.parse(endpoint2.merge(route2, parameters2))
-      );
-    };
-    Object.assign(request2, {
-      endpoint: endpoint2,
-      defaults: withDefaults$b.bind(null, endpoint2)
-    });
-    return endpointOptions.request.hook(request2, endpointOptions);
-  };
-  return Object.assign(newApi, {
-    endpoint: endpoint2,
-    defaults: withDefaults$b.bind(null, endpoint2)
-  });
-}
-
-// pkg/dist-src/index.js
-var request$5 = withDefaults$b(endpoint$5, {
-  headers: {
-    "user-agent": `octokit-request.js/${VERSION$k} ${getUserAgent$5()}`
-  }
-});
-
-function getUserAgent$4() {
-  if (typeof navigator === "object" && "userAgent" in navigator) {
-    return navigator.userAgent;
-  }
-
-  if (typeof process === "object" && process.version !== undefined) {
-    return `Node.js/${process.version.substr(1)} (${process.platform}; ${
-      process.arch
-    })`;
-  }
-
-  return "<environment undetectable>";
-}
-
-// pkg/dist-src/defaults.js
-
-// pkg/dist-src/version.js
-var VERSION$j = "0.0.0-development";
-
-// pkg/dist-src/defaults.js
-var userAgent$4 = `octokit-endpoint.js/${VERSION$j} ${getUserAgent$4()}`;
-var DEFAULTS$4 = {
-  method: "GET",
-  baseUrl: "https://api.github.com",
-  headers: {
-    accept: "application/vnd.github.v3+json",
-    "user-agent": userAgent$4
-  },
-  mediaType: {
-    format: ""
-  }
-};
-
-// pkg/dist-src/util/lowercase-keys.js
-function lowercaseKeys$4(object) {
-  if (!object) {
-    return {};
-  }
-  return Object.keys(object).reduce((newObj, key) => {
-    newObj[key.toLowerCase()] = object[key];
-    return newObj;
-  }, {});
-}
-
-// pkg/dist-src/util/is-plain-object.js
-function isPlainObject$9(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/util/merge-deep.js
-function mergeDeep$4(defaults, options) {
-  const result = Object.assign({}, defaults);
-  Object.keys(options).forEach((key) => {
-    if (isPlainObject$9(options[key])) {
-      if (!(key in defaults))
-        Object.assign(result, { [key]: options[key] });
-      else
-        result[key] = mergeDeep$4(defaults[key], options[key]);
-    } else {
-      Object.assign(result, { [key]: options[key] });
-    }
-  });
-  return result;
-}
-
-// pkg/dist-src/util/remove-undefined-properties.js
-function removeUndefinedProperties$4(obj) {
-  for (const key in obj) {
-    if (obj[key] === void 0) {
-      delete obj[key];
-    }
-  }
-  return obj;
-}
-
-// pkg/dist-src/merge.js
-function merge$4(defaults, route, options) {
-  if (typeof route === "string") {
-    let [method, url] = route.split(" ");
-    options = Object.assign(url ? { method, url } : { url: method }, options);
-  } else {
-    options = Object.assign({}, route);
-  }
-  options.headers = lowercaseKeys$4(options.headers);
-  removeUndefinedProperties$4(options);
-  removeUndefinedProperties$4(options.headers);
-  const mergedOptions = mergeDeep$4(defaults || {}, options);
-  if (options.url === "/graphql") {
-    if (defaults && defaults.mediaType.previews?.length) {
-      mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(
-        (preview) => !mergedOptions.mediaType.previews.includes(preview)
-      ).concat(mergedOptions.mediaType.previews);
-    }
-    mergedOptions.mediaType.previews = (mergedOptions.mediaType.previews || []).map((preview) => preview.replace(/-preview/, ""));
-  }
-  return mergedOptions;
-}
-
-// pkg/dist-src/util/add-query-parameters.js
-function addQueryParameters$4(url, parameters) {
-  const separator = /\?/.test(url) ? "&" : "?";
-  const names = Object.keys(parameters);
-  if (names.length === 0) {
-    return url;
-  }
-  return url + separator + names.map((name) => {
-    if (name === "q") {
-      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
-    }
-    return `${name}=${encodeURIComponent(parameters[name])}`;
-  }).join("&");
-}
-
-// pkg/dist-src/util/extract-url-variable-names.js
-var urlVariableRegex$4 = /\{[^}]+\}/g;
-function removeNonChars$4(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
-}
-function extractUrlVariableNames$4(url) {
-  const matches = url.match(urlVariableRegex$4);
-  if (!matches) {
-    return [];
-  }
-  return matches.map(removeNonChars$4).reduce((a, b) => a.concat(b), []);
-}
-
-// pkg/dist-src/util/omit.js
-function omit$4(object, keysToOmit) {
-  const result = { __proto__: null };
-  for (const key of Object.keys(object)) {
-    if (keysToOmit.indexOf(key) === -1) {
-      result[key] = object[key];
-    }
-  }
-  return result;
-}
-
-// pkg/dist-src/util/url-template.js
-function encodeReserved$4(str) {
-  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function(part) {
-    if (!/%[0-9A-Fa-f]/.test(part)) {
-      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
-    }
-    return part;
-  }).join("");
-}
-function encodeUnreserved$4(str) {
-  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
-    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
-  });
-}
-function encodeValue$4(operator, value, key) {
-  value = operator === "+" || operator === "#" ? encodeReserved$4(value) : encodeUnreserved$4(value);
-  if (key) {
-    return encodeUnreserved$4(key) + "=" + value;
-  } else {
-    return value;
-  }
-}
-function isDefined$4(value) {
-  return value !== void 0 && value !== null;
-}
-function isKeyOperator$4(operator) {
-  return operator === ";" || operator === "&" || operator === "?";
-}
-function getValues$4(context, operator, key, modifier) {
-  var value = context[key], result = [];
-  if (isDefined$4(value) && value !== "") {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      value = value.toString();
-      if (modifier && modifier !== "*") {
-        value = value.substring(0, parseInt(modifier, 10));
-      }
-      result.push(
-        encodeValue$4(operator, value, isKeyOperator$4(operator) ? key : "")
-      );
-    } else {
-      if (modifier === "*") {
-        if (Array.isArray(value)) {
-          value.filter(isDefined$4).forEach(function(value2) {
-            result.push(
-              encodeValue$4(operator, value2, isKeyOperator$4(operator) ? key : "")
-            );
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$4(value[k])) {
-              result.push(encodeValue$4(operator, value[k], k));
-            }
-          });
-        }
-      } else {
-        const tmp = [];
-        if (Array.isArray(value)) {
-          value.filter(isDefined$4).forEach(function(value2) {
-            tmp.push(encodeValue$4(operator, value2));
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$4(value[k])) {
-              tmp.push(encodeUnreserved$4(k));
-              tmp.push(encodeValue$4(operator, value[k].toString()));
-            }
-          });
-        }
-        if (isKeyOperator$4(operator)) {
-          result.push(encodeUnreserved$4(key) + "=" + tmp.join(","));
-        } else if (tmp.length !== 0) {
-          result.push(tmp.join(","));
-        }
-      }
-    }
-  } else {
-    if (operator === ";") {
-      if (isDefined$4(value)) {
-        result.push(encodeUnreserved$4(key));
-      }
-    } else if (value === "" && (operator === "&" || operator === "?")) {
-      result.push(encodeUnreserved$4(key) + "=");
-    } else if (value === "") {
-      result.push("");
-    }
-  }
-  return result;
-}
-function parseUrl$4(template) {
-  return {
-    expand: expand$5.bind(null, template)
-  };
-}
-function expand$5(template, context) {
-  var operators = ["+", "#", ".", "/", ";", "?", "&"];
-  template = template.replace(
-    /\{([^\{\}]+)\}|([^\{\}]+)/g,
-    function(_, expression, literal) {
-      if (expression) {
-        let operator = "";
-        const values = [];
-        if (operators.indexOf(expression.charAt(0)) !== -1) {
-          operator = expression.charAt(0);
-          expression = expression.substr(1);
-        }
-        expression.split(/,/g).forEach(function(variable) {
-          var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-          values.push(getValues$4(context, operator, tmp[1], tmp[2] || tmp[3]));
-        });
-        if (operator && operator !== "+") {
-          var separator = ",";
-          if (operator === "?") {
-            separator = "&";
-          } else if (operator !== "#") {
-            separator = operator;
-          }
-          return (values.length !== 0 ? operator : "") + values.join(separator);
-        } else {
-          return values.join(",");
-        }
-      } else {
-        return encodeReserved$4(literal);
-      }
-    }
-  );
-  if (template === "/") {
-    return template;
-  } else {
-    return template.replace(/\/$/, "");
-  }
-}
-
-// pkg/dist-src/parse.js
-function parse$8(options) {
-  let method = options.method.toUpperCase();
-  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
-  let headers = Object.assign({}, options.headers);
-  let body;
-  let parameters = omit$4(options, [
-    "method",
-    "baseUrl",
-    "url",
-    "headers",
-    "request",
-    "mediaType"
-  ]);
-  const urlVariableNames = extractUrlVariableNames$4(url);
-  url = parseUrl$4(url).expand(parameters);
-  if (!/^http/.test(url)) {
-    url = options.baseUrl + url;
-  }
-  const omittedParameters = Object.keys(options).filter((option) => urlVariableNames.includes(option)).concat("baseUrl");
-  const remainingParameters = omit$4(parameters, omittedParameters);
-  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
-  if (!isBinaryRequest) {
-    if (options.mediaType.format) {
-      headers.accept = headers.accept.split(/,/).map(
-        (format) => format.replace(
-          /application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/,
-          `application/vnd$1$2.${options.mediaType.format}`
-        )
-      ).join(",");
-    }
-    if (url.endsWith("/graphql")) {
-      if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
-        headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
-          const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
-          return `application/vnd.github.${preview}-preview${format}`;
-        }).join(",");
-      }
-    }
-  }
-  if (["GET", "HEAD"].includes(method)) {
-    url = addQueryParameters$4(url, remainingParameters);
-  } else {
-    if ("data" in remainingParameters) {
-      body = remainingParameters.data;
-    } else {
-      if (Object.keys(remainingParameters).length) {
-        body = remainingParameters;
-      }
-    }
-  }
-  if (!headers["content-type"] && typeof body !== "undefined") {
-    headers["content-type"] = "application/json; charset=utf-8";
-  }
-  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
-    body = "";
-  }
-  return Object.assign(
-    { method, url, headers },
-    typeof body !== "undefined" ? { body } : null,
-    options.request ? { request: options.request } : null
-  );
-}
-
-// pkg/dist-src/endpoint-with-defaults.js
-function endpointWithDefaults$4(defaults, route, options) {
-  return parse$8(merge$4(defaults, route, options));
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$a(oldDefaults, newDefaults) {
-  const DEFAULTS2 = merge$4(oldDefaults, newDefaults);
-  const endpoint2 = endpointWithDefaults$4.bind(null, DEFAULTS2);
-  return Object.assign(endpoint2, {
-    DEFAULTS: DEFAULTS2,
-    defaults: withDefaults$a.bind(null, DEFAULTS2),
-    merge: merge$4.bind(null, DEFAULTS2),
-    parse: parse$8
-  });
-}
-
-// pkg/dist-src/index.js
-var endpoint$4 = withDefaults$a(null, DEFAULTS$4);
-
-class RequestError$4 extends Error {
-  name;
-  /**
-   * http status code
-   */
-  status;
-  /**
-   * Request options that lead to the error.
-   */
-  request;
-  /**
-   * Response object if a response was received
-   */
-  response;
-  constructor(message, statusCode, options) {
-    super(message);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-    this.name = "HttpError";
-    this.status = statusCode;
-    if ("response" in options) {
-      this.response = options.response;
-    }
-    const requestCopy = Object.assign({}, options.request);
-    if (options.request.headers.authorization) {
-      requestCopy.headers = Object.assign({}, options.request.headers, {
-        authorization: options.request.headers.authorization.replace(
-          / .*$/,
-          " [REDACTED]"
-        )
-      });
-    }
-    requestCopy.url = requestCopy.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy;
-  }
-}
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$i = "0.0.0-development";
-
-// pkg/dist-src/is-plain-object.js
-function isPlainObject$8(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/get-buffer-response.js
-function getBufferResponse$4(response) {
-  return response.arrayBuffer();
-}
-
-// pkg/dist-src/fetch-wrapper.js
-function fetchWrapper$4(requestOptions) {
-  const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
-  const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  if (isPlainObject$8(requestOptions.body) || Array.isArray(requestOptions.body)) {
-    requestOptions.body = JSON.stringify(requestOptions.body);
-  }
-  let headers = {};
-  let status;
-  let url;
-  let { fetch } = globalThis;
-  if (requestOptions.request?.fetch) {
-    fetch = requestOptions.request.fetch;
-  }
-  if (!fetch) {
-    throw new Error(
-      "fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). Learn more at https://github.com/octokit/octokit.js/#fetch-missing"
-    );
-  }
-  return fetch(requestOptions.url, {
-    method: requestOptions.method,
-    body: requestOptions.body,
-    redirect: requestOptions.request?.redirect,
-    // Header values must be `string`
-    headers: Object.fromEntries(
-      Object.entries(requestOptions.headers).map(([name, value]) => [
-        name,
-        String(value)
-      ])
-    ),
-    signal: requestOptions.request?.signal,
-    // duplex must be set if request.body is ReadableStream or Async Iterables.
-    // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
-    ...requestOptions.body && { duplex: "half" }
-  }).then(async (response) => {
-    url = response.url;
-    status = response.status;
-    for (const keyAndValue of response.headers) {
-      headers[keyAndValue[0]] = keyAndValue[1];
-    }
-    if ("deprecation" in headers) {
-      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
-      const deprecationLink = matches && matches.pop();
-      log.warn(
-        `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
-      );
-    }
-    if (status === 204 || status === 205) {
-      return;
-    }
-    if (requestOptions.method === "HEAD") {
-      if (status < 400) {
-        return;
-      }
-      throw new RequestError$4(response.statusText, status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: void 0
-        },
-        request: requestOptions
-      });
-    }
-    if (status === 304) {
-      throw new RequestError$4("Not modified", status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: await getResponseData$4(response)
-        },
-        request: requestOptions
-      });
-    }
-    if (status >= 400) {
-      const data = await getResponseData$4(response);
-      const error = new RequestError$4(toErrorMessage$4(data), status, {
-        response: {
-          url,
-          status,
-          headers,
-          data
-        },
-        request: requestOptions
-      });
-      throw error;
-    }
-    return parseSuccessResponseBody ? await getResponseData$4(response) : response.body;
-  }).then((data) => {
-    return {
-      status,
-      url,
-      headers,
-      data
-    };
-  }).catch((error) => {
-    if (error instanceof RequestError$4)
-      throw error;
-    else if (error.name === "AbortError")
-      throw error;
-    let message = error.message;
-    if (error.name === "TypeError" && "cause" in error) {
-      if (error.cause instanceof Error) {
-        message = error.cause.message;
-      } else if (typeof error.cause === "string") {
-        message = error.cause;
-      }
-    }
-    throw new RequestError$4(message, 500, {
-      request: requestOptions
-    });
-  });
-}
-async function getResponseData$4(response) {
-  const contentType = response.headers.get("content-type");
-  if (/application\/json/.test(contentType)) {
-    return response.json().catch(() => response.text()).catch(() => "");
-  }
-  if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
-    return response.text();
-  }
-  return getBufferResponse$4(response);
-}
-function toErrorMessage$4(data) {
-  if (typeof data === "string")
-    return data;
-  let suffix;
-  if ("documentation_url" in data) {
-    suffix = ` - ${data.documentation_url}`;
-  } else {
-    suffix = "";
-  }
-  if ("message" in data) {
-    if (Array.isArray(data.errors)) {
-      return `${data.message}: ${data.errors.map(JSON.stringify).join(", ")}${suffix}`;
-    }
-    return `${data.message}${suffix}`;
-  }
-  return `Unknown error: ${JSON.stringify(data)}`;
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$9(oldEndpoint, newDefaults) {
-  const endpoint2 = oldEndpoint.defaults(newDefaults);
-  const newApi = function(route, parameters) {
-    const endpointOptions = endpoint2.merge(route, parameters);
-    if (!endpointOptions.request || !endpointOptions.request.hook) {
-      return fetchWrapper$4(endpoint2.parse(endpointOptions));
-    }
-    const request2 = (route2, parameters2) => {
-      return fetchWrapper$4(
-        endpoint2.parse(endpoint2.merge(route2, parameters2))
-      );
-    };
-    Object.assign(request2, {
-      endpoint: endpoint2,
-      defaults: withDefaults$9.bind(null, endpoint2)
-    });
-    return endpointOptions.request.hook(request2, endpointOptions);
-  };
-  return Object.assign(newApi, {
-    endpoint: endpoint2,
-    defaults: withDefaults$9.bind(null, endpoint2)
-  });
-}
-
-// pkg/dist-src/index.js
-var request$4 = withDefaults$9(endpoint$4, {
-  headers: {
-    "user-agent": `octokit-request.js/${VERSION$i} ${getUserAgent$4()}`
-  }
-});
-
-function getUserAgent$3() {
-  if (typeof navigator === "object" && "userAgent" in navigator) {
-    return navigator.userAgent;
-  }
-
-  if (typeof process === "object" && process.version !== undefined) {
-    return `Node.js/${process.version.substr(1)} (${process.platform}; ${
-      process.arch
-    })`;
-  }
-
-  return "<environment undetectable>";
-}
-
-// pkg/dist-src/defaults.js
-
-// pkg/dist-src/version.js
-var VERSION$h = "0.0.0-development";
-
-// pkg/dist-src/defaults.js
-var userAgent$3 = `octokit-endpoint.js/${VERSION$h} ${getUserAgent$3()}`;
-var DEFAULTS$3 = {
-  method: "GET",
-  baseUrl: "https://api.github.com",
-  headers: {
-    accept: "application/vnd.github.v3+json",
-    "user-agent": userAgent$3
-  },
-  mediaType: {
-    format: ""
-  }
-};
-
-// pkg/dist-src/util/lowercase-keys.js
-function lowercaseKeys$3(object) {
-  if (!object) {
-    return {};
-  }
-  return Object.keys(object).reduce((newObj, key) => {
-    newObj[key.toLowerCase()] = object[key];
-    return newObj;
-  }, {});
-}
-
-// pkg/dist-src/util/is-plain-object.js
-function isPlainObject$7(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/util/merge-deep.js
-function mergeDeep$3(defaults, options) {
-  const result = Object.assign({}, defaults);
-  Object.keys(options).forEach((key) => {
-    if (isPlainObject$7(options[key])) {
-      if (!(key in defaults))
-        Object.assign(result, { [key]: options[key] });
-      else
-        result[key] = mergeDeep$3(defaults[key], options[key]);
-    } else {
-      Object.assign(result, { [key]: options[key] });
-    }
-  });
-  return result;
-}
-
-// pkg/dist-src/util/remove-undefined-properties.js
-function removeUndefinedProperties$3(obj) {
-  for (const key in obj) {
-    if (obj[key] === void 0) {
-      delete obj[key];
-    }
-  }
-  return obj;
-}
-
-// pkg/dist-src/merge.js
-function merge$3(defaults, route, options) {
-  if (typeof route === "string") {
-    let [method, url] = route.split(" ");
-    options = Object.assign(url ? { method, url } : { url: method }, options);
-  } else {
-    options = Object.assign({}, route);
-  }
-  options.headers = lowercaseKeys$3(options.headers);
-  removeUndefinedProperties$3(options);
-  removeUndefinedProperties$3(options.headers);
-  const mergedOptions = mergeDeep$3(defaults || {}, options);
-  if (options.url === "/graphql") {
-    if (defaults && defaults.mediaType.previews?.length) {
-      mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(
-        (preview) => !mergedOptions.mediaType.previews.includes(preview)
-      ).concat(mergedOptions.mediaType.previews);
-    }
-    mergedOptions.mediaType.previews = (mergedOptions.mediaType.previews || []).map((preview) => preview.replace(/-preview/, ""));
-  }
-  return mergedOptions;
-}
-
-// pkg/dist-src/util/add-query-parameters.js
-function addQueryParameters$3(url, parameters) {
-  const separator = /\?/.test(url) ? "&" : "?";
-  const names = Object.keys(parameters);
-  if (names.length === 0) {
-    return url;
-  }
-  return url + separator + names.map((name) => {
-    if (name === "q") {
-      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
-    }
-    return `${name}=${encodeURIComponent(parameters[name])}`;
-  }).join("&");
-}
-
-// pkg/dist-src/util/extract-url-variable-names.js
-var urlVariableRegex$3 = /\{[^}]+\}/g;
-function removeNonChars$3(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
-}
-function extractUrlVariableNames$3(url) {
-  const matches = url.match(urlVariableRegex$3);
-  if (!matches) {
-    return [];
-  }
-  return matches.map(removeNonChars$3).reduce((a, b) => a.concat(b), []);
-}
-
-// pkg/dist-src/util/omit.js
-function omit$3(object, keysToOmit) {
-  const result = { __proto__: null };
-  for (const key of Object.keys(object)) {
-    if (keysToOmit.indexOf(key) === -1) {
-      result[key] = object[key];
-    }
-  }
-  return result;
-}
-
-// pkg/dist-src/util/url-template.js
-function encodeReserved$3(str) {
-  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function(part) {
-    if (!/%[0-9A-Fa-f]/.test(part)) {
-      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
-    }
-    return part;
-  }).join("");
-}
-function encodeUnreserved$3(str) {
-  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
-    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
-  });
-}
-function encodeValue$3(operator, value, key) {
-  value = operator === "+" || operator === "#" ? encodeReserved$3(value) : encodeUnreserved$3(value);
-  if (key) {
-    return encodeUnreserved$3(key) + "=" + value;
-  } else {
-    return value;
-  }
-}
-function isDefined$3(value) {
-  return value !== void 0 && value !== null;
-}
-function isKeyOperator$3(operator) {
-  return operator === ";" || operator === "&" || operator === "?";
-}
-function getValues$3(context, operator, key, modifier) {
-  var value = context[key], result = [];
-  if (isDefined$3(value) && value !== "") {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      value = value.toString();
-      if (modifier && modifier !== "*") {
-        value = value.substring(0, parseInt(modifier, 10));
-      }
-      result.push(
-        encodeValue$3(operator, value, isKeyOperator$3(operator) ? key : "")
-      );
-    } else {
-      if (modifier === "*") {
-        if (Array.isArray(value)) {
-          value.filter(isDefined$3).forEach(function(value2) {
-            result.push(
-              encodeValue$3(operator, value2, isKeyOperator$3(operator) ? key : "")
-            );
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$3(value[k])) {
-              result.push(encodeValue$3(operator, value[k], k));
-            }
-          });
-        }
-      } else {
-        const tmp = [];
-        if (Array.isArray(value)) {
-          value.filter(isDefined$3).forEach(function(value2) {
-            tmp.push(encodeValue$3(operator, value2));
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$3(value[k])) {
-              tmp.push(encodeUnreserved$3(k));
-              tmp.push(encodeValue$3(operator, value[k].toString()));
-            }
-          });
-        }
-        if (isKeyOperator$3(operator)) {
-          result.push(encodeUnreserved$3(key) + "=" + tmp.join(","));
-        } else if (tmp.length !== 0) {
-          result.push(tmp.join(","));
-        }
-      }
-    }
-  } else {
-    if (operator === ";") {
-      if (isDefined$3(value)) {
-        result.push(encodeUnreserved$3(key));
-      }
-    } else if (value === "" && (operator === "&" || operator === "?")) {
-      result.push(encodeUnreserved$3(key) + "=");
-    } else if (value === "") {
-      result.push("");
-    }
-  }
-  return result;
-}
-function parseUrl$3(template) {
-  return {
-    expand: expand$4.bind(null, template)
-  };
-}
-function expand$4(template, context) {
-  var operators = ["+", "#", ".", "/", ";", "?", "&"];
-  template = template.replace(
-    /\{([^\{\}]+)\}|([^\{\}]+)/g,
-    function(_, expression, literal) {
-      if (expression) {
-        let operator = "";
-        const values = [];
-        if (operators.indexOf(expression.charAt(0)) !== -1) {
-          operator = expression.charAt(0);
-          expression = expression.substr(1);
-        }
-        expression.split(/,/g).forEach(function(variable) {
-          var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-          values.push(getValues$3(context, operator, tmp[1], tmp[2] || tmp[3]));
-        });
-        if (operator && operator !== "+") {
-          var separator = ",";
-          if (operator === "?") {
-            separator = "&";
-          } else if (operator !== "#") {
-            separator = operator;
-          }
-          return (values.length !== 0 ? operator : "") + values.join(separator);
-        } else {
-          return values.join(",");
-        }
-      } else {
-        return encodeReserved$3(literal);
-      }
-    }
-  );
-  if (template === "/") {
-    return template;
-  } else {
-    return template.replace(/\/$/, "");
-  }
-}
-
-// pkg/dist-src/parse.js
-function parse$7(options) {
-  let method = options.method.toUpperCase();
-  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
-  let headers = Object.assign({}, options.headers);
-  let body;
-  let parameters = omit$3(options, [
-    "method",
-    "baseUrl",
-    "url",
-    "headers",
-    "request",
-    "mediaType"
-  ]);
-  const urlVariableNames = extractUrlVariableNames$3(url);
-  url = parseUrl$3(url).expand(parameters);
-  if (!/^http/.test(url)) {
-    url = options.baseUrl + url;
-  }
-  const omittedParameters = Object.keys(options).filter((option) => urlVariableNames.includes(option)).concat("baseUrl");
-  const remainingParameters = omit$3(parameters, omittedParameters);
-  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
-  if (!isBinaryRequest) {
-    if (options.mediaType.format) {
-      headers.accept = headers.accept.split(/,/).map(
-        (format) => format.replace(
-          /application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/,
-          `application/vnd$1$2.${options.mediaType.format}`
-        )
-      ).join(",");
-    }
-    if (url.endsWith("/graphql")) {
-      if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
-        headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
-          const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
-          return `application/vnd.github.${preview}-preview${format}`;
-        }).join(",");
-      }
-    }
-  }
-  if (["GET", "HEAD"].includes(method)) {
-    url = addQueryParameters$3(url, remainingParameters);
-  } else {
-    if ("data" in remainingParameters) {
-      body = remainingParameters.data;
-    } else {
-      if (Object.keys(remainingParameters).length) {
-        body = remainingParameters;
-      }
-    }
-  }
-  if (!headers["content-type"] && typeof body !== "undefined") {
-    headers["content-type"] = "application/json; charset=utf-8";
-  }
-  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
-    body = "";
-  }
-  return Object.assign(
-    { method, url, headers },
-    typeof body !== "undefined" ? { body } : null,
-    options.request ? { request: options.request } : null
-  );
-}
-
-// pkg/dist-src/endpoint-with-defaults.js
-function endpointWithDefaults$3(defaults, route, options) {
-  return parse$7(merge$3(defaults, route, options));
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$8(oldDefaults, newDefaults) {
-  const DEFAULTS2 = merge$3(oldDefaults, newDefaults);
-  const endpoint2 = endpointWithDefaults$3.bind(null, DEFAULTS2);
-  return Object.assign(endpoint2, {
-    DEFAULTS: DEFAULTS2,
-    defaults: withDefaults$8.bind(null, DEFAULTS2),
-    merge: merge$3.bind(null, DEFAULTS2),
-    parse: parse$7
-  });
-}
-
-// pkg/dist-src/index.js
-var endpoint$3 = withDefaults$8(null, DEFAULTS$3);
-
-class RequestError$3 extends Error {
-  name;
-  /**
-   * http status code
-   */
-  status;
-  /**
-   * Request options that lead to the error.
-   */
-  request;
-  /**
-   * Response object if a response was received
-   */
-  response;
-  constructor(message, statusCode, options) {
-    super(message);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-    this.name = "HttpError";
-    this.status = statusCode;
-    if ("response" in options) {
-      this.response = options.response;
-    }
-    const requestCopy = Object.assign({}, options.request);
-    if (options.request.headers.authorization) {
-      requestCopy.headers = Object.assign({}, options.request.headers, {
-        authorization: options.request.headers.authorization.replace(
-          / .*$/,
-          " [REDACTED]"
-        )
-      });
-    }
-    requestCopy.url = requestCopy.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy;
-  }
-}
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$g = "0.0.0-development";
-
-// pkg/dist-src/is-plain-object.js
-function isPlainObject$6(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/get-buffer-response.js
-function getBufferResponse$3(response) {
-  return response.arrayBuffer();
-}
-
-// pkg/dist-src/fetch-wrapper.js
-function fetchWrapper$3(requestOptions) {
-  const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
-  const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  if (isPlainObject$6(requestOptions.body) || Array.isArray(requestOptions.body)) {
-    requestOptions.body = JSON.stringify(requestOptions.body);
-  }
-  let headers = {};
-  let status;
-  let url;
-  let { fetch } = globalThis;
-  if (requestOptions.request?.fetch) {
-    fetch = requestOptions.request.fetch;
-  }
-  if (!fetch) {
-    throw new Error(
-      "fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). Learn more at https://github.com/octokit/octokit.js/#fetch-missing"
-    );
-  }
-  return fetch(requestOptions.url, {
-    method: requestOptions.method,
-    body: requestOptions.body,
-    redirect: requestOptions.request?.redirect,
-    // Header values must be `string`
-    headers: Object.fromEntries(
-      Object.entries(requestOptions.headers).map(([name, value]) => [
-        name,
-        String(value)
-      ])
-    ),
-    signal: requestOptions.request?.signal,
-    // duplex must be set if request.body is ReadableStream or Async Iterables.
-    // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
-    ...requestOptions.body && { duplex: "half" }
-  }).then(async (response) => {
-    url = response.url;
-    status = response.status;
-    for (const keyAndValue of response.headers) {
-      headers[keyAndValue[0]] = keyAndValue[1];
-    }
-    if ("deprecation" in headers) {
-      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
-      const deprecationLink = matches && matches.pop();
-      log.warn(
-        `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
-      );
-    }
-    if (status === 204 || status === 205) {
-      return;
-    }
-    if (requestOptions.method === "HEAD") {
-      if (status < 400) {
-        return;
-      }
-      throw new RequestError$3(response.statusText, status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: void 0
-        },
-        request: requestOptions
-      });
-    }
-    if (status === 304) {
-      throw new RequestError$3("Not modified", status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: await getResponseData$3(response)
-        },
-        request: requestOptions
-      });
-    }
-    if (status >= 400) {
-      const data = await getResponseData$3(response);
-      const error = new RequestError$3(toErrorMessage$3(data), status, {
-        response: {
-          url,
-          status,
-          headers,
-          data
-        },
-        request: requestOptions
-      });
-      throw error;
-    }
-    return parseSuccessResponseBody ? await getResponseData$3(response) : response.body;
-  }).then((data) => {
-    return {
-      status,
-      url,
-      headers,
-      data
-    };
-  }).catch((error) => {
-    if (error instanceof RequestError$3)
-      throw error;
-    else if (error.name === "AbortError")
-      throw error;
-    let message = error.message;
-    if (error.name === "TypeError" && "cause" in error) {
-      if (error.cause instanceof Error) {
-        message = error.cause.message;
-      } else if (typeof error.cause === "string") {
-        message = error.cause;
-      }
-    }
-    throw new RequestError$3(message, 500, {
-      request: requestOptions
-    });
-  });
-}
-async function getResponseData$3(response) {
-  const contentType = response.headers.get("content-type");
-  if (/application\/json/.test(contentType)) {
-    return response.json().catch(() => response.text()).catch(() => "");
-  }
-  if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
-    return response.text();
-  }
-  return getBufferResponse$3(response);
-}
-function toErrorMessage$3(data) {
-  if (typeof data === "string")
-    return data;
-  let suffix;
-  if ("documentation_url" in data) {
-    suffix = ` - ${data.documentation_url}`;
-  } else {
-    suffix = "";
-  }
-  if ("message" in data) {
-    if (Array.isArray(data.errors)) {
-      return `${data.message}: ${data.errors.map(JSON.stringify).join(", ")}${suffix}`;
-    }
-    return `${data.message}${suffix}`;
-  }
-  return `Unknown error: ${JSON.stringify(data)}`;
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$7(oldEndpoint, newDefaults) {
-  const endpoint2 = oldEndpoint.defaults(newDefaults);
-  const newApi = function(route, parameters) {
-    const endpointOptions = endpoint2.merge(route, parameters);
-    if (!endpointOptions.request || !endpointOptions.request.hook) {
-      return fetchWrapper$3(endpoint2.parse(endpointOptions));
-    }
-    const request2 = (route2, parameters2) => {
-      return fetchWrapper$3(
-        endpoint2.parse(endpoint2.merge(route2, parameters2))
-      );
-    };
-    Object.assign(request2, {
-      endpoint: endpoint2,
-      defaults: withDefaults$7.bind(null, endpoint2)
-    });
-    return endpointOptions.request.hook(request2, endpointOptions);
-  };
-  return Object.assign(newApi, {
-    endpoint: endpoint2,
-    defaults: withDefaults$7.bind(null, endpoint2)
-  });
-}
-
-// pkg/dist-src/index.js
-var request$3 = withDefaults$7(endpoint$3, {
-  headers: {
-    "user-agent": `octokit-request.js/${VERSION$g} ${getUserAgent$3()}`
-  }
-});
-
-function getUserAgent$2() {
-  if (typeof navigator === "object" && "userAgent" in navigator) {
-    return navigator.userAgent;
-  }
-
-  if (typeof process === "object" && process.version !== undefined) {
-    return `Node.js/${process.version.substr(1)} (${process.platform}; ${
-      process.arch
-    })`;
-  }
-
-  return "<environment undetectable>";
-}
-
-// pkg/dist-src/defaults.js
-
-// pkg/dist-src/version.js
-var VERSION$f = "0.0.0-development";
-
-// pkg/dist-src/defaults.js
-var userAgent$2 = `octokit-endpoint.js/${VERSION$f} ${getUserAgent$2()}`;
-var DEFAULTS$2 = {
-  method: "GET",
-  baseUrl: "https://api.github.com",
-  headers: {
-    accept: "application/vnd.github.v3+json",
-    "user-agent": userAgent$2
-  },
-  mediaType: {
-    format: ""
-  }
-};
-
-// pkg/dist-src/util/lowercase-keys.js
-function lowercaseKeys$2(object) {
-  if (!object) {
-    return {};
-  }
-  return Object.keys(object).reduce((newObj, key) => {
-    newObj[key.toLowerCase()] = object[key];
-    return newObj;
-  }, {});
-}
-
-// pkg/dist-src/util/is-plain-object.js
-function isPlainObject$5(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/util/merge-deep.js
-function mergeDeep$2(defaults, options) {
-  const result = Object.assign({}, defaults);
-  Object.keys(options).forEach((key) => {
-    if (isPlainObject$5(options[key])) {
-      if (!(key in defaults))
-        Object.assign(result, { [key]: options[key] });
-      else
-        result[key] = mergeDeep$2(defaults[key], options[key]);
-    } else {
-      Object.assign(result, { [key]: options[key] });
-    }
-  });
-  return result;
-}
-
-// pkg/dist-src/util/remove-undefined-properties.js
-function removeUndefinedProperties$2(obj) {
-  for (const key in obj) {
-    if (obj[key] === void 0) {
-      delete obj[key];
-    }
-  }
-  return obj;
-}
-
-// pkg/dist-src/merge.js
-function merge$2(defaults, route, options) {
-  if (typeof route === "string") {
-    let [method, url] = route.split(" ");
-    options = Object.assign(url ? { method, url } : { url: method }, options);
-  } else {
-    options = Object.assign({}, route);
-  }
-  options.headers = lowercaseKeys$2(options.headers);
-  removeUndefinedProperties$2(options);
-  removeUndefinedProperties$2(options.headers);
-  const mergedOptions = mergeDeep$2(defaults || {}, options);
-  if (options.url === "/graphql") {
-    if (defaults && defaults.mediaType.previews?.length) {
-      mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(
-        (preview) => !mergedOptions.mediaType.previews.includes(preview)
-      ).concat(mergedOptions.mediaType.previews);
-    }
-    mergedOptions.mediaType.previews = (mergedOptions.mediaType.previews || []).map((preview) => preview.replace(/-preview/, ""));
-  }
-  return mergedOptions;
-}
-
-// pkg/dist-src/util/add-query-parameters.js
-function addQueryParameters$2(url, parameters) {
-  const separator = /\?/.test(url) ? "&" : "?";
-  const names = Object.keys(parameters);
-  if (names.length === 0) {
-    return url;
-  }
-  return url + separator + names.map((name) => {
-    if (name === "q") {
-      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
-    }
-    return `${name}=${encodeURIComponent(parameters[name])}`;
-  }).join("&");
-}
-
-// pkg/dist-src/util/extract-url-variable-names.js
-var urlVariableRegex$2 = /\{[^}]+\}/g;
-function removeNonChars$2(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
-}
-function extractUrlVariableNames$2(url) {
-  const matches = url.match(urlVariableRegex$2);
-  if (!matches) {
-    return [];
-  }
-  return matches.map(removeNonChars$2).reduce((a, b) => a.concat(b), []);
-}
-
-// pkg/dist-src/util/omit.js
-function omit$2(object, keysToOmit) {
-  const result = { __proto__: null };
-  for (const key of Object.keys(object)) {
-    if (keysToOmit.indexOf(key) === -1) {
-      result[key] = object[key];
-    }
-  }
-  return result;
-}
-
-// pkg/dist-src/util/url-template.js
-function encodeReserved$2(str) {
-  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function(part) {
-    if (!/%[0-9A-Fa-f]/.test(part)) {
-      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
-    }
-    return part;
-  }).join("");
-}
-function encodeUnreserved$2(str) {
-  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
-    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
-  });
-}
-function encodeValue$2(operator, value, key) {
-  value = operator === "+" || operator === "#" ? encodeReserved$2(value) : encodeUnreserved$2(value);
-  if (key) {
-    return encodeUnreserved$2(key) + "=" + value;
-  } else {
-    return value;
-  }
-}
-function isDefined$2(value) {
-  return value !== void 0 && value !== null;
-}
-function isKeyOperator$2(operator) {
-  return operator === ";" || operator === "&" || operator === "?";
-}
-function getValues$2(context, operator, key, modifier) {
-  var value = context[key], result = [];
-  if (isDefined$2(value) && value !== "") {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      value = value.toString();
-      if (modifier && modifier !== "*") {
-        value = value.substring(0, parseInt(modifier, 10));
-      }
-      result.push(
-        encodeValue$2(operator, value, isKeyOperator$2(operator) ? key : "")
-      );
-    } else {
-      if (modifier === "*") {
-        if (Array.isArray(value)) {
-          value.filter(isDefined$2).forEach(function(value2) {
-            result.push(
-              encodeValue$2(operator, value2, isKeyOperator$2(operator) ? key : "")
-            );
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$2(value[k])) {
-              result.push(encodeValue$2(operator, value[k], k));
-            }
-          });
-        }
-      } else {
-        const tmp = [];
-        if (Array.isArray(value)) {
-          value.filter(isDefined$2).forEach(function(value2) {
-            tmp.push(encodeValue$2(operator, value2));
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$2(value[k])) {
-              tmp.push(encodeUnreserved$2(k));
-              tmp.push(encodeValue$2(operator, value[k].toString()));
-            }
-          });
-        }
-        if (isKeyOperator$2(operator)) {
-          result.push(encodeUnreserved$2(key) + "=" + tmp.join(","));
-        } else if (tmp.length !== 0) {
-          result.push(tmp.join(","));
-        }
-      }
-    }
-  } else {
-    if (operator === ";") {
-      if (isDefined$2(value)) {
-        result.push(encodeUnreserved$2(key));
-      }
-    } else if (value === "" && (operator === "&" || operator === "?")) {
-      result.push(encodeUnreserved$2(key) + "=");
-    } else if (value === "") {
-      result.push("");
-    }
-  }
-  return result;
-}
-function parseUrl$2(template) {
-  return {
-    expand: expand$3.bind(null, template)
-  };
-}
-function expand$3(template, context) {
-  var operators = ["+", "#", ".", "/", ";", "?", "&"];
-  template = template.replace(
-    /\{([^\{\}]+)\}|([^\{\}]+)/g,
-    function(_, expression, literal) {
-      if (expression) {
-        let operator = "";
-        const values = [];
-        if (operators.indexOf(expression.charAt(0)) !== -1) {
-          operator = expression.charAt(0);
-          expression = expression.substr(1);
-        }
-        expression.split(/,/g).forEach(function(variable) {
-          var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-          values.push(getValues$2(context, operator, tmp[1], tmp[2] || tmp[3]));
-        });
-        if (operator && operator !== "+") {
-          var separator = ",";
-          if (operator === "?") {
-            separator = "&";
-          } else if (operator !== "#") {
-            separator = operator;
-          }
-          return (values.length !== 0 ? operator : "") + values.join(separator);
-        } else {
-          return values.join(",");
-        }
-      } else {
-        return encodeReserved$2(literal);
-      }
-    }
-  );
-  if (template === "/") {
-    return template;
-  } else {
-    return template.replace(/\/$/, "");
-  }
-}
-
-// pkg/dist-src/parse.js
-function parse$6(options) {
-  let method = options.method.toUpperCase();
-  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
-  let headers = Object.assign({}, options.headers);
-  let body;
-  let parameters = omit$2(options, [
-    "method",
-    "baseUrl",
-    "url",
-    "headers",
-    "request",
-    "mediaType"
-  ]);
-  const urlVariableNames = extractUrlVariableNames$2(url);
-  url = parseUrl$2(url).expand(parameters);
-  if (!/^http/.test(url)) {
-    url = options.baseUrl + url;
-  }
-  const omittedParameters = Object.keys(options).filter((option) => urlVariableNames.includes(option)).concat("baseUrl");
-  const remainingParameters = omit$2(parameters, omittedParameters);
-  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
-  if (!isBinaryRequest) {
-    if (options.mediaType.format) {
-      headers.accept = headers.accept.split(/,/).map(
-        (format) => format.replace(
-          /application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/,
-          `application/vnd$1$2.${options.mediaType.format}`
-        )
-      ).join(",");
-    }
-    if (url.endsWith("/graphql")) {
-      if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
-        headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
-          const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
-          return `application/vnd.github.${preview}-preview${format}`;
-        }).join(",");
-      }
-    }
-  }
-  if (["GET", "HEAD"].includes(method)) {
-    url = addQueryParameters$2(url, remainingParameters);
-  } else {
-    if ("data" in remainingParameters) {
-      body = remainingParameters.data;
-    } else {
-      if (Object.keys(remainingParameters).length) {
-        body = remainingParameters;
-      }
-    }
-  }
-  if (!headers["content-type"] && typeof body !== "undefined") {
-    headers["content-type"] = "application/json; charset=utf-8";
-  }
-  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
-    body = "";
-  }
-  return Object.assign(
-    { method, url, headers },
-    typeof body !== "undefined" ? { body } : null,
-    options.request ? { request: options.request } : null
-  );
-}
-
-// pkg/dist-src/endpoint-with-defaults.js
-function endpointWithDefaults$2(defaults, route, options) {
-  return parse$6(merge$2(defaults, route, options));
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$6(oldDefaults, newDefaults) {
-  const DEFAULTS2 = merge$2(oldDefaults, newDefaults);
-  const endpoint2 = endpointWithDefaults$2.bind(null, DEFAULTS2);
-  return Object.assign(endpoint2, {
-    DEFAULTS: DEFAULTS2,
-    defaults: withDefaults$6.bind(null, DEFAULTS2),
-    merge: merge$2.bind(null, DEFAULTS2),
-    parse: parse$6
-  });
-}
-
-// pkg/dist-src/index.js
-var endpoint$2 = withDefaults$6(null, DEFAULTS$2);
-
-class RequestError$2 extends Error {
-  name;
-  /**
-   * http status code
-   */
-  status;
-  /**
-   * Request options that lead to the error.
-   */
-  request;
-  /**
-   * Response object if a response was received
-   */
-  response;
-  constructor(message, statusCode, options) {
-    super(message);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-    this.name = "HttpError";
-    this.status = statusCode;
-    if ("response" in options) {
-      this.response = options.response;
-    }
-    const requestCopy = Object.assign({}, options.request);
-    if (options.request.headers.authorization) {
-      requestCopy.headers = Object.assign({}, options.request.headers, {
-        authorization: options.request.headers.authorization.replace(
-          / .*$/,
-          " [REDACTED]"
-        )
-      });
-    }
-    requestCopy.url = requestCopy.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy;
-  }
-}
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$e = "0.0.0-development";
-
-// pkg/dist-src/is-plain-object.js
-function isPlainObject$4(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/get-buffer-response.js
-function getBufferResponse$2(response) {
-  return response.arrayBuffer();
-}
-
-// pkg/dist-src/fetch-wrapper.js
-function fetchWrapper$2(requestOptions) {
-  const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
-  const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  if (isPlainObject$4(requestOptions.body) || Array.isArray(requestOptions.body)) {
-    requestOptions.body = JSON.stringify(requestOptions.body);
-  }
-  let headers = {};
-  let status;
-  let url;
-  let { fetch } = globalThis;
-  if (requestOptions.request?.fetch) {
-    fetch = requestOptions.request.fetch;
-  }
-  if (!fetch) {
-    throw new Error(
-      "fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). Learn more at https://github.com/octokit/octokit.js/#fetch-missing"
-    );
-  }
-  return fetch(requestOptions.url, {
-    method: requestOptions.method,
-    body: requestOptions.body,
-    redirect: requestOptions.request?.redirect,
-    // Header values must be `string`
-    headers: Object.fromEntries(
-      Object.entries(requestOptions.headers).map(([name, value]) => [
-        name,
-        String(value)
-      ])
-    ),
-    signal: requestOptions.request?.signal,
-    // duplex must be set if request.body is ReadableStream or Async Iterables.
-    // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
-    ...requestOptions.body && { duplex: "half" }
-  }).then(async (response) => {
-    url = response.url;
-    status = response.status;
-    for (const keyAndValue of response.headers) {
-      headers[keyAndValue[0]] = keyAndValue[1];
-    }
-    if ("deprecation" in headers) {
-      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
-      const deprecationLink = matches && matches.pop();
-      log.warn(
-        `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
-      );
-    }
-    if (status === 204 || status === 205) {
-      return;
-    }
-    if (requestOptions.method === "HEAD") {
-      if (status < 400) {
-        return;
-      }
-      throw new RequestError$2(response.statusText, status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: void 0
-        },
-        request: requestOptions
-      });
-    }
-    if (status === 304) {
-      throw new RequestError$2("Not modified", status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: await getResponseData$2(response)
-        },
-        request: requestOptions
-      });
-    }
-    if (status >= 400) {
-      const data = await getResponseData$2(response);
-      const error = new RequestError$2(toErrorMessage$2(data), status, {
-        response: {
-          url,
-          status,
-          headers,
-          data
-        },
-        request: requestOptions
-      });
-      throw error;
-    }
-    return parseSuccessResponseBody ? await getResponseData$2(response) : response.body;
-  }).then((data) => {
-    return {
-      status,
-      url,
-      headers,
-      data
-    };
-  }).catch((error) => {
-    if (error instanceof RequestError$2)
-      throw error;
-    else if (error.name === "AbortError")
-      throw error;
-    let message = error.message;
-    if (error.name === "TypeError" && "cause" in error) {
-      if (error.cause instanceof Error) {
-        message = error.cause.message;
-      } else if (typeof error.cause === "string") {
-        message = error.cause;
-      }
-    }
-    throw new RequestError$2(message, 500, {
-      request: requestOptions
-    });
-  });
-}
-async function getResponseData$2(response) {
-  const contentType = response.headers.get("content-type");
-  if (/application\/json/.test(contentType)) {
-    return response.json().catch(() => response.text()).catch(() => "");
-  }
-  if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
-    return response.text();
-  }
-  return getBufferResponse$2(response);
-}
-function toErrorMessage$2(data) {
-  if (typeof data === "string")
-    return data;
-  let suffix;
-  if ("documentation_url" in data) {
-    suffix = ` - ${data.documentation_url}`;
-  } else {
-    suffix = "";
-  }
-  if ("message" in data) {
-    if (Array.isArray(data.errors)) {
-      return `${data.message}: ${data.errors.map(JSON.stringify).join(", ")}${suffix}`;
-    }
-    return `${data.message}${suffix}`;
-  }
-  return `Unknown error: ${JSON.stringify(data)}`;
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$5(oldEndpoint, newDefaults) {
-  const endpoint2 = oldEndpoint.defaults(newDefaults);
-  const newApi = function(route, parameters) {
-    const endpointOptions = endpoint2.merge(route, parameters);
-    if (!endpointOptions.request || !endpointOptions.request.hook) {
-      return fetchWrapper$2(endpoint2.parse(endpointOptions));
-    }
-    const request2 = (route2, parameters2) => {
-      return fetchWrapper$2(
-        endpoint2.parse(endpoint2.merge(route2, parameters2))
-      );
-    };
-    Object.assign(request2, {
-      endpoint: endpoint2,
-      defaults: withDefaults$5.bind(null, endpoint2)
-    });
-    return endpointOptions.request.hook(request2, endpointOptions);
-  };
-  return Object.assign(newApi, {
-    endpoint: endpoint2,
-    defaults: withDefaults$5.bind(null, endpoint2)
-  });
-}
-
-// pkg/dist-src/index.js
-var request$2 = withDefaults$5(endpoint$2, {
-  headers: {
-    "user-agent": `octokit-request.js/${VERSION$e} ${getUserAgent$2()}`
-  }
-});
-
-function oauthAuthorizationUrl(options) {
-  const clientType = options.clientType || "oauth-app";
-  const baseUrl = options.baseUrl || "https://github.com";
-  const result = {
-    clientType,
-    allowSignup: options.allowSignup === false ? false : true,
-    clientId: options.clientId,
-    login: options.login || null,
-    redirectUrl: options.redirectUrl || null,
-    state: options.state || Math.random().toString(36).substr(2),
-    url: ""
-  };
-  if (clientType === "oauth-app") {
-    const scopes = "scopes" in options ? options.scopes : [];
-    result.scopes = typeof scopes === "string" ? scopes.split(/[,\s]+/).filter(Boolean) : scopes;
-  }
-  result.url = urlBuilderAuthorize(`${baseUrl}/login/oauth/authorize`, result);
-  return result;
-}
-function urlBuilderAuthorize(base, options) {
-  const map = {
-    allowSignup: "allow_signup",
-    clientId: "client_id",
-    login: "login",
-    redirectUrl: "redirect_uri",
-    scopes: "scope",
-    state: "state"
-  };
-  let url = base;
-  Object.keys(map).filter((k) => options[k] !== null).filter((k) => {
-    if (k !== "scopes")
-      return true;
-    if (options.clientType === "github-app")
-      return false;
-    return !Array.isArray(options[k]) || options[k].length > 0;
-  }).map((key) => [map[key], `${options[key]}`]).forEach(([key, value], index) => {
-    url += index === 0 ? `?` : "&";
-    url += `${key}=${encodeURIComponent(value)}`;
-  });
-  return url;
-}
-
-function getUserAgent$1() {
-  if (typeof navigator === "object" && "userAgent" in navigator) {
-    return navigator.userAgent;
-  }
-
-  if (typeof process === "object" && process.version !== undefined) {
-    return `Node.js/${process.version.substr(1)} (${process.platform}; ${
-      process.arch
-    })`;
-  }
-
-  return "<environment undetectable>";
-}
-
-// pkg/dist-src/defaults.js
-
-// pkg/dist-src/version.js
-var VERSION$d = "0.0.0-development";
-
-// pkg/dist-src/defaults.js
-var userAgent$1 = `octokit-endpoint.js/${VERSION$d} ${getUserAgent$1()}`;
-var DEFAULTS$1 = {
-  method: "GET",
-  baseUrl: "https://api.github.com",
-  headers: {
-    accept: "application/vnd.github.v3+json",
-    "user-agent": userAgent$1
-  },
-  mediaType: {
-    format: ""
-  }
-};
-
-// pkg/dist-src/util/lowercase-keys.js
-function lowercaseKeys$1(object) {
-  if (!object) {
-    return {};
-  }
-  return Object.keys(object).reduce((newObj, key) => {
-    newObj[key.toLowerCase()] = object[key];
-    return newObj;
-  }, {});
-}
-
-// pkg/dist-src/util/is-plain-object.js
-function isPlainObject$3(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/util/merge-deep.js
-function mergeDeep$1(defaults, options) {
-  const result = Object.assign({}, defaults);
-  Object.keys(options).forEach((key) => {
-    if (isPlainObject$3(options[key])) {
-      if (!(key in defaults))
-        Object.assign(result, { [key]: options[key] });
-      else
-        result[key] = mergeDeep$1(defaults[key], options[key]);
-    } else {
-      Object.assign(result, { [key]: options[key] });
-    }
-  });
-  return result;
-}
-
-// pkg/dist-src/util/remove-undefined-properties.js
-function removeUndefinedProperties$1(obj) {
-  for (const key in obj) {
-    if (obj[key] === void 0) {
-      delete obj[key];
-    }
-  }
-  return obj;
-}
-
-// pkg/dist-src/merge.js
-function merge$1(defaults, route, options) {
-  if (typeof route === "string") {
-    let [method, url] = route.split(" ");
-    options = Object.assign(url ? { method, url } : { url: method }, options);
-  } else {
-    options = Object.assign({}, route);
-  }
-  options.headers = lowercaseKeys$1(options.headers);
-  removeUndefinedProperties$1(options);
-  removeUndefinedProperties$1(options.headers);
-  const mergedOptions = mergeDeep$1(defaults || {}, options);
-  if (options.url === "/graphql") {
-    if (defaults && defaults.mediaType.previews?.length) {
-      mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(
-        (preview) => !mergedOptions.mediaType.previews.includes(preview)
-      ).concat(mergedOptions.mediaType.previews);
-    }
-    mergedOptions.mediaType.previews = (mergedOptions.mediaType.previews || []).map((preview) => preview.replace(/-preview/, ""));
-  }
-  return mergedOptions;
-}
-
-// pkg/dist-src/util/add-query-parameters.js
-function addQueryParameters$1(url, parameters) {
-  const separator = /\?/.test(url) ? "&" : "?";
-  const names = Object.keys(parameters);
-  if (names.length === 0) {
-    return url;
-  }
-  return url + separator + names.map((name) => {
-    if (name === "q") {
-      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
-    }
-    return `${name}=${encodeURIComponent(parameters[name])}`;
-  }).join("&");
-}
-
-// pkg/dist-src/util/extract-url-variable-names.js
-var urlVariableRegex$1 = /\{[^}]+\}/g;
-function removeNonChars$1(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
-}
-function extractUrlVariableNames$1(url) {
-  const matches = url.match(urlVariableRegex$1);
-  if (!matches) {
-    return [];
-  }
-  return matches.map(removeNonChars$1).reduce((a, b) => a.concat(b), []);
-}
-
-// pkg/dist-src/util/omit.js
-function omit$1(object, keysToOmit) {
-  const result = { __proto__: null };
-  for (const key of Object.keys(object)) {
-    if (keysToOmit.indexOf(key) === -1) {
-      result[key] = object[key];
-    }
-  }
-  return result;
-}
-
-// pkg/dist-src/util/url-template.js
-function encodeReserved$1(str) {
-  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function(part) {
-    if (!/%[0-9A-Fa-f]/.test(part)) {
-      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
-    }
-    return part;
-  }).join("");
-}
-function encodeUnreserved$1(str) {
-  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
-    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
-  });
-}
-function encodeValue$1(operator, value, key) {
-  value = operator === "+" || operator === "#" ? encodeReserved$1(value) : encodeUnreserved$1(value);
-  if (key) {
-    return encodeUnreserved$1(key) + "=" + value;
-  } else {
-    return value;
-  }
-}
-function isDefined$1(value) {
-  return value !== void 0 && value !== null;
-}
-function isKeyOperator$1(operator) {
-  return operator === ";" || operator === "&" || operator === "?";
-}
-function getValues$1(context, operator, key, modifier) {
-  var value = context[key], result = [];
-  if (isDefined$1(value) && value !== "") {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      value = value.toString();
-      if (modifier && modifier !== "*") {
-        value = value.substring(0, parseInt(modifier, 10));
-      }
-      result.push(
-        encodeValue$1(operator, value, isKeyOperator$1(operator) ? key : "")
-      );
-    } else {
-      if (modifier === "*") {
-        if (Array.isArray(value)) {
-          value.filter(isDefined$1).forEach(function(value2) {
-            result.push(
-              encodeValue$1(operator, value2, isKeyOperator$1(operator) ? key : "")
-            );
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$1(value[k])) {
-              result.push(encodeValue$1(operator, value[k], k));
-            }
-          });
-        }
-      } else {
-        const tmp = [];
-        if (Array.isArray(value)) {
-          value.filter(isDefined$1).forEach(function(value2) {
-            tmp.push(encodeValue$1(operator, value2));
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$1(value[k])) {
-              tmp.push(encodeUnreserved$1(k));
-              tmp.push(encodeValue$1(operator, value[k].toString()));
-            }
-          });
-        }
-        if (isKeyOperator$1(operator)) {
-          result.push(encodeUnreserved$1(key) + "=" + tmp.join(","));
-        } else if (tmp.length !== 0) {
-          result.push(tmp.join(","));
-        }
-      }
-    }
-  } else {
-    if (operator === ";") {
-      if (isDefined$1(value)) {
-        result.push(encodeUnreserved$1(key));
-      }
-    } else if (value === "" && (operator === "&" || operator === "?")) {
-      result.push(encodeUnreserved$1(key) + "=");
-    } else if (value === "") {
-      result.push("");
-    }
-  }
-  return result;
-}
-function parseUrl$1(template) {
-  return {
-    expand: expand$2.bind(null, template)
-  };
-}
-function expand$2(template, context) {
-  var operators = ["+", "#", ".", "/", ";", "?", "&"];
-  template = template.replace(
-    /\{([^\{\}]+)\}|([^\{\}]+)/g,
-    function(_, expression, literal) {
-      if (expression) {
-        let operator = "";
-        const values = [];
-        if (operators.indexOf(expression.charAt(0)) !== -1) {
-          operator = expression.charAt(0);
-          expression = expression.substr(1);
-        }
-        expression.split(/,/g).forEach(function(variable) {
-          var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-          values.push(getValues$1(context, operator, tmp[1], tmp[2] || tmp[3]));
-        });
-        if (operator && operator !== "+") {
-          var separator = ",";
-          if (operator === "?") {
-            separator = "&";
-          } else if (operator !== "#") {
-            separator = operator;
-          }
-          return (values.length !== 0 ? operator : "") + values.join(separator);
-        } else {
-          return values.join(",");
-        }
-      } else {
-        return encodeReserved$1(literal);
-      }
-    }
-  );
-  if (template === "/") {
-    return template;
-  } else {
-    return template.replace(/\/$/, "");
-  }
-}
-
-// pkg/dist-src/parse.js
-function parse$5(options) {
-  let method = options.method.toUpperCase();
-  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
-  let headers = Object.assign({}, options.headers);
-  let body;
-  let parameters = omit$1(options, [
-    "method",
-    "baseUrl",
-    "url",
-    "headers",
-    "request",
-    "mediaType"
-  ]);
-  const urlVariableNames = extractUrlVariableNames$1(url);
-  url = parseUrl$1(url).expand(parameters);
-  if (!/^http/.test(url)) {
-    url = options.baseUrl + url;
-  }
-  const omittedParameters = Object.keys(options).filter((option) => urlVariableNames.includes(option)).concat("baseUrl");
-  const remainingParameters = omit$1(parameters, omittedParameters);
-  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
-  if (!isBinaryRequest) {
-    if (options.mediaType.format) {
-      headers.accept = headers.accept.split(/,/).map(
-        (format) => format.replace(
-          /application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/,
-          `application/vnd$1$2.${options.mediaType.format}`
-        )
-      ).join(",");
-    }
-    if (url.endsWith("/graphql")) {
-      if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
-        headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
-          const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
-          return `application/vnd.github.${preview}-preview${format}`;
-        }).join(",");
-      }
-    }
-  }
-  if (["GET", "HEAD"].includes(method)) {
-    url = addQueryParameters$1(url, remainingParameters);
-  } else {
-    if ("data" in remainingParameters) {
-      body = remainingParameters.data;
-    } else {
-      if (Object.keys(remainingParameters).length) {
-        body = remainingParameters;
-      }
-    }
-  }
-  if (!headers["content-type"] && typeof body !== "undefined") {
-    headers["content-type"] = "application/json; charset=utf-8";
-  }
-  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
-    body = "";
-  }
-  return Object.assign(
-    { method, url, headers },
-    typeof body !== "undefined" ? { body } : null,
-    options.request ? { request: options.request } : null
-  );
-}
-
-// pkg/dist-src/endpoint-with-defaults.js
-function endpointWithDefaults$1(defaults, route, options) {
-  return parse$5(merge$1(defaults, route, options));
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$4(oldDefaults, newDefaults) {
-  const DEFAULTS2 = merge$1(oldDefaults, newDefaults);
-  const endpoint2 = endpointWithDefaults$1.bind(null, DEFAULTS2);
-  return Object.assign(endpoint2, {
-    DEFAULTS: DEFAULTS2,
-    defaults: withDefaults$4.bind(null, DEFAULTS2),
-    merge: merge$1.bind(null, DEFAULTS2),
-    parse: parse$5
-  });
-}
-
-// pkg/dist-src/index.js
-var endpoint$1 = withDefaults$4(null, DEFAULTS$1);
-
-class RequestError$1 extends Error {
-  name;
-  /**
-   * http status code
-   */
-  status;
-  /**
-   * Request options that lead to the error.
-   */
-  request;
-  /**
-   * Response object if a response was received
-   */
-  response;
-  constructor(message, statusCode, options) {
-    super(message);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-    this.name = "HttpError";
-    this.status = statusCode;
-    if ("response" in options) {
-      this.response = options.response;
-    }
-    const requestCopy = Object.assign({}, options.request);
-    if (options.request.headers.authorization) {
-      requestCopy.headers = Object.assign({}, options.request.headers, {
-        authorization: options.request.headers.authorization.replace(
-          / .*$/,
-          " [REDACTED]"
-        )
-      });
-    }
-    requestCopy.url = requestCopy.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy;
-  }
-}
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$c = "0.0.0-development";
-
-// pkg/dist-src/is-plain-object.js
-function isPlainObject$2(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/get-buffer-response.js
-function getBufferResponse$1(response) {
-  return response.arrayBuffer();
-}
-
-// pkg/dist-src/fetch-wrapper.js
-function fetchWrapper$1(requestOptions) {
-  const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
-  const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  if (isPlainObject$2(requestOptions.body) || Array.isArray(requestOptions.body)) {
-    requestOptions.body = JSON.stringify(requestOptions.body);
-  }
-  let headers = {};
-  let status;
-  let url;
-  let { fetch } = globalThis;
-  if (requestOptions.request?.fetch) {
-    fetch = requestOptions.request.fetch;
-  }
-  if (!fetch) {
-    throw new Error(
-      "fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). Learn more at https://github.com/octokit/octokit.js/#fetch-missing"
-    );
-  }
-  return fetch(requestOptions.url, {
-    method: requestOptions.method,
-    body: requestOptions.body,
-    redirect: requestOptions.request?.redirect,
-    // Header values must be `string`
-    headers: Object.fromEntries(
-      Object.entries(requestOptions.headers).map(([name, value]) => [
-        name,
-        String(value)
-      ])
-    ),
-    signal: requestOptions.request?.signal,
-    // duplex must be set if request.body is ReadableStream or Async Iterables.
-    // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
-    ...requestOptions.body && { duplex: "half" }
-  }).then(async (response) => {
-    url = response.url;
-    status = response.status;
-    for (const keyAndValue of response.headers) {
-      headers[keyAndValue[0]] = keyAndValue[1];
-    }
-    if ("deprecation" in headers) {
-      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
-      const deprecationLink = matches && matches.pop();
-      log.warn(
-        `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
-      );
-    }
-    if (status === 204 || status === 205) {
-      return;
-    }
-    if (requestOptions.method === "HEAD") {
-      if (status < 400) {
-        return;
-      }
-      throw new RequestError$1(response.statusText, status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: void 0
-        },
-        request: requestOptions
-      });
-    }
-    if (status === 304) {
-      throw new RequestError$1("Not modified", status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: await getResponseData$1(response)
-        },
-        request: requestOptions
-      });
-    }
-    if (status >= 400) {
-      const data = await getResponseData$1(response);
-      const error = new RequestError$1(toErrorMessage$1(data), status, {
-        response: {
-          url,
-          status,
-          headers,
-          data
-        },
-        request: requestOptions
-      });
-      throw error;
-    }
-    return parseSuccessResponseBody ? await getResponseData$1(response) : response.body;
-  }).then((data) => {
-    return {
-      status,
-      url,
-      headers,
-      data
-    };
-  }).catch((error) => {
-    if (error instanceof RequestError$1)
-      throw error;
-    else if (error.name === "AbortError")
-      throw error;
-    let message = error.message;
-    if (error.name === "TypeError" && "cause" in error) {
-      if (error.cause instanceof Error) {
-        message = error.cause.message;
-      } else if (typeof error.cause === "string") {
-        message = error.cause;
-      }
-    }
-    throw new RequestError$1(message, 500, {
-      request: requestOptions
-    });
-  });
-}
-async function getResponseData$1(response) {
-  const contentType = response.headers.get("content-type");
-  if (/application\/json/.test(contentType)) {
-    return response.json().catch(() => response.text()).catch(() => "");
-  }
-  if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
-    return response.text();
-  }
-  return getBufferResponse$1(response);
-}
-function toErrorMessage$1(data) {
-  if (typeof data === "string")
-    return data;
-  let suffix;
-  if ("documentation_url" in data) {
-    suffix = ` - ${data.documentation_url}`;
-  } else {
-    suffix = "";
-  }
-  if ("message" in data) {
-    if (Array.isArray(data.errors)) {
-      return `${data.message}: ${data.errors.map(JSON.stringify).join(", ")}${suffix}`;
-    }
-    return `${data.message}${suffix}`;
-  }
-  return `Unknown error: ${JSON.stringify(data)}`;
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$3(oldEndpoint, newDefaults) {
-  const endpoint2 = oldEndpoint.defaults(newDefaults);
-  const newApi = function(route, parameters) {
-    const endpointOptions = endpoint2.merge(route, parameters);
-    if (!endpointOptions.request || !endpointOptions.request.hook) {
-      return fetchWrapper$1(endpoint2.parse(endpointOptions));
-    }
-    const request2 = (route2, parameters2) => {
-      return fetchWrapper$1(
-        endpoint2.parse(endpoint2.merge(route2, parameters2))
-      );
-    };
-    Object.assign(request2, {
-      endpoint: endpoint2,
-      defaults: withDefaults$3.bind(null, endpoint2)
-    });
-    return endpointOptions.request.hook(request2, endpointOptions);
-  };
-  return Object.assign(newApi, {
-    endpoint: endpoint2,
-    defaults: withDefaults$3.bind(null, endpoint2)
-  });
-}
-
-// pkg/dist-src/index.js
-var request$1 = withDefaults$3(endpoint$1, {
-  headers: {
-    "user-agent": `octokit-request.js/${VERSION$c} ${getUserAgent$1()}`
-  }
-});
-
-// pkg/dist-src/version.js
-function requestToOAuthBaseUrl(request) {
-  const endpointDefaults = request.endpoint.DEFAULTS;
-  return /^https:\/\/(api\.)?github\.com$/.test(endpointDefaults.baseUrl) ? "https://github.com" : endpointDefaults.baseUrl.replace("/api/v3", "");
-}
-async function oauthRequest(request, route, parameters) {
-  const withOAuthParameters = {
-    baseUrl: requestToOAuthBaseUrl(request),
-    headers: {
-      accept: "application/json"
-    },
-    ...parameters
-  };
-  const response = await request(route, withOAuthParameters);
-  if ("error" in response.data) {
-    const error = new RequestError$1(
-      `${response.data.error_description} (${response.data.error}, ${response.data.error_uri})`,
-      400,
-      {
-        request: request.endpoint.merge(
-          route,
-          withOAuthParameters
-        )
-      }
-    );
-    error.response = response;
-    throw error;
-  }
-  return response;
-}
-
-// pkg/dist-src/get-web-flow-authorization-url.js
-function getWebFlowAuthorizationUrl({
-  request = request$1,
-  ...options
-}) {
-  const baseUrl = requestToOAuthBaseUrl(request);
-  return oauthAuthorizationUrl({
-    ...options,
-    baseUrl
-  });
-}
-async function exchangeWebFlowCode(options) {
-  const request = options.request || /* istanbul ignore next: we always pass a custom request in tests */
-  request$1;
-  const response = await oauthRequest(
-    request,
-    "POST /login/oauth/access_token",
-    {
-      client_id: options.clientId,
-      client_secret: options.clientSecret,
-      code: options.code,
-      redirect_uri: options.redirectUrl
-    }
-  );
-  const authentication = {
-    clientType: options.clientType,
-    clientId: options.clientId,
-    clientSecret: options.clientSecret,
-    token: response.data.access_token,
-    scopes: response.data.scope.split(/\s+/).filter(Boolean)
-  };
-  if (options.clientType === "github-app") {
-    if ("refresh_token" in response.data) {
-      const apiTimeInMs = new Date(response.headers.date).getTime();
-      authentication.refreshToken = response.data.refresh_token, authentication.expiresAt = toTimestamp(
-        apiTimeInMs,
-        response.data.expires_in
-      ), authentication.refreshTokenExpiresAt = toTimestamp(
-        apiTimeInMs,
-        response.data.refresh_token_expires_in
-      );
-    }
-    delete authentication.scopes;
-  }
-  return { ...response, authentication };
-}
-function toTimestamp(apiTimeInMs, expirationInSeconds) {
-  return new Date(apiTimeInMs + expirationInSeconds * 1e3).toISOString();
-}
-async function createDeviceCode(options) {
-  const request = options.request || /* istanbul ignore next: we always pass a custom request in tests */
-  request$1;
-  const parameters = {
-    client_id: options.clientId
-  };
-  if ("scopes" in options && Array.isArray(options.scopes)) {
-    parameters.scope = options.scopes.join(" ");
-  }
-  return oauthRequest(request, "POST /login/device/code", parameters);
-}
-async function exchangeDeviceCode(options) {
-  const request = options.request || /* istanbul ignore next: we always pass a custom request in tests */
-  request$1;
-  const response = await oauthRequest(
-    request,
-    "POST /login/oauth/access_token",
-    {
-      client_id: options.clientId,
-      device_code: options.code,
-      grant_type: "urn:ietf:params:oauth:grant-type:device_code"
-    }
-  );
-  const authentication = {
-    clientType: options.clientType,
-    clientId: options.clientId,
-    token: response.data.access_token,
-    scopes: response.data.scope.split(/\s+/).filter(Boolean)
-  };
-  if ("clientSecret" in options) {
-    authentication.clientSecret = options.clientSecret;
-  }
-  if (options.clientType === "github-app") {
-    if ("refresh_token" in response.data) {
-      const apiTimeInMs = new Date(response.headers.date).getTime();
-      authentication.refreshToken = response.data.refresh_token, authentication.expiresAt = toTimestamp2(
-        apiTimeInMs,
-        response.data.expires_in
-      ), authentication.refreshTokenExpiresAt = toTimestamp2(
-        apiTimeInMs,
-        response.data.refresh_token_expires_in
-      );
-    }
-    delete authentication.scopes;
-  }
-  return { ...response, authentication };
-}
-function toTimestamp2(apiTimeInMs, expirationInSeconds) {
-  return new Date(apiTimeInMs + expirationInSeconds * 1e3).toISOString();
-}
-async function checkToken(options) {
-  const request = options.request || /* istanbul ignore next: we always pass a custom request in tests */
-  request$1;
-  const response = await request("POST /applications/{client_id}/token", {
-    headers: {
-      authorization: `basic ${btoa(
-        `${options.clientId}:${options.clientSecret}`
-      )}`
-    },
-    client_id: options.clientId,
-    access_token: options.token
-  });
-  const authentication = {
-    clientType: options.clientType,
-    clientId: options.clientId,
-    clientSecret: options.clientSecret,
-    token: options.token,
-    scopes: response.data.scopes
-  };
-  if (response.data.expires_at)
-    authentication.expiresAt = response.data.expires_at;
-  if (options.clientType === "github-app") {
-    delete authentication.scopes;
-  }
-  return { ...response, authentication };
-}
-async function refreshToken(options) {
-  const request = options.request || /* istanbul ignore next: we always pass a custom request in tests */
-  request$1;
-  const response = await oauthRequest(
-    request,
-    "POST /login/oauth/access_token",
-    {
-      client_id: options.clientId,
-      client_secret: options.clientSecret,
-      grant_type: "refresh_token",
-      refresh_token: options.refreshToken
-    }
-  );
-  const apiTimeInMs = new Date(response.headers.date).getTime();
-  const authentication = {
-    clientType: "github-app",
-    clientId: options.clientId,
-    clientSecret: options.clientSecret,
-    token: response.data.access_token,
-    refreshToken: response.data.refresh_token,
-    expiresAt: toTimestamp3(apiTimeInMs, response.data.expires_in),
-    refreshTokenExpiresAt: toTimestamp3(
-      apiTimeInMs,
-      response.data.refresh_token_expires_in
-    )
-  };
-  return { ...response, authentication };
-}
-function toTimestamp3(apiTimeInMs, expirationInSeconds) {
-  return new Date(apiTimeInMs + expirationInSeconds * 1e3).toISOString();
-}
-async function scopeToken(options) {
-  const {
-    request: optionsRequest,
-    clientType,
-    clientId,
-    clientSecret,
-    token,
-    ...requestOptions
-  } = options;
-  const request = optionsRequest || /* istanbul ignore next: we always pass a custom request in tests */
-  request$1;
-  const response = await request(
-    "POST /applications/{client_id}/token/scoped",
-    {
-      headers: {
-        authorization: `basic ${btoa(`${clientId}:${clientSecret}`)}`
-      },
-      client_id: clientId,
-      access_token: token,
-      ...requestOptions
-    }
-  );
-  const authentication = Object.assign(
-    {
-      clientType,
-      clientId,
-      clientSecret,
-      token: response.data.token
-    },
-    response.data.expires_at ? { expiresAt: response.data.expires_at } : {}
-  );
-  return { ...response, authentication };
-}
-async function resetToken(options) {
-  const request = options.request || /* istanbul ignore next: we always pass a custom request in tests */
-  request$1;
-  const auth = btoa(`${options.clientId}:${options.clientSecret}`);
-  const response = await request(
-    "PATCH /applications/{client_id}/token",
-    {
-      headers: {
-        authorization: `basic ${auth}`
-      },
-      client_id: options.clientId,
-      access_token: options.token
-    }
-  );
-  const authentication = {
-    clientType: options.clientType,
-    clientId: options.clientId,
-    clientSecret: options.clientSecret,
-    token: response.data.token,
-    scopes: response.data.scopes
-  };
-  if (response.data.expires_at)
-    authentication.expiresAt = response.data.expires_at;
-  if (options.clientType === "github-app") {
-    delete authentication.scopes;
-  }
-  return { ...response, authentication };
-}
-async function deleteToken(options) {
-  const request = options.request || /* istanbul ignore next: we always pass a custom request in tests */
-  request$1;
-  const auth = btoa(`${options.clientId}:${options.clientSecret}`);
-  return request(
-    "DELETE /applications/{client_id}/token",
-    {
-      headers: {
-        authorization: `basic ${auth}`
-      },
-      client_id: options.clientId,
-      access_token: options.token
-    }
-  );
-}
-async function deleteAuthorization(options) {
-  const request = options.request || /* istanbul ignore next: we always pass a custom request in tests */
-  request$1;
-  const auth = btoa(`${options.clientId}:${options.clientSecret}`);
-  return request(
-    "DELETE /applications/{client_id}/grant",
-    {
-      headers: {
-        authorization: `basic ${auth}`
-      },
-      client_id: options.clientId,
-      access_token: options.token
-    }
-  );
-}
-
-// pkg/dist-src/index.js
-async function getOAuthAccessToken(state, options) {
-  const cachedAuthentication = getCachedAuthentication(state, options.auth);
-  if (cachedAuthentication)
-    return cachedAuthentication;
-  const { data: verification } = await createDeviceCode({
-    clientType: state.clientType,
-    clientId: state.clientId,
-    request: options.request || state.request,
-    // @ts-expect-error the extra code to make TS happy is not worth it
-    scopes: options.auth.scopes || state.scopes
-  });
-  await state.onVerification(verification);
-  const authentication = await waitForAccessToken(
-    options.request || state.request,
-    state.clientId,
-    state.clientType,
-    verification
-  );
-  state.authentication = authentication;
-  return authentication;
-}
-function getCachedAuthentication(state, auth2) {
-  if (auth2.refresh === true)
-    return false;
-  if (!state.authentication)
-    return false;
-  if (state.clientType === "github-app") {
-    return state.authentication;
-  }
-  const authentication = state.authentication;
-  const newScope = ("scopes" in auth2 && auth2.scopes || state.scopes).join(
-    " "
-  );
-  const currentScope = authentication.scopes.join(" ");
-  return newScope === currentScope ? authentication : false;
-}
-async function wait(seconds) {
-  await new Promise((resolve) => setTimeout(resolve, seconds * 1e3));
-}
-async function waitForAccessToken(request, clientId, clientType, verification) {
-  try {
-    const options = {
-      clientId,
-      request,
-      code: verification.device_code
-    };
-    const { authentication } = clientType === "oauth-app" ? await exchangeDeviceCode({
-      ...options,
-      clientType: "oauth-app"
-    }) : await exchangeDeviceCode({
-      ...options,
-      clientType: "github-app"
-    });
-    return {
-      type: "token",
-      tokenType: "oauth",
-      ...authentication
-    };
-  } catch (error) {
-    if (!error.response)
-      throw error;
-    const errorType = error.response.data.error;
-    if (errorType === "authorization_pending") {
-      await wait(verification.interval);
-      return waitForAccessToken(request, clientId, clientType, verification);
-    }
-    if (errorType === "slow_down") {
-      await wait(verification.interval + 5);
-      return waitForAccessToken(request, clientId, clientType, verification);
-    }
-    throw error;
-  }
-}
-
-// pkg/dist-src/auth.js
-async function auth$5(state, authOptions) {
-  return getOAuthAccessToken(state, {
-    auth: authOptions
-  });
-}
-
-// pkg/dist-src/hook.js
-async function hook$5(state, request, route, parameters) {
-  let endpoint = request.endpoint.merge(
-    route,
-    parameters
-  );
-  if (/\/login\/(oauth\/access_token|device\/code)$/.test(endpoint.url)) {
-    return request(endpoint);
-  }
-  const { token } = await getOAuthAccessToken(state, {
-    request,
-    auth: { type: "oauth" }
-  });
-  endpoint.headers.authorization = `token ${token}`;
-  return request(endpoint);
-}
-
-// pkg/dist-src/version.js
-var VERSION$b = "0.0.0-development";
-
-// pkg/dist-src/index.js
-function createOAuthDeviceAuth(options) {
-  const requestWithDefaults = options.request || request$2.defaults({
-    headers: {
-      "user-agent": `octokit-auth-oauth-device.js/${VERSION$b} ${getUserAgent$2()}`
-    }
-  });
-  const { request = requestWithDefaults, ...otherOptions } = options;
-  const state = options.clientType === "github-app" ? {
-    ...otherOptions,
-    clientType: "github-app",
-    request
-  } : {
-    ...otherOptions,
-    clientType: "oauth-app",
-    request,
-    scopes: options.scopes || []
-  };
-  if (!options.clientId) {
-    throw new Error(
-      '[@octokit/auth-oauth-device] "clientId" option must be set (https://github.com/octokit/auth-oauth-device.js#usage)'
-    );
-  }
-  if (!options.onVerification) {
-    throw new Error(
-      '[@octokit/auth-oauth-device] "onVerification" option must be a function (https://github.com/octokit/auth-oauth-device.js#usage)'
-    );
-  }
-  return Object.assign(auth$5.bind(null, state), {
-    hook: hook$5.bind(null, state)
-  });
-}
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$a = "0.0.0-development";
-async function getAuthentication(state) {
-  if ("code" in state.strategyOptions) {
-    const { authentication } = await exchangeWebFlowCode({
-      clientId: state.clientId,
-      clientSecret: state.clientSecret,
-      clientType: state.clientType,
-      onTokenCreated: state.onTokenCreated,
-      ...state.strategyOptions,
-      request: state.request
-    });
-    return {
-      type: "token",
-      tokenType: "oauth",
-      ...authentication
-    };
-  }
-  if ("onVerification" in state.strategyOptions) {
-    const deviceAuth = createOAuthDeviceAuth({
-      clientType: state.clientType,
-      clientId: state.clientId,
-      onTokenCreated: state.onTokenCreated,
-      ...state.strategyOptions,
-      request: state.request
-    });
-    const authentication = await deviceAuth({
-      type: "oauth"
-    });
-    return {
-      clientSecret: state.clientSecret,
-      ...authentication
-    };
-  }
-  if ("token" in state.strategyOptions) {
-    return {
-      type: "token",
-      tokenType: "oauth",
-      clientId: state.clientId,
-      clientSecret: state.clientSecret,
-      clientType: state.clientType,
-      onTokenCreated: state.onTokenCreated,
-      ...state.strategyOptions
-    };
-  }
-  throw new Error("[@octokit/auth-oauth-user] Invalid strategy options");
-}
-async function auth$4(state, options = {}) {
-  if (!state.authentication) {
-    state.authentication = state.clientType === "oauth-app" ? await getAuthentication(state) : await getAuthentication(state);
-  }
-  if (state.authentication.invalid) {
-    throw new Error("[@octokit/auth-oauth-user] Token is invalid");
-  }
-  const currentAuthentication = state.authentication;
-  if ("expiresAt" in currentAuthentication) {
-    if (options.type === "refresh" || new Date(currentAuthentication.expiresAt) < /* @__PURE__ */ new Date()) {
-      const { authentication } = await refreshToken({
-        clientType: "github-app",
-        clientId: state.clientId,
-        clientSecret: state.clientSecret,
-        refreshToken: currentAuthentication.refreshToken,
-        request: state.request
-      });
-      state.authentication = {
-        tokenType: "oauth",
-        type: "token",
-        ...authentication
-      };
-    }
-  }
-  if (options.type === "refresh") {
-    if (state.clientType === "oauth-app") {
-      throw new Error(
-        "[@octokit/auth-oauth-user] OAuth Apps do not support expiring tokens"
-      );
-    }
-    if (!currentAuthentication.hasOwnProperty("expiresAt")) {
-      throw new Error("[@octokit/auth-oauth-user] Refresh token missing");
-    }
-    await state.onTokenCreated?.(state.authentication, {
-      type: options.type
-    });
-  }
-  if (options.type === "check" || options.type === "reset") {
-    const method = options.type === "check" ? checkToken : resetToken;
-    try {
-      const { authentication } = await method({
-        // @ts-expect-error making TS happy would require unnecessary code so no
-        clientType: state.clientType,
-        clientId: state.clientId,
-        clientSecret: state.clientSecret,
-        token: state.authentication.token,
-        request: state.request
-      });
-      state.authentication = {
-        tokenType: "oauth",
-        type: "token",
-        // @ts-expect-error TBD
-        ...authentication
-      };
-      if (options.type === "reset") {
-        await state.onTokenCreated?.(state.authentication, {
-          type: options.type
-        });
-      }
-      return state.authentication;
-    } catch (error) {
-      if (error.status === 404) {
-        error.message = "[@octokit/auth-oauth-user] Token is invalid";
-        state.authentication.invalid = true;
-      }
-      throw error;
-    }
-  }
-  if (options.type === "delete" || options.type === "deleteAuthorization") {
-    const method = options.type === "delete" ? deleteToken : deleteAuthorization;
-    try {
-      await method({
-        // @ts-expect-error making TS happy would require unnecessary code so no
-        clientType: state.clientType,
-        clientId: state.clientId,
-        clientSecret: state.clientSecret,
-        token: state.authentication.token,
-        request: state.request
-      });
-    } catch (error) {
-      if (error.status !== 404)
-        throw error;
-    }
-    state.authentication.invalid = true;
-    return state.authentication;
-  }
-  return state.authentication;
-}
-
-// pkg/dist-src/requires-basic-auth.js
-var ROUTES_REQUIRING_BASIC_AUTH = /\/applications\/[^/]+\/(token|grant)s?/;
-function requiresBasicAuth(url) {
-  return url && ROUTES_REQUIRING_BASIC_AUTH.test(url);
-}
-
-// pkg/dist-src/hook.js
-async function hook$4(state, request, route, parameters = {}) {
-  const endpoint = request.endpoint.merge(
-    route,
-    parameters
-  );
-  if (/\/login\/(oauth\/access_token|device\/code)$/.test(endpoint.url)) {
-    return request(endpoint);
-  }
-  if (requiresBasicAuth(endpoint.url)) {
-    const credentials = btoa(`${state.clientId}:${state.clientSecret}`);
-    endpoint.headers.authorization = `basic ${credentials}`;
-    return request(endpoint);
-  }
-  const { token } = state.clientType === "oauth-app" ? await auth$4({ ...state, request }) : await auth$4({ ...state, request });
-  endpoint.headers.authorization = "token " + token;
-  return request(endpoint);
-}
-
-// pkg/dist-src/index.js
-function createOAuthUserAuth({
-  clientId,
-  clientSecret,
-  clientType = "oauth-app",
-  request = request$3.defaults({
-    headers: {
-      "user-agent": `octokit-auth-oauth-app.js/${VERSION$a} ${getUserAgent$3()}`
-    }
-  }),
-  onTokenCreated,
-  ...strategyOptions
-}) {
-  const state = Object.assign({
-    clientType,
-    clientId,
-    clientSecret,
-    onTokenCreated,
-    strategyOptions,
-    request
-  });
-  return Object.assign(auth$4.bind(null, state), {
-    // @ts-expect-error not worth the extra code needed to appease TS
-    hook: hook$4.bind(null, state)
-  });
-}
-createOAuthUserAuth.VERSION = VERSION$a;
-
-// pkg/dist-src/index.js
-async function auth$3(state, authOptions) {
-  if (authOptions.type === "oauth-app") {
-    return {
-      type: "oauth-app",
-      clientId: state.clientId,
-      clientSecret: state.clientSecret,
-      clientType: state.clientType,
-      headers: {
-        authorization: `basic ${btoa(
-          `${state.clientId}:${state.clientSecret}`
-        )}`
-      }
-    };
-  }
-  if ("factory" in authOptions) {
-    const { type, ...options } = {
-      ...authOptions,
-      ...state
-    };
-    return authOptions.factory(options);
-  }
-  const common = {
-    clientId: state.clientId,
-    clientSecret: state.clientSecret,
-    request: state.request,
-    ...authOptions
-  };
-  const userAuth = state.clientType === "oauth-app" ? await createOAuthUserAuth({
-    ...common,
-    clientType: state.clientType
-  }) : await createOAuthUserAuth({
-    ...common,
-    clientType: state.clientType
-  });
-  return userAuth();
-}
-async function hook$3(state, request2, route, parameters) {
-  let endpoint = request2.endpoint.merge(
-    route,
-    parameters
-  );
-  if (/\/login\/(oauth\/access_token|device\/code)$/.test(endpoint.url)) {
-    return request2(endpoint);
-  }
-  if (state.clientType === "github-app" && !requiresBasicAuth(endpoint.url)) {
-    throw new Error(
-      `[@octokit/auth-oauth-app] GitHub Apps cannot use their client ID/secret for basic authentication for endpoints other than "/applications/{client_id}/**". "${endpoint.method} ${endpoint.url}" is not supported.`
-    );
-  }
-  const credentials = btoa(`${state.clientId}:${state.clientSecret}`);
-  endpoint.headers.authorization = `basic ${credentials}`;
-  try {
-    return await request2(endpoint);
-  } catch (error) {
-    if (error.status !== 401)
-      throw error;
-    error.message = `[@octokit/auth-oauth-app] "${endpoint.method} ${endpoint.url}" does not support clientId/clientSecret basic authentication.`;
-    throw error;
-  }
-}
-
-// pkg/dist-src/version.js
-var VERSION$9 = "0.0.0-development";
-function createOAuthAppAuth(options) {
-  const state = Object.assign(
-    {
-      request: request$4.defaults({
-        headers: {
-          "user-agent": `octokit-auth-oauth-app.js/${VERSION$9} ${getUserAgent$4()}`
-        }
-      }),
-      clientType: "oauth-app"
-    },
-    options
-  );
-  return Object.assign(auth$3.bind(null, state), {
-    hook: hook$3.bind(null, state)
-  });
-}
-
-// we don't @ts-check here because it chokes on atob and btoa which are available in all modern JS runtime environments
-
-/**
- * @param {string} privateKey
- * @returns {boolean}
- */
-function isPkcs1(privateKey) {
-  return privateKey.includes("-----BEGIN RSA PRIVATE KEY-----");
-}
-
-/**
- * @param {string} privateKey
- * @returns {boolean}
- */
-function isOpenSsh(privateKey) {
-  return privateKey.includes("-----BEGIN OPENSSH PRIVATE KEY-----");
-}
-
-/**
- * @param {string} str
- * @returns {ArrayBuffer}
- */
-function string2ArrayBuffer(str) {
-  const buf = new ArrayBuffer(str.length);
-  const bufView = new Uint8Array(buf);
-  for (let i = 0, strLen = str.length; i < strLen; i++) {
-    bufView[i] = str.charCodeAt(i);
-  }
-  return buf;
-}
-
-/**
- * @param {string} pem
- * @returns {ArrayBuffer}
- */
-function getDERfromPEM(pem) {
-  const pemB64 = pem
-    .trim()
-    .split("\n")
-    .slice(1, -1) // Remove the --- BEGIN / END PRIVATE KEY ---
-    .join("");
-
-  const decoded = atob(pemB64);
-  return string2ArrayBuffer(decoded);
-}
-
-/**
- * @param {import('../internals').Header} header
- * @param {import('../internals').Payload} payload
- * @returns {string}
- */
-function getEncodedMessage(header, payload) {
-  return `${base64encodeJSON(header)}.${base64encodeJSON(payload)}`;
-}
-
-/**
- * @param {ArrayBuffer} buffer
- * @returns {string}
- */
-function base64encode(buffer) {
-  var binary = "";
-  var bytes = new Uint8Array(buffer);
-  var len = bytes.byteLength;
-  for (var i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-
-  return fromBase64(btoa(binary));
-}
-
-/**
- * @param {string} base64
- * @returns {string}
- */
-function fromBase64(base64) {
-  return base64.replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-}
-
-/**
- * @param {Record<string,unknown>} obj
- * @returns {string}
- */
-function base64encodeJSON(obj) {
-  return fromBase64(btoa(JSON.stringify(obj)));
-}
-
-// this can be removed once we only support Node 20+
-
-// no-op, unfortunately there is no way to transform from PKCS8 or OpenSSH to PKCS1 with WebCrypto
-function convertPrivateKey(privateKey) {
-  if (!isPkcs1(privateKey)) return privateKey;
-
-  return createPrivateKey(privateKey).export({
-    type: "pkcs8",
-    format: "pem",
-  });
-}
-
-// we don't @ts-check here because it chokes crypto which is a global API in modern JS runtime environments
-
-/**
- * @param {import('../internals').GetTokenOptions} options
- * @returns {Promise<string>}
- */
-async function getToken({ privateKey, payload }) {
-  const convertedPrivateKey = convertPrivateKey(privateKey);
-
-  // WebCrypto only supports PKCS#8, unfortunately
-  /* c8 ignore start */
-  if (isPkcs1(convertedPrivateKey)) {
-    throw new Error(
-      "[universal-github-app-jwt] Private Key is in PKCS#1 format, but only PKCS#8 is supported. See https://github.com/gr2m/universal-github-app-jwt#private-key-formats"
-    );
-  }
-  /* c8 ignore stop */
-
-  // WebCrypto does not support OpenSSH, unfortunately
-  if (isOpenSsh(convertedPrivateKey)) {
-    throw new Error(
-      "[universal-github-app-jwt] Private Key is in OpenSSH format, but only PKCS#8 is supported. See https://github.com/gr2m/universal-github-app-jwt#private-key-formats"
-    );
-  }
-
-  const algorithm = {
-    name: "RSASSA-PKCS1-v1_5",
-    hash: { name: "SHA-256" },
-  };
-
-  /** @type {import('../internals').Header} */
-  const header = { alg: "RS256", typ: "JWT" };
-
-  const privateKeyDER = getDERfromPEM(convertedPrivateKey);
-  const importedKey = await subtle.importKey(
-    "pkcs8",
-    privateKeyDER,
-    algorithm,
-    false,
-    ["sign"]
-  );
-
-  const encodedMessage = getEncodedMessage(header, payload);
-  const encodedMessageArrBuf = string2ArrayBuffer(encodedMessage);
-
-  const signatureArrBuf = await subtle.sign(
-    algorithm.name,
-    importedKey,
-    encodedMessageArrBuf
-  );
-
-  const encodedSignature = base64encode(signatureArrBuf);
-
-  return `${encodedMessage}.${encodedSignature}`;
-}
-
-// @ts-check
-
-/**
- * @param {import(".").Options} options
- * @returns {Promise<import(".").Result>}
- */
-async function githubAppJwt({
-  id,
-  privateKey,
-  now = Math.floor(Date.now() / 1000),
-}) {
-  // Private keys are often times configured as environment variables, in which case line breaks are escaped using `\\n`.
-  // Replace these here for convenience.
-  const privateKeyWithNewlines = privateKey.replace(/\\n/g, '\n');
-
-  // When creating a JSON Web Token, it sets the "issued at time" (iat) to 30s
-  // in the past as we have seen people running situations where the GitHub API
-  // claimed the iat would be in future. It turned out the clocks on the
-  // different machine were not in sync.
-  const nowWithSafetyMargin = now - 30;
-  const expiration = nowWithSafetyMargin + 60 * 10; // JWT expiration time (10 minute maximum)
-
-  const payload = {
-    iat: nowWithSafetyMargin, // Issued at time
-    exp: expiration,
-    iss: id,
-  };
-
-  const token = await getToken({
-    privateKey: privateKeyWithNewlines,
-    payload,
-  });
-
-  return {
-    appId: id,
-    expiration,
-    token,
-  };
-}
-
-/**
- * @module LRUCache
- */
-const perf = typeof performance === 'object' &&
-    performance &&
-    typeof performance.now === 'function'
-    ? performance
-    : Date;
-const warned = new Set();
-/* c8 ignore start */
-const PROCESS = (typeof process === 'object' && !!process ? process : {});
-/* c8 ignore start */
-const emitWarning = (msg, type, code, fn) => {
-    typeof PROCESS.emitWarning === 'function'
-        ? PROCESS.emitWarning(msg, type, code, fn)
-        : console.error(`[${code}] ${type}: ${msg}`);
-};
-let AC = globalThis.AbortController;
-let AS = globalThis.AbortSignal;
-/* c8 ignore start */
-if (typeof AC === 'undefined') {
-    //@ts-ignore
-    AS = class AbortSignal {
-        onabort;
-        _onabort = [];
-        reason;
-        aborted = false;
-        addEventListener(_, fn) {
-            this._onabort.push(fn);
-        }
-    };
-    //@ts-ignore
-    AC = class AbortController {
-        constructor() {
-            warnACPolyfill();
-        }
-        signal = new AS();
-        abort(reason) {
-            if (this.signal.aborted)
-                return;
-            //@ts-ignore
-            this.signal.reason = reason;
-            //@ts-ignore
-            this.signal.aborted = true;
-            //@ts-ignore
-            for (const fn of this.signal._onabort) {
-                fn(reason);
-            }
-            this.signal.onabort?.(reason);
-        }
-    };
-    let printACPolyfillWarning = PROCESS.env?.LRU_CACHE_IGNORE_AC_WARNING !== '1';
-    const warnACPolyfill = () => {
-        if (!printACPolyfillWarning)
-            return;
-        printACPolyfillWarning = false;
-        emitWarning('AbortController is not defined. If using lru-cache in ' +
-            'node 14, load an AbortController polyfill from the ' +
-            '`node-abort-controller` package. A minimal polyfill is ' +
-            'provided for use by LRUCache.fetch(), but it should not be ' +
-            'relied upon in other contexts (eg, passing it to other APIs that ' +
-            'use AbortController/AbortSignal might have undesirable effects). ' +
-            'You may disable this with LRU_CACHE_IGNORE_AC_WARNING=1 in the env.', 'NO_ABORT_CONTROLLER', 'ENOTSUP', warnACPolyfill);
-    };
-}
-/* c8 ignore stop */
-const shouldWarn = (code) => !warned.has(code);
-const isPosInt = (n) => n && n === Math.floor(n) && n > 0 && isFinite(n);
-/* c8 ignore start */
-// This is a little bit ridiculous, tbh.
-// The maximum array length is 2^32-1 or thereabouts on most JS impls.
-// And well before that point, you're caching the entire world, I mean,
-// that's ~32GB of just integers for the next/prev links, plus whatever
-// else to hold that many keys and values.  Just filling the memory with
-// zeroes at init time is brutal when you get that big.
-// But why not be complete?
-// Maybe in the future, these limits will have expanded.
-const getUintArray = (max) => !isPosInt(max)
-    ? null
-    : max <= Math.pow(2, 8)
-        ? Uint8Array
-        : max <= Math.pow(2, 16)
-            ? Uint16Array
-            : max <= Math.pow(2, 32)
-                ? Uint32Array
-                : max <= Number.MAX_SAFE_INTEGER
-                    ? ZeroArray
-                    : null;
-/* c8 ignore stop */
-class ZeroArray extends Array {
-    constructor(size) {
-        super(size);
-        this.fill(0);
-    }
-}
-class Stack {
-    heap;
-    length;
-    // private constructor
-    static #constructing = false;
-    static create(max) {
-        const HeapCls = getUintArray(max);
-        if (!HeapCls)
-            return [];
-        Stack.#constructing = true;
-        const s = new Stack(max, HeapCls);
-        Stack.#constructing = false;
-        return s;
-    }
-    constructor(max, HeapCls) {
-        /* c8 ignore start */
-        if (!Stack.#constructing) {
-            throw new TypeError('instantiate Stack using Stack.create(n)');
-        }
-        /* c8 ignore stop */
-        this.heap = new HeapCls(max);
-        this.length = 0;
-    }
-    push(n) {
-        this.heap[this.length++] = n;
-    }
-    pop() {
-        return this.heap[--this.length];
-    }
-}
-/**
- * Default export, the thing you're using this module to get.
- *
- * All properties from the options object (with the exception of
- * {@link OptionsBase.max} and {@link OptionsBase.maxSize}) are added as
- * normal public members. (`max` and `maxBase` are read-only getters.)
- * Changing any of these will alter the defaults for subsequent method calls,
- * but is otherwise safe.
- */
-class LRUCache {
-    // properties coming in from the options of these, only max and maxSize
-    // really *need* to be protected. The rest can be modified, as they just
-    // set defaults for various methods.
-    #max;
-    #maxSize;
-    #dispose;
-    #disposeAfter;
-    #fetchMethod;
-    /**
-     * {@link LRUCache.OptionsBase.ttl}
-     */
-    ttl;
-    /**
-     * {@link LRUCache.OptionsBase.ttlResolution}
-     */
-    ttlResolution;
-    /**
-     * {@link LRUCache.OptionsBase.ttlAutopurge}
-     */
-    ttlAutopurge;
-    /**
-     * {@link LRUCache.OptionsBase.updateAgeOnGet}
-     */
-    updateAgeOnGet;
-    /**
-     * {@link LRUCache.OptionsBase.updateAgeOnHas}
-     */
-    updateAgeOnHas;
-    /**
-     * {@link LRUCache.OptionsBase.allowStale}
-     */
-    allowStale;
-    /**
-     * {@link LRUCache.OptionsBase.noDisposeOnSet}
-     */
-    noDisposeOnSet;
-    /**
-     * {@link LRUCache.OptionsBase.noUpdateTTL}
-     */
-    noUpdateTTL;
-    /**
-     * {@link LRUCache.OptionsBase.maxEntrySize}
-     */
-    maxEntrySize;
-    /**
-     * {@link LRUCache.OptionsBase.sizeCalculation}
-     */
-    sizeCalculation;
-    /**
-     * {@link LRUCache.OptionsBase.noDeleteOnFetchRejection}
-     */
-    noDeleteOnFetchRejection;
-    /**
-     * {@link LRUCache.OptionsBase.noDeleteOnStaleGet}
-     */
-    noDeleteOnStaleGet;
-    /**
-     * {@link LRUCache.OptionsBase.allowStaleOnFetchAbort}
-     */
-    allowStaleOnFetchAbort;
-    /**
-     * {@link LRUCache.OptionsBase.allowStaleOnFetchRejection}
-     */
-    allowStaleOnFetchRejection;
-    /**
-     * {@link LRUCache.OptionsBase.ignoreFetchAbort}
-     */
-    ignoreFetchAbort;
-    // computed properties
-    #size;
-    #calculatedSize;
-    #keyMap;
-    #keyList;
-    #valList;
-    #next;
-    #prev;
-    #head;
-    #tail;
-    #free;
-    #disposed;
-    #sizes;
-    #starts;
-    #ttls;
-    #hasDispose;
-    #hasFetchMethod;
-    #hasDisposeAfter;
-    /**
-     * Do not call this method unless you need to inspect the
-     * inner workings of the cache.  If anything returned by this
-     * object is modified in any way, strange breakage may occur.
-     *
-     * These fields are private for a reason!
-     *
-     * @internal
-     */
-    static unsafeExposeInternals(c) {
-        return {
-            // properties
-            starts: c.#starts,
-            ttls: c.#ttls,
-            sizes: c.#sizes,
-            keyMap: c.#keyMap,
-            keyList: c.#keyList,
-            valList: c.#valList,
-            next: c.#next,
-            prev: c.#prev,
-            get head() {
-                return c.#head;
-            },
-            get tail() {
-                return c.#tail;
-            },
-            free: c.#free,
-            // methods
-            isBackgroundFetch: (p) => c.#isBackgroundFetch(p),
-            backgroundFetch: (k, index, options, context) => c.#backgroundFetch(k, index, options, context),
-            moveToTail: (index) => c.#moveToTail(index),
-            indexes: (options) => c.#indexes(options),
-            rindexes: (options) => c.#rindexes(options),
-            isStale: (index) => c.#isStale(index),
-        };
-    }
-    // Protected read-only members
-    /**
-     * {@link LRUCache.OptionsBase.max} (read-only)
-     */
-    get max() {
-        return this.#max;
-    }
-    /**
-     * {@link LRUCache.OptionsBase.maxSize} (read-only)
-     */
-    get maxSize() {
-        return this.#maxSize;
-    }
-    /**
-     * The total computed size of items in the cache (read-only)
-     */
-    get calculatedSize() {
-        return this.#calculatedSize;
-    }
-    /**
-     * The number of items stored in the cache (read-only)
-     */
-    get size() {
-        return this.#size;
-    }
-    /**
-     * {@link LRUCache.OptionsBase.fetchMethod} (read-only)
-     */
-    get fetchMethod() {
-        return this.#fetchMethod;
-    }
-    /**
-     * {@link LRUCache.OptionsBase.dispose} (read-only)
-     */
-    get dispose() {
-        return this.#dispose;
-    }
-    /**
-     * {@link LRUCache.OptionsBase.disposeAfter} (read-only)
-     */
-    get disposeAfter() {
-        return this.#disposeAfter;
-    }
-    constructor(options) {
-        const { max = 0, ttl, ttlResolution = 1, ttlAutopurge, updateAgeOnGet, updateAgeOnHas, allowStale, dispose, disposeAfter, noDisposeOnSet, noUpdateTTL, maxSize = 0, maxEntrySize = 0, sizeCalculation, fetchMethod, noDeleteOnFetchRejection, noDeleteOnStaleGet, allowStaleOnFetchRejection, allowStaleOnFetchAbort, ignoreFetchAbort, } = options;
-        if (max !== 0 && !isPosInt(max)) {
-            throw new TypeError('max option must be a nonnegative integer');
-        }
-        const UintArray = max ? getUintArray(max) : Array;
-        if (!UintArray) {
-            throw new Error('invalid max value: ' + max);
-        }
-        this.#max = max;
-        this.#maxSize = maxSize;
-        this.maxEntrySize = maxEntrySize || this.#maxSize;
-        this.sizeCalculation = sizeCalculation;
-        if (this.sizeCalculation) {
-            if (!this.#maxSize && !this.maxEntrySize) {
-                throw new TypeError('cannot set sizeCalculation without setting maxSize or maxEntrySize');
-            }
-            if (typeof this.sizeCalculation !== 'function') {
-                throw new TypeError('sizeCalculation set to non-function');
-            }
-        }
-        if (fetchMethod !== undefined &&
-            typeof fetchMethod !== 'function') {
-            throw new TypeError('fetchMethod must be a function if specified');
-        }
-        this.#fetchMethod = fetchMethod;
-        this.#hasFetchMethod = !!fetchMethod;
-        this.#keyMap = new Map();
-        this.#keyList = new Array(max).fill(undefined);
-        this.#valList = new Array(max).fill(undefined);
-        this.#next = new UintArray(max);
-        this.#prev = new UintArray(max);
-        this.#head = 0;
-        this.#tail = 0;
-        this.#free = Stack.create(max);
-        this.#size = 0;
-        this.#calculatedSize = 0;
-        if (typeof dispose === 'function') {
-            this.#dispose = dispose;
-        }
-        if (typeof disposeAfter === 'function') {
-            this.#disposeAfter = disposeAfter;
-            this.#disposed = [];
-        }
-        else {
-            this.#disposeAfter = undefined;
-            this.#disposed = undefined;
-        }
-        this.#hasDispose = !!this.#dispose;
-        this.#hasDisposeAfter = !!this.#disposeAfter;
-        this.noDisposeOnSet = !!noDisposeOnSet;
-        this.noUpdateTTL = !!noUpdateTTL;
-        this.noDeleteOnFetchRejection = !!noDeleteOnFetchRejection;
-        this.allowStaleOnFetchRejection = !!allowStaleOnFetchRejection;
-        this.allowStaleOnFetchAbort = !!allowStaleOnFetchAbort;
-        this.ignoreFetchAbort = !!ignoreFetchAbort;
-        // NB: maxEntrySize is set to maxSize if it's set
-        if (this.maxEntrySize !== 0) {
-            if (this.#maxSize !== 0) {
-                if (!isPosInt(this.#maxSize)) {
-                    throw new TypeError('maxSize must be a positive integer if specified');
-                }
-            }
-            if (!isPosInt(this.maxEntrySize)) {
-                throw new TypeError('maxEntrySize must be a positive integer if specified');
-            }
-            this.#initializeSizeTracking();
-        }
-        this.allowStale = !!allowStale;
-        this.noDeleteOnStaleGet = !!noDeleteOnStaleGet;
-        this.updateAgeOnGet = !!updateAgeOnGet;
-        this.updateAgeOnHas = !!updateAgeOnHas;
-        this.ttlResolution =
-            isPosInt(ttlResolution) || ttlResolution === 0
-                ? ttlResolution
-                : 1;
-        this.ttlAutopurge = !!ttlAutopurge;
-        this.ttl = ttl || 0;
-        if (this.ttl) {
-            if (!isPosInt(this.ttl)) {
-                throw new TypeError('ttl must be a positive integer if specified');
-            }
-            this.#initializeTTLTracking();
-        }
-        // do not allow completely unbounded caches
-        if (this.#max === 0 && this.ttl === 0 && this.#maxSize === 0) {
-            throw new TypeError('At least one of max, maxSize, or ttl is required');
-        }
-        if (!this.ttlAutopurge && !this.#max && !this.#maxSize) {
-            const code = 'LRU_CACHE_UNBOUNDED';
-            if (shouldWarn(code)) {
-                warned.add(code);
-                const msg = 'TTL caching without ttlAutopurge, max, or maxSize can ' +
-                    'result in unbounded memory consumption.';
-                emitWarning(msg, 'UnboundedCacheWarning', code, LRUCache);
-            }
-        }
-    }
-    /**
-     * Return the remaining TTL time for a given entry key
-     */
-    getRemainingTTL(key) {
-        return this.#keyMap.has(key) ? Infinity : 0;
-    }
-    #initializeTTLTracking() {
-        const ttls = new ZeroArray(this.#max);
-        const starts = new ZeroArray(this.#max);
-        this.#ttls = ttls;
-        this.#starts = starts;
-        this.#setItemTTL = (index, ttl, start = perf.now()) => {
-            starts[index] = ttl !== 0 ? start : 0;
-            ttls[index] = ttl;
-            if (ttl !== 0 && this.ttlAutopurge) {
-                const t = setTimeout(() => {
-                    if (this.#isStale(index)) {
-                        this.delete(this.#keyList[index]);
-                    }
-                }, ttl + 1);
-                // unref() not supported on all platforms
-                /* c8 ignore start */
-                if (t.unref) {
-                    t.unref();
-                }
-                /* c8 ignore stop */
-            }
-        };
-        this.#updateItemAge = index => {
-            starts[index] = ttls[index] !== 0 ? perf.now() : 0;
-        };
-        this.#statusTTL = (status, index) => {
-            if (ttls[index]) {
-                const ttl = ttls[index];
-                const start = starts[index];
-                /* c8 ignore next */
-                if (!ttl || !start)
-                    return;
-                status.ttl = ttl;
-                status.start = start;
-                status.now = cachedNow || getNow();
-                const age = status.now - start;
-                status.remainingTTL = ttl - age;
-            }
-        };
-        // debounce calls to perf.now() to 1s so we're not hitting
-        // that costly call repeatedly.
-        let cachedNow = 0;
-        const getNow = () => {
-            const n = perf.now();
-            if (this.ttlResolution > 0) {
-                cachedNow = n;
-                const t = setTimeout(() => (cachedNow = 0), this.ttlResolution);
-                // not available on all platforms
-                /* c8 ignore start */
-                if (t.unref) {
-                    t.unref();
-                }
-                /* c8 ignore stop */
-            }
-            return n;
-        };
-        this.getRemainingTTL = key => {
-            const index = this.#keyMap.get(key);
-            if (index === undefined) {
-                return 0;
-            }
-            const ttl = ttls[index];
-            const start = starts[index];
-            if (!ttl || !start) {
-                return Infinity;
-            }
-            const age = (cachedNow || getNow()) - start;
-            return ttl - age;
-        };
-        this.#isStale = index => {
-            const s = starts[index];
-            const t = ttls[index];
-            return !!t && !!s && (cachedNow || getNow()) - s > t;
-        };
-    }
-    // conditionally set private methods related to TTL
-    #updateItemAge = () => { };
-    #statusTTL = () => { };
-    #setItemTTL = () => { };
-    /* c8 ignore stop */
-    #isStale = () => false;
-    #initializeSizeTracking() {
-        const sizes = new ZeroArray(this.#max);
-        this.#calculatedSize = 0;
-        this.#sizes = sizes;
-        this.#removeItemSize = index => {
-            this.#calculatedSize -= sizes[index];
-            sizes[index] = 0;
-        };
-        this.#requireSize = (k, v, size, sizeCalculation) => {
-            // provisionally accept background fetches.
-            // actual value size will be checked when they return.
-            if (this.#isBackgroundFetch(v)) {
-                return 0;
-            }
-            if (!isPosInt(size)) {
-                if (sizeCalculation) {
-                    if (typeof sizeCalculation !== 'function') {
-                        throw new TypeError('sizeCalculation must be a function');
-                    }
-                    size = sizeCalculation(v, k);
-                    if (!isPosInt(size)) {
-                        throw new TypeError('sizeCalculation return invalid (expect positive integer)');
-                    }
-                }
-                else {
-                    throw new TypeError('invalid size value (must be positive integer). ' +
-                        'When maxSize or maxEntrySize is used, sizeCalculation ' +
-                        'or size must be set.');
-                }
-            }
-            return size;
-        };
-        this.#addItemSize = (index, size, status) => {
-            sizes[index] = size;
-            if (this.#maxSize) {
-                const maxSize = this.#maxSize - sizes[index];
-                while (this.#calculatedSize > maxSize) {
-                    this.#evict(true);
-                }
-            }
-            this.#calculatedSize += sizes[index];
-            if (status) {
-                status.entrySize = size;
-                status.totalCalculatedSize = this.#calculatedSize;
-            }
-        };
-    }
-    #removeItemSize = _i => { };
-    #addItemSize = (_i, _s, _st) => { };
-    #requireSize = (_k, _v, size, sizeCalculation) => {
-        if (size || sizeCalculation) {
-            throw new TypeError('cannot set size without setting maxSize or maxEntrySize on cache');
-        }
-        return 0;
-    };
-    *#indexes({ allowStale = this.allowStale } = {}) {
-        if (this.#size) {
-            for (let i = this.#tail; true;) {
-                if (!this.#isValidIndex(i)) {
-                    break;
-                }
-                if (allowStale || !this.#isStale(i)) {
-                    yield i;
-                }
-                if (i === this.#head) {
-                    break;
-                }
-                else {
-                    i = this.#prev[i];
-                }
-            }
-        }
-    }
-    *#rindexes({ allowStale = this.allowStale } = {}) {
-        if (this.#size) {
-            for (let i = this.#head; true;) {
-                if (!this.#isValidIndex(i)) {
-                    break;
-                }
-                if (allowStale || !this.#isStale(i)) {
-                    yield i;
-                }
-                if (i === this.#tail) {
-                    break;
-                }
-                else {
-                    i = this.#next[i];
-                }
-            }
-        }
-    }
-    #isValidIndex(index) {
-        return (index !== undefined &&
-            this.#keyMap.get(this.#keyList[index]) === index);
-    }
-    /**
-     * Return a generator yielding `[key, value]` pairs,
-     * in order from most recently used to least recently used.
-     */
-    *entries() {
-        for (const i of this.#indexes()) {
-            if (this.#valList[i] !== undefined &&
-                this.#keyList[i] !== undefined &&
-                !this.#isBackgroundFetch(this.#valList[i])) {
-                yield [this.#keyList[i], this.#valList[i]];
-            }
-        }
-    }
-    /**
-     * Inverse order version of {@link LRUCache.entries}
-     *
-     * Return a generator yielding `[key, value]` pairs,
-     * in order from least recently used to most recently used.
-     */
-    *rentries() {
-        for (const i of this.#rindexes()) {
-            if (this.#valList[i] !== undefined &&
-                this.#keyList[i] !== undefined &&
-                !this.#isBackgroundFetch(this.#valList[i])) {
-                yield [this.#keyList[i], this.#valList[i]];
-            }
-        }
-    }
-    /**
-     * Return a generator yielding the keys in the cache,
-     * in order from most recently used to least recently used.
-     */
-    *keys() {
-        for (const i of this.#indexes()) {
-            const k = this.#keyList[i];
-            if (k !== undefined &&
-                !this.#isBackgroundFetch(this.#valList[i])) {
-                yield k;
-            }
-        }
-    }
-    /**
-     * Inverse order version of {@link LRUCache.keys}
-     *
-     * Return a generator yielding the keys in the cache,
-     * in order from least recently used to most recently used.
-     */
-    *rkeys() {
-        for (const i of this.#rindexes()) {
-            const k = this.#keyList[i];
-            if (k !== undefined &&
-                !this.#isBackgroundFetch(this.#valList[i])) {
-                yield k;
-            }
-        }
-    }
-    /**
-     * Return a generator yielding the values in the cache,
-     * in order from most recently used to least recently used.
-     */
-    *values() {
-        for (const i of this.#indexes()) {
-            const v = this.#valList[i];
-            if (v !== undefined &&
-                !this.#isBackgroundFetch(this.#valList[i])) {
-                yield this.#valList[i];
-            }
-        }
-    }
-    /**
-     * Inverse order version of {@link LRUCache.values}
-     *
-     * Return a generator yielding the values in the cache,
-     * in order from least recently used to most recently used.
-     */
-    *rvalues() {
-        for (const i of this.#rindexes()) {
-            const v = this.#valList[i];
-            if (v !== undefined &&
-                !this.#isBackgroundFetch(this.#valList[i])) {
-                yield this.#valList[i];
-            }
-        }
-    }
-    /**
-     * Iterating over the cache itself yields the same results as
-     * {@link LRUCache.entries}
-     */
-    [Symbol.iterator]() {
-        return this.entries();
-    }
-    /**
-     * A String value that is used in the creation of the default string description of an object.
-     * Called by the built-in method Object.prototype.toString.
-     */
-    [Symbol.toStringTag] = 'LRUCache';
-    /**
-     * Find a value for which the supplied fn method returns a truthy value,
-     * similar to Array.find().  fn is called as fn(value, key, cache).
-     */
-    find(fn, getOptions = {}) {
-        for (const i of this.#indexes()) {
-            const v = this.#valList[i];
-            const value = this.#isBackgroundFetch(v)
-                ? v.__staleWhileFetching
-                : v;
-            if (value === undefined)
-                continue;
-            if (fn(value, this.#keyList[i], this)) {
-                return this.get(this.#keyList[i], getOptions);
-            }
-        }
-    }
-    /**
-     * Call the supplied function on each item in the cache, in order from
-     * most recently used to least recently used.  fn is called as
-     * fn(value, key, cache).  Does not update age or recenty of use.
-     * Does not iterate over stale values.
-     */
-    forEach(fn, thisp = this) {
-        for (const i of this.#indexes()) {
-            const v = this.#valList[i];
-            const value = this.#isBackgroundFetch(v)
-                ? v.__staleWhileFetching
-                : v;
-            if (value === undefined)
-                continue;
-            fn.call(thisp, value, this.#keyList[i], this);
-        }
-    }
-    /**
-     * The same as {@link LRUCache.forEach} but items are iterated over in
-     * reverse order.  (ie, less recently used items are iterated over first.)
-     */
-    rforEach(fn, thisp = this) {
-        for (const i of this.#rindexes()) {
-            const v = this.#valList[i];
-            const value = this.#isBackgroundFetch(v)
-                ? v.__staleWhileFetching
-                : v;
-            if (value === undefined)
-                continue;
-            fn.call(thisp, value, this.#keyList[i], this);
-        }
-    }
-    /**
-     * Delete any stale entries. Returns true if anything was removed,
-     * false otherwise.
-     */
-    purgeStale() {
-        let deleted = false;
-        for (const i of this.#rindexes({ allowStale: true })) {
-            if (this.#isStale(i)) {
-                this.delete(this.#keyList[i]);
-                deleted = true;
-            }
-        }
-        return deleted;
-    }
-    /**
-     * Get the extended info about a given entry, to get its value, size, and
-     * TTL info simultaneously. Like {@link LRUCache#dump}, but just for a
-     * single key. Always returns stale values, if their info is found in the
-     * cache, so be sure to check for expired TTLs if relevant.
-     */
-    info(key) {
-        const i = this.#keyMap.get(key);
-        if (i === undefined)
-            return undefined;
-        const v = this.#valList[i];
-        const value = this.#isBackgroundFetch(v)
-            ? v.__staleWhileFetching
-            : v;
-        if (value === undefined)
-            return undefined;
-        const entry = { value };
-        if (this.#ttls && this.#starts) {
-            const ttl = this.#ttls[i];
-            const start = this.#starts[i];
-            if (ttl && start) {
-                const remain = ttl - (perf.now() - start);
-                entry.ttl = remain;
-                entry.start = Date.now();
-            }
-        }
-        if (this.#sizes) {
-            entry.size = this.#sizes[i];
-        }
-        return entry;
-    }
-    /**
-     * Return an array of [key, {@link LRUCache.Entry}] tuples which can be
-     * passed to cache.load()
-     */
-    dump() {
-        const arr = [];
-        for (const i of this.#indexes({ allowStale: true })) {
-            const key = this.#keyList[i];
-            const v = this.#valList[i];
-            const value = this.#isBackgroundFetch(v)
-                ? v.__staleWhileFetching
-                : v;
-            if (value === undefined || key === undefined)
-                continue;
-            const entry = { value };
-            if (this.#ttls && this.#starts) {
-                entry.ttl = this.#ttls[i];
-                // always dump the start relative to a portable timestamp
-                // it's ok for this to be a bit slow, it's a rare operation.
-                const age = perf.now() - this.#starts[i];
-                entry.start = Math.floor(Date.now() - age);
-            }
-            if (this.#sizes) {
-                entry.size = this.#sizes[i];
-            }
-            arr.unshift([key, entry]);
-        }
-        return arr;
-    }
-    /**
-     * Reset the cache and load in the items in entries in the order listed.
-     * Note that the shape of the resulting cache may be different if the
-     * same options are not used in both caches.
-     */
-    load(arr) {
-        this.clear();
-        for (const [key, entry] of arr) {
-            if (entry.start) {
-                // entry.start is a portable timestamp, but we may be using
-                // node's performance.now(), so calculate the offset, so that
-                // we get the intended remaining TTL, no matter how long it's
-                // been on ice.
-                //
-                // it's ok for this to be a bit slow, it's a rare operation.
-                const age = Date.now() - entry.start;
-                entry.start = perf.now() - age;
-            }
-            this.set(key, entry.value, entry);
-        }
-    }
-    /**
-     * Add a value to the cache.
-     *
-     * Note: if `undefined` is specified as a value, this is an alias for
-     * {@link LRUCache#delete}
-     */
-    set(k, v, setOptions = {}) {
-        if (v === undefined) {
-            this.delete(k);
-            return this;
-        }
-        const { ttl = this.ttl, start, noDisposeOnSet = this.noDisposeOnSet, sizeCalculation = this.sizeCalculation, status, } = setOptions;
-        let { noUpdateTTL = this.noUpdateTTL } = setOptions;
-        const size = this.#requireSize(k, v, setOptions.size || 0, sizeCalculation);
-        // if the item doesn't fit, don't do anything
-        // NB: maxEntrySize set to maxSize by default
-        if (this.maxEntrySize && size > this.maxEntrySize) {
-            if (status) {
-                status.set = 'miss';
-                status.maxEntrySizeExceeded = true;
-            }
-            // have to delete, in case something is there already.
-            this.delete(k);
-            return this;
-        }
-        let index = this.#size === 0 ? undefined : this.#keyMap.get(k);
-        if (index === undefined) {
-            // addition
-            index = (this.#size === 0
-                ? this.#tail
-                : this.#free.length !== 0
-                    ? this.#free.pop()
-                    : this.#size === this.#max
-                        ? this.#evict(false)
-                        : this.#size);
-            this.#keyList[index] = k;
-            this.#valList[index] = v;
-            this.#keyMap.set(k, index);
-            this.#next[this.#tail] = index;
-            this.#prev[index] = this.#tail;
-            this.#tail = index;
-            this.#size++;
-            this.#addItemSize(index, size, status);
-            if (status)
-                status.set = 'add';
-            noUpdateTTL = false;
-        }
-        else {
-            // update
-            this.#moveToTail(index);
-            const oldVal = this.#valList[index];
-            if (v !== oldVal) {
-                if (this.#hasFetchMethod && this.#isBackgroundFetch(oldVal)) {
-                    oldVal.__abortController.abort(new Error('replaced'));
-                    const { __staleWhileFetching: s } = oldVal;
-                    if (s !== undefined && !noDisposeOnSet) {
-                        if (this.#hasDispose) {
-                            this.#dispose?.(s, k, 'set');
-                        }
-                        if (this.#hasDisposeAfter) {
-                            this.#disposed?.push([s, k, 'set']);
-                        }
-                    }
-                }
-                else if (!noDisposeOnSet) {
-                    if (this.#hasDispose) {
-                        this.#dispose?.(oldVal, k, 'set');
-                    }
-                    if (this.#hasDisposeAfter) {
-                        this.#disposed?.push([oldVal, k, 'set']);
-                    }
-                }
-                this.#removeItemSize(index);
-                this.#addItemSize(index, size, status);
-                this.#valList[index] = v;
-                if (status) {
-                    status.set = 'replace';
-                    const oldValue = oldVal && this.#isBackgroundFetch(oldVal)
-                        ? oldVal.__staleWhileFetching
-                        : oldVal;
-                    if (oldValue !== undefined)
-                        status.oldValue = oldValue;
-                }
-            }
-            else if (status) {
-                status.set = 'update';
-            }
-        }
-        if (ttl !== 0 && !this.#ttls) {
-            this.#initializeTTLTracking();
-        }
-        if (this.#ttls) {
-            if (!noUpdateTTL) {
-                this.#setItemTTL(index, ttl, start);
-            }
-            if (status)
-                this.#statusTTL(status, index);
-        }
-        if (!noDisposeOnSet && this.#hasDisposeAfter && this.#disposed) {
-            const dt = this.#disposed;
-            let task;
-            while ((task = dt?.shift())) {
-                this.#disposeAfter?.(...task);
-            }
-        }
-        return this;
-    }
-    /**
-     * Evict the least recently used item, returning its value or
-     * `undefined` if cache is empty.
-     */
-    pop() {
-        try {
-            while (this.#size) {
-                const val = this.#valList[this.#head];
-                this.#evict(true);
-                if (this.#isBackgroundFetch(val)) {
-                    if (val.__staleWhileFetching) {
-                        return val.__staleWhileFetching;
-                    }
-                }
-                else if (val !== undefined) {
-                    return val;
-                }
-            }
-        }
-        finally {
-            if (this.#hasDisposeAfter && this.#disposed) {
-                const dt = this.#disposed;
-                let task;
-                while ((task = dt?.shift())) {
-                    this.#disposeAfter?.(...task);
-                }
-            }
-        }
-    }
-    #evict(free) {
-        const head = this.#head;
-        const k = this.#keyList[head];
-        const v = this.#valList[head];
-        if (this.#hasFetchMethod && this.#isBackgroundFetch(v)) {
-            v.__abortController.abort(new Error('evicted'));
-        }
-        else if (this.#hasDispose || this.#hasDisposeAfter) {
-            if (this.#hasDispose) {
-                this.#dispose?.(v, k, 'evict');
-            }
-            if (this.#hasDisposeAfter) {
-                this.#disposed?.push([v, k, 'evict']);
-            }
-        }
-        this.#removeItemSize(head);
-        // if we aren't about to use the index, then null these out
-        if (free) {
-            this.#keyList[head] = undefined;
-            this.#valList[head] = undefined;
-            this.#free.push(head);
-        }
-        if (this.#size === 1) {
-            this.#head = this.#tail = 0;
-            this.#free.length = 0;
-        }
-        else {
-            this.#head = this.#next[head];
-        }
-        this.#keyMap.delete(k);
-        this.#size--;
-        return head;
-    }
-    /**
-     * Check if a key is in the cache, without updating the recency of use.
-     * Will return false if the item is stale, even though it is technically
-     * in the cache.
-     *
-     * Will not update item age unless
-     * {@link LRUCache.OptionsBase.updateAgeOnHas} is set.
-     */
-    has(k, hasOptions = {}) {
-        const { updateAgeOnHas = this.updateAgeOnHas, status } = hasOptions;
-        const index = this.#keyMap.get(k);
-        if (index !== undefined) {
-            const v = this.#valList[index];
-            if (this.#isBackgroundFetch(v) &&
-                v.__staleWhileFetching === undefined) {
-                return false;
-            }
-            if (!this.#isStale(index)) {
-                if (updateAgeOnHas) {
-                    this.#updateItemAge(index);
-                }
-                if (status) {
-                    status.has = 'hit';
-                    this.#statusTTL(status, index);
-                }
-                return true;
-            }
-            else if (status) {
-                status.has = 'stale';
-                this.#statusTTL(status, index);
-            }
-        }
-        else if (status) {
-            status.has = 'miss';
-        }
-        return false;
-    }
-    /**
-     * Like {@link LRUCache#get} but doesn't update recency or delete stale
-     * items.
-     *
-     * Returns `undefined` if the item is stale, unless
-     * {@link LRUCache.OptionsBase.allowStale} is set.
-     */
-    peek(k, peekOptions = {}) {
-        const { allowStale = this.allowStale } = peekOptions;
-        const index = this.#keyMap.get(k);
-        if (index === undefined ||
-            (!allowStale && this.#isStale(index))) {
-            return;
-        }
-        const v = this.#valList[index];
-        // either stale and allowed, or forcing a refresh of non-stale value
-        return this.#isBackgroundFetch(v) ? v.__staleWhileFetching : v;
-    }
-    #backgroundFetch(k, index, options, context) {
-        const v = index === undefined ? undefined : this.#valList[index];
-        if (this.#isBackgroundFetch(v)) {
-            return v;
-        }
-        const ac = new AC();
-        const { signal } = options;
-        // when/if our AC signals, then stop listening to theirs.
-        signal?.addEventListener('abort', () => ac.abort(signal.reason), {
-            signal: ac.signal,
-        });
-        const fetchOpts = {
-            signal: ac.signal,
-            options,
-            context,
-        };
-        const cb = (v, updateCache = false) => {
-            const { aborted } = ac.signal;
-            const ignoreAbort = options.ignoreFetchAbort && v !== undefined;
-            if (options.status) {
-                if (aborted && !updateCache) {
-                    options.status.fetchAborted = true;
-                    options.status.fetchError = ac.signal.reason;
-                    if (ignoreAbort)
-                        options.status.fetchAbortIgnored = true;
-                }
-                else {
-                    options.status.fetchResolved = true;
-                }
-            }
-            if (aborted && !ignoreAbort && !updateCache) {
-                return fetchFail(ac.signal.reason);
-            }
-            // either we didn't abort, and are still here, or we did, and ignored
-            const bf = p;
-            if (this.#valList[index] === p) {
-                if (v === undefined) {
-                    if (bf.__staleWhileFetching) {
-                        this.#valList[index] = bf.__staleWhileFetching;
-                    }
-                    else {
-                        this.delete(k);
-                    }
-                }
-                else {
-                    if (options.status)
-                        options.status.fetchUpdated = true;
-                    this.set(k, v, fetchOpts.options);
-                }
-            }
-            return v;
-        };
-        const eb = (er) => {
-            if (options.status) {
-                options.status.fetchRejected = true;
-                options.status.fetchError = er;
-            }
-            return fetchFail(er);
-        };
-        const fetchFail = (er) => {
-            const { aborted } = ac.signal;
-            const allowStaleAborted = aborted && options.allowStaleOnFetchAbort;
-            const allowStale = allowStaleAborted || options.allowStaleOnFetchRejection;
-            const noDelete = allowStale || options.noDeleteOnFetchRejection;
-            const bf = p;
-            if (this.#valList[index] === p) {
-                // if we allow stale on fetch rejections, then we need to ensure that
-                // the stale value is not removed from the cache when the fetch fails.
-                const del = !noDelete || bf.__staleWhileFetching === undefined;
-                if (del) {
-                    this.delete(k);
-                }
-                else if (!allowStaleAborted) {
-                    // still replace the *promise* with the stale value,
-                    // since we are done with the promise at this point.
-                    // leave it untouched if we're still waiting for an
-                    // aborted background fetch that hasn't yet returned.
-                    this.#valList[index] = bf.__staleWhileFetching;
-                }
-            }
-            if (allowStale) {
-                if (options.status && bf.__staleWhileFetching !== undefined) {
-                    options.status.returnedStale = true;
-                }
-                return bf.__staleWhileFetching;
-            }
-            else if (bf.__returned === bf) {
-                throw er;
-            }
-        };
-        const pcall = (res, rej) => {
-            const fmp = this.#fetchMethod?.(k, v, fetchOpts);
-            if (fmp && fmp instanceof Promise) {
-                fmp.then(v => res(v === undefined ? undefined : v), rej);
-            }
-            // ignored, we go until we finish, regardless.
-            // defer check until we are actually aborting,
-            // so fetchMethod can override.
-            ac.signal.addEventListener('abort', () => {
-                if (!options.ignoreFetchAbort ||
-                    options.allowStaleOnFetchAbort) {
-                    res(undefined);
-                    // when it eventually resolves, update the cache.
-                    if (options.allowStaleOnFetchAbort) {
-                        res = v => cb(v, true);
-                    }
-                }
-            });
-        };
-        if (options.status)
-            options.status.fetchDispatched = true;
-        const p = new Promise(pcall).then(cb, eb);
-        const bf = Object.assign(p, {
-            __abortController: ac,
-            __staleWhileFetching: v,
-            __returned: undefined,
-        });
-        if (index === undefined) {
-            // internal, don't expose status.
-            this.set(k, bf, { ...fetchOpts.options, status: undefined });
-            index = this.#keyMap.get(k);
-        }
-        else {
-            this.#valList[index] = bf;
-        }
-        return bf;
-    }
-    #isBackgroundFetch(p) {
-        if (!this.#hasFetchMethod)
-            return false;
-        const b = p;
-        return (!!b &&
-            b instanceof Promise &&
-            b.hasOwnProperty('__staleWhileFetching') &&
-            b.__abortController instanceof AC);
-    }
-    async fetch(k, fetchOptions = {}) {
-        const { 
-        // get options
-        allowStale = this.allowStale, updateAgeOnGet = this.updateAgeOnGet, noDeleteOnStaleGet = this.noDeleteOnStaleGet, 
-        // set options
-        ttl = this.ttl, noDisposeOnSet = this.noDisposeOnSet, size = 0, sizeCalculation = this.sizeCalculation, noUpdateTTL = this.noUpdateTTL, 
-        // fetch exclusive options
-        noDeleteOnFetchRejection = this.noDeleteOnFetchRejection, allowStaleOnFetchRejection = this.allowStaleOnFetchRejection, ignoreFetchAbort = this.ignoreFetchAbort, allowStaleOnFetchAbort = this.allowStaleOnFetchAbort, context, forceRefresh = false, status, signal, } = fetchOptions;
-        if (!this.#hasFetchMethod) {
-            if (status)
-                status.fetch = 'get';
-            return this.get(k, {
-                allowStale,
-                updateAgeOnGet,
-                noDeleteOnStaleGet,
-                status,
-            });
-        }
-        const options = {
-            allowStale,
-            updateAgeOnGet,
-            noDeleteOnStaleGet,
-            ttl,
-            noDisposeOnSet,
-            size,
-            sizeCalculation,
-            noUpdateTTL,
-            noDeleteOnFetchRejection,
-            allowStaleOnFetchRejection,
-            allowStaleOnFetchAbort,
-            ignoreFetchAbort,
-            status,
-            signal,
-        };
-        let index = this.#keyMap.get(k);
-        if (index === undefined) {
-            if (status)
-                status.fetch = 'miss';
-            const p = this.#backgroundFetch(k, index, options, context);
-            return (p.__returned = p);
-        }
-        else {
-            // in cache, maybe already fetching
-            const v = this.#valList[index];
-            if (this.#isBackgroundFetch(v)) {
-                const stale = allowStale && v.__staleWhileFetching !== undefined;
-                if (status) {
-                    status.fetch = 'inflight';
-                    if (stale)
-                        status.returnedStale = true;
-                }
-                return stale ? v.__staleWhileFetching : (v.__returned = v);
-            }
-            // if we force a refresh, that means do NOT serve the cached value,
-            // unless we are already in the process of refreshing the cache.
-            const isStale = this.#isStale(index);
-            if (!forceRefresh && !isStale) {
-                if (status)
-                    status.fetch = 'hit';
-                this.#moveToTail(index);
-                if (updateAgeOnGet) {
-                    this.#updateItemAge(index);
-                }
-                if (status)
-                    this.#statusTTL(status, index);
-                return v;
-            }
-            // ok, it is stale or a forced refresh, and not already fetching.
-            // refresh the cache.
-            const p = this.#backgroundFetch(k, index, options, context);
-            const hasStale = p.__staleWhileFetching !== undefined;
-            const staleVal = hasStale && allowStale;
-            if (status) {
-                status.fetch = isStale ? 'stale' : 'refresh';
-                if (staleVal && isStale)
-                    status.returnedStale = true;
-            }
-            return staleVal ? p.__staleWhileFetching : (p.__returned = p);
-        }
-    }
-    /**
-     * Return a value from the cache. Will update the recency of the cache
-     * entry found.
-     *
-     * If the key is not found, get() will return `undefined`.
-     */
-    get(k, getOptions = {}) {
-        const { allowStale = this.allowStale, updateAgeOnGet = this.updateAgeOnGet, noDeleteOnStaleGet = this.noDeleteOnStaleGet, status, } = getOptions;
-        const index = this.#keyMap.get(k);
-        if (index !== undefined) {
-            const value = this.#valList[index];
-            const fetching = this.#isBackgroundFetch(value);
-            if (status)
-                this.#statusTTL(status, index);
-            if (this.#isStale(index)) {
-                if (status)
-                    status.get = 'stale';
-                // delete only if not an in-flight background fetch
-                if (!fetching) {
-                    if (!noDeleteOnStaleGet) {
-                        this.delete(k);
-                    }
-                    if (status && allowStale)
-                        status.returnedStale = true;
-                    return allowStale ? value : undefined;
-                }
-                else {
-                    if (status &&
-                        allowStale &&
-                        value.__staleWhileFetching !== undefined) {
-                        status.returnedStale = true;
-                    }
-                    return allowStale ? value.__staleWhileFetching : undefined;
-                }
-            }
-            else {
-                if (status)
-                    status.get = 'hit';
-                // if we're currently fetching it, we don't actually have it yet
-                // it's not stale, which means this isn't a staleWhileRefetching.
-                // If it's not stale, and fetching, AND has a __staleWhileFetching
-                // value, then that means the user fetched with {forceRefresh:true},
-                // so it's safe to return that value.
-                if (fetching) {
-                    return value.__staleWhileFetching;
-                }
-                this.#moveToTail(index);
-                if (updateAgeOnGet) {
-                    this.#updateItemAge(index);
-                }
-                return value;
-            }
-        }
-        else if (status) {
-            status.get = 'miss';
-        }
-    }
-    #connect(p, n) {
-        this.#prev[n] = p;
-        this.#next[p] = n;
-    }
-    #moveToTail(index) {
-        // if tail already, nothing to do
-        // if head, move head to next[index]
-        // else
-        //   move next[prev[index]] to next[index] (head has no prev)
-        //   move prev[next[index]] to prev[index]
-        // prev[index] = tail
-        // next[tail] = index
-        // tail = index
-        if (index !== this.#tail) {
-            if (index === this.#head) {
-                this.#head = this.#next[index];
-            }
-            else {
-                this.#connect(this.#prev[index], this.#next[index]);
-            }
-            this.#connect(this.#tail, index);
-            this.#tail = index;
-        }
-    }
-    /**
-     * Deletes a key out of the cache.
-     * Returns true if the key was deleted, false otherwise.
-     */
-    delete(k) {
-        let deleted = false;
-        if (this.#size !== 0) {
-            const index = this.#keyMap.get(k);
-            if (index !== undefined) {
-                deleted = true;
-                if (this.#size === 1) {
-                    this.clear();
-                }
-                else {
-                    this.#removeItemSize(index);
-                    const v = this.#valList[index];
-                    if (this.#isBackgroundFetch(v)) {
-                        v.__abortController.abort(new Error('deleted'));
-                    }
-                    else if (this.#hasDispose || this.#hasDisposeAfter) {
-                        if (this.#hasDispose) {
-                            this.#dispose?.(v, k, 'delete');
-                        }
-                        if (this.#hasDisposeAfter) {
-                            this.#disposed?.push([v, k, 'delete']);
-                        }
-                    }
-                    this.#keyMap.delete(k);
-                    this.#keyList[index] = undefined;
-                    this.#valList[index] = undefined;
-                    if (index === this.#tail) {
-                        this.#tail = this.#prev[index];
-                    }
-                    else if (index === this.#head) {
-                        this.#head = this.#next[index];
-                    }
-                    else {
-                        const pi = this.#prev[index];
-                        this.#next[pi] = this.#next[index];
-                        const ni = this.#next[index];
-                        this.#prev[ni] = this.#prev[index];
-                    }
-                    this.#size--;
-                    this.#free.push(index);
-                }
-            }
-        }
-        if (this.#hasDisposeAfter && this.#disposed?.length) {
-            const dt = this.#disposed;
-            let task;
-            while ((task = dt?.shift())) {
-                this.#disposeAfter?.(...task);
-            }
-        }
-        return deleted;
-    }
-    /**
-     * Clear the cache entirely, throwing away all values.
-     */
-    clear() {
-        for (const index of this.#rindexes({ allowStale: true })) {
-            const v = this.#valList[index];
-            if (this.#isBackgroundFetch(v)) {
-                v.__abortController.abort(new Error('deleted'));
-            }
-            else {
-                const k = this.#keyList[index];
-                if (this.#hasDispose) {
-                    this.#dispose?.(v, k, 'delete');
-                }
-                if (this.#hasDisposeAfter) {
-                    this.#disposed?.push([v, k, 'delete']);
-                }
-            }
-        }
-        this.#keyMap.clear();
-        this.#valList.fill(undefined);
-        this.#keyList.fill(undefined);
-        if (this.#ttls && this.#starts) {
-            this.#ttls.fill(0);
-            this.#starts.fill(0);
-        }
-        if (this.#sizes) {
-            this.#sizes.fill(0);
-        }
-        this.#head = 0;
-        this.#tail = 0;
-        this.#free.length = 0;
-        this.#calculatedSize = 0;
-        this.#size = 0;
-        if (this.#hasDisposeAfter && this.#disposed) {
-            const dt = this.#disposed;
-            let task;
-            while ((task = dt?.shift())) {
-                this.#disposeAfter?.(...task);
-            }
-        }
-    }
-}
-
-// pkg/dist-src/index.js
-async function getAppAuthentication({
-  appId,
-  privateKey,
-  timeDifference
-}) {
-  try {
-    const appAuthentication = await githubAppJwt({
-      id: appId,
-      privateKey,
-      now: timeDifference && Math.floor(Date.now() / 1e3) + timeDifference
-    });
-    return {
-      type: "app",
-      token: appAuthentication.token,
-      appId: appAuthentication.appId,
-      expiresAt: new Date(appAuthentication.expiration * 1e3).toISOString()
-    };
-  } catch (error) {
-    if (privateKey === "-----BEGIN RSA PRIVATE KEY-----") {
-      throw new Error(
-        "The 'privateKey` option contains only the first line '-----BEGIN RSA PRIVATE KEY-----'. If you are setting it using a `.env` file, make sure it is set on a single line with newlines replaced by '\n'"
-      );
-    } else {
-      throw error;
-    }
-  }
-}
-function getCache() {
-  return new LRUCache({
-    // cache max. 15000 tokens, that will use less than 10mb memory
-    max: 15e3,
-    // Cache for 1 minute less than GitHub expiry
-    ttl: 1e3 * 60 * 59
-  });
-}
-async function get(cache, options) {
-  const cacheKey = optionsToCacheKey(options);
-  const result = await cache.get(cacheKey);
-  if (!result) {
-    return;
-  }
-  const [
-    token,
-    createdAt,
-    expiresAt,
-    repositorySelection,
-    permissionsString,
-    singleFileName
-  ] = result.split("|");
-  const permissions = options.permissions || permissionsString.split(/,/).reduce((permissions2, string) => {
-    if (/!$/.test(string)) {
-      permissions2[string.slice(0, -1)] = "write";
-    } else {
-      permissions2[string] = "read";
-    }
-    return permissions2;
-  }, {});
-  return {
-    token,
-    createdAt,
-    expiresAt,
-    permissions,
-    repositoryIds: options.repositoryIds,
-    repositoryNames: options.repositoryNames,
-    singleFileName,
-    repositorySelection
-  };
-}
-async function set$1(cache, options, data) {
-  const key = optionsToCacheKey(options);
-  const permissionsString = options.permissions ? "" : Object.keys(data.permissions).map(
-    (name) => `${name}${data.permissions[name] === "write" ? "!" : ""}`
-  ).join(",");
-  const value = [
-    data.token,
-    data.createdAt,
-    data.expiresAt,
-    data.repositorySelection,
-    permissionsString,
-    data.singleFileName
-  ].join("|");
-  await cache.set(key, value);
-}
-function optionsToCacheKey({
-  installationId,
-  permissions = {},
-  repositoryIds = [],
-  repositoryNames = []
-}) {
-  const permissionsString = Object.keys(permissions).sort().map((name) => permissions[name] === "read" ? name : `${name}!`).join(",");
-  const repositoryIdsString = repositoryIds.sort().join(",");
-  const repositoryNamesString = repositoryNames.join(",");
-  return [
-    installationId,
-    repositoryIdsString,
-    repositoryNamesString,
-    permissionsString
-  ].filter(Boolean).join("|");
-}
-
-// pkg/dist-src/to-token-authentication.js
-function toTokenAuthentication({
-  installationId,
-  token,
-  createdAt,
-  expiresAt,
-  repositorySelection,
-  permissions,
-  repositoryIds,
-  repositoryNames,
-  singleFileName
-}) {
-  return Object.assign(
-    {
-      type: "token",
-      tokenType: "installation",
-      token,
-      installationId,
-      permissions,
-      createdAt,
-      expiresAt,
-      repositorySelection
-    },
-    repositoryIds ? { repositoryIds } : null,
-    repositoryNames ? { repositoryNames } : null,
-    singleFileName ? { singleFileName } : null
-  );
-}
-
-// pkg/dist-src/get-installation-authentication.js
-async function getInstallationAuthentication(state, options, customRequest) {
-  const installationId = Number(options.installationId || state.installationId);
-  if (!installationId) {
-    throw new Error(
-      "[@octokit/auth-app] installationId option is required for installation authentication."
-    );
-  }
-  if (options.factory) {
-    const { type, factory, oauthApp, ...factoryAuthOptions } = {
-      ...state,
-      ...options
-    };
-    return factory(factoryAuthOptions);
-  }
-  const optionsWithInstallationTokenFromState = Object.assign(
-    { installationId },
-    options
-  );
-  if (!options.refresh) {
-    const result = await get(
-      state.cache,
-      optionsWithInstallationTokenFromState
-    );
-    if (result) {
-      const {
-        token: token2,
-        createdAt: createdAt2,
-        expiresAt: expiresAt2,
-        permissions: permissions2,
-        repositoryIds: repositoryIds2,
-        repositoryNames: repositoryNames2,
-        singleFileName: singleFileName2,
-        repositorySelection: repositorySelection2
-      } = result;
-      return toTokenAuthentication({
-        installationId,
-        token: token2,
-        createdAt: createdAt2,
-        expiresAt: expiresAt2,
-        permissions: permissions2,
-        repositorySelection: repositorySelection2,
-        repositoryIds: repositoryIds2,
-        repositoryNames: repositoryNames2,
-        singleFileName: singleFileName2
-      });
-    }
-  }
-  const appAuthentication = await getAppAuthentication(state);
-  const request = customRequest || state.request;
-  const {
-    data: {
-      token,
-      expires_at: expiresAt,
-      repositories,
-      permissions: permissionsOptional,
-      repository_selection: repositorySelectionOptional,
-      single_file: singleFileName
-    }
-  } = await request("POST /app/installations/{installation_id}/access_tokens", {
-    installation_id: installationId,
-    repository_ids: options.repositoryIds,
-    repositories: options.repositoryNames,
-    permissions: options.permissions,
-    mediaType: {
-      previews: ["machine-man"]
-    },
-    headers: {
-      authorization: `bearer ${appAuthentication.token}`
-    }
-  });
-  const permissions = permissionsOptional || {};
-  const repositorySelection = repositorySelectionOptional || "all";
-  const repositoryIds = repositories ? repositories.map((r) => r.id) : void 0;
-  const repositoryNames = repositories ? repositories.map((repo) => repo.name) : void 0;
-  const createdAt = (/* @__PURE__ */ new Date()).toISOString();
-  await set$1(state.cache, optionsWithInstallationTokenFromState, {
-    token,
-    createdAt,
-    expiresAt,
-    repositorySelection,
-    permissions,
-    repositoryIds,
-    repositoryNames,
-    singleFileName
-  });
-  return toTokenAuthentication({
-    installationId,
-    token,
-    createdAt,
-    expiresAt,
-    repositorySelection,
-    permissions,
-    repositoryIds,
-    repositoryNames,
-    singleFileName
-  });
-}
-
-// pkg/dist-src/auth.js
-async function auth$2(state, authOptions) {
-  switch (authOptions.type) {
-    case "app":
-      return getAppAuthentication(state);
-    case "oauth-app":
-      return state.oauthApp({ type: "oauth-app" });
-    case "installation":
-      return getInstallationAuthentication(state, {
-        ...authOptions,
-        type: "installation"
-      });
-    case "oauth-user":
-      return state.oauthApp(authOptions);
-    default:
-      throw new Error(`Invalid auth type: ${authOptions.type}`);
-  }
-}
-
-// pkg/dist-src/requires-app-auth.js
-var PATHS = [
-  "/app",
-  "/app/hook/config",
-  "/app/hook/deliveries",
-  "/app/hook/deliveries/{delivery_id}",
-  "/app/hook/deliveries/{delivery_id}/attempts",
-  "/app/installations",
-  "/app/installations/{installation_id}",
-  "/app/installations/{installation_id}/access_tokens",
-  "/app/installations/{installation_id}/suspended",
-  "/app/installation-requests",
-  "/marketplace_listing/accounts/{account_id}",
-  "/marketplace_listing/plan",
-  "/marketplace_listing/plans",
-  "/marketplace_listing/plans/{plan_id}/accounts",
-  "/marketplace_listing/stubbed/accounts/{account_id}",
-  "/marketplace_listing/stubbed/plan",
-  "/marketplace_listing/stubbed/plans",
-  "/marketplace_listing/stubbed/plans/{plan_id}/accounts",
-  "/orgs/{org}/installation",
-  "/repos/{owner}/{repo}/installation",
-  "/users/{username}/installation"
-];
-function routeMatcher(paths) {
-  const regexes = paths.map(
-    (p) => p.split("/").map((c) => c.startsWith("{") ? "(?:.+?)" : c).join("/")
-  );
-  const regex = `^(?:${regexes.map((r) => `(?:${r})`).join("|")})$`;
-  return new RegExp(regex, "i");
-}
-var REGEX = routeMatcher(PATHS);
-function requiresAppAuth(url) {
-  return !!url && REGEX.test(url.split("?")[0]);
-}
-
-// pkg/dist-src/hook.js
-var FIVE_SECONDS_IN_MS = 5 * 1e3;
-function isNotTimeSkewError(error) {
-  return !(error.message.match(
-    /'Expiration time' claim \('exp'\) must be a numeric value representing the future time at which the assertion expires/
-  ) || error.message.match(
-    /'Issued at' claim \('iat'\) must be an Integer representing the time that the assertion was issued/
-  ));
-}
-async function hook$2(state, request, route, parameters) {
-  const endpoint = request.endpoint.merge(route, parameters);
-  const url = endpoint.url;
-  if (/\/login\/oauth\/access_token$/.test(url)) {
-    return request(endpoint);
-  }
-  if (requiresAppAuth(url.replace(request.endpoint.DEFAULTS.baseUrl, ""))) {
-    const { token: token2 } = await getAppAuthentication(state);
-    endpoint.headers.authorization = `bearer ${token2}`;
-    let response;
-    try {
-      response = await request(endpoint);
-    } catch (error) {
-      if (isNotTimeSkewError(error)) {
-        throw error;
-      }
-      if (typeof error.response.headers.date === "undefined") {
-        throw error;
-      }
-      const diff = Math.floor(
-        (Date.parse(error.response.headers.date) - Date.parse((/* @__PURE__ */ new Date()).toString())) / 1e3
-      );
-      state.log.warn(error.message);
-      state.log.warn(
-        `[@octokit/auth-app] GitHub API time and system time are different by ${diff} seconds. Retrying request with the difference accounted for.`
-      );
-      const { token: token3 } = await getAppAuthentication({
-        ...state,
-        timeDifference: diff
-      });
-      endpoint.headers.authorization = `bearer ${token3}`;
-      return request(endpoint);
-    }
-    return response;
-  }
-  if (requiresBasicAuth(url)) {
-    const authentication = await state.oauthApp({ type: "oauth-app" });
-    endpoint.headers.authorization = authentication.headers.authorization;
-    return request(endpoint);
-  }
-  const { token, createdAt } = await getInstallationAuthentication(
-    state,
-    // @ts-expect-error TBD
-    {},
-    request
-  );
-  endpoint.headers.authorization = `token ${token}`;
-  return sendRequestWithRetries(
-    state,
-    request,
-    endpoint,
-    createdAt
-  );
-}
-async function sendRequestWithRetries(state, request, options, createdAt, retries = 0) {
-  const timeSinceTokenCreationInMs = +/* @__PURE__ */ new Date() - +new Date(createdAt);
-  try {
-    return await request(options);
-  } catch (error) {
-    if (error.status !== 401) {
-      throw error;
-    }
-    if (timeSinceTokenCreationInMs >= FIVE_SECONDS_IN_MS) {
-      if (retries > 0) {
-        error.message = `After ${retries} retries within ${timeSinceTokenCreationInMs / 1e3}s of creating the installation access token, the response remains 401. At this point, the cause may be an authentication problem or a system outage. Please check https://www.githubstatus.com for status information`;
-      }
-      throw error;
-    }
-    ++retries;
-    const awaitTime = retries * 1e3;
-    state.log.warn(
-      `[@octokit/auth-app] Retrying after 401 response to account for token replication delay (retry: ${retries}, wait: ${awaitTime / 1e3}s)`
-    );
-    await new Promise((resolve) => setTimeout(resolve, awaitTime));
-    return sendRequestWithRetries(state, request, options, createdAt, retries);
-  }
-}
-
-// pkg/dist-src/version.js
-var VERSION$8 = "7.1.0";
-function createAppAuth(options) {
-  if (!options.appId) {
-    throw new Error("[@octokit/auth-app] appId option is required");
-  }
-  if (!options.privateKey) {
-    throw new Error("[@octokit/auth-app] privateKey option is required");
-  }
-  if ("installationId" in options && !options.installationId) {
-    throw new Error(
-      "[@octokit/auth-app] installationId is set to a falsy value"
-    );
-  }
-  const log = Object.assign(
-    {
-      warn: console.warn.bind(console)
-    },
-    options.log
-  );
-  const request = options.request || request$5.defaults({
-    headers: {
-      "user-agent": `octokit-auth-app.js/${VERSION$8} ${getUserAgent$5()}`
-    }
-  });
-  const state = Object.assign(
-    {
-      request,
-      cache: getCache()
-    },
-    options,
-    options.installationId ? { installationId: Number(options.installationId) } : {},
-    {
-      log,
-      oauthApp: createOAuthAppAuth({
-        clientType: "github-app",
-        clientId: options.clientId || "",
-        clientSecret: options.clientSecret || "",
-        request
-      })
-    }
-  );
-  return Object.assign(auth$2.bind(null, state), {
-    hook: hook$2.bind(null, state)
-  });
-}
-
-function getUserAgent() {
-  if (typeof navigator === "object" && "userAgent" in navigator) {
-    return navigator.userAgent;
-  }
-
-  if (typeof process === "object" && process.version !== undefined) {
-    return `Node.js/${process.version.substr(1)} (${process.platform}; ${
-      process.arch
-    })`;
-  }
-
-  return "<environment undetectable>";
-}
-
-// @ts-check
-
-function register(state, name, method, options) {
-  if (typeof method !== "function") {
-    throw new Error("method for before hook must be a function");
-  }
-
-  if (!options) {
-    options = {};
-  }
-
-  if (Array.isArray(name)) {
-    return name.reverse().reduce((callback, name) => {
-      return register.bind(null, state, name, callback, options);
-    }, method)();
-  }
-
-  return Promise.resolve().then(() => {
-    if (!state.registry[name]) {
-      return method(options);
-    }
-
-    return state.registry[name].reduce((method, registered) => {
-      return registered.hook.bind(null, method, options);
-    }, method)();
-  });
-}
-
-// @ts-check
-
-function addHook(state, kind, name, hook) {
-  const orig = hook;
-  if (!state.registry[name]) {
-    state.registry[name] = [];
-  }
-
-  if (kind === "before") {
-    hook = (method, options) => {
-      return Promise.resolve()
-        .then(orig.bind(null, options))
-        .then(method.bind(null, options));
-    };
-  }
-
-  if (kind === "after") {
-    hook = (method, options) => {
-      let result;
-      return Promise.resolve()
-        .then(method.bind(null, options))
-        .then((result_) => {
-          result = result_;
-          return orig(result, options);
-        })
-        .then(() => {
-          return result;
-        });
-    };
-  }
-
-  if (kind === "error") {
-    hook = (method, options) => {
-      return Promise.resolve()
-        .then(method.bind(null, options))
-        .catch((error) => {
-          return orig(error, options);
-        });
-    };
-  }
-
-  state.registry[name].push({
-    hook: hook,
-    orig: orig,
-  });
-}
-
-// @ts-check
-
-function removeHook(state, name, method) {
-  if (!state.registry[name]) {
-    return;
-  }
-
-  const index = state.registry[name]
-    .map((registered) => {
-      return registered.orig;
-    })
-    .indexOf(method);
-
-  if (index === -1) {
-    return;
-  }
-
-  state.registry[name].splice(index, 1);
-}
-
-// @ts-check
-
-// bind with array of arguments: https://stackoverflow.com/a/21792913
-const bind = Function.bind;
-const bindable = bind.bind(bind);
-
-function bindApi(hook, state, name) {
-  const removeHookRef = bindable(removeHook, null).apply(
-    null,
-    name ? [state, name] : [state]
-  );
-  hook.api = { remove: removeHookRef };
-  hook.remove = removeHookRef;
-  ["before", "error", "after", "wrap"].forEach((kind) => {
-    const args = name ? [state, kind, name] : [state, kind];
-    hook[kind] = hook.api[kind] = bindable(addHook, null).apply(null, args);
-  });
-}
-
-function Singular() {
-  const singularHookName = Symbol("Singular");
-  const singularHookState = {
-    registry: {},
-  };
-  const singularHook = register.bind(null, singularHookState, singularHookName);
-  bindApi(singularHook, singularHookState, singularHookName);
-  return singularHook;
-}
-
-function Collection$1() {
-  const state = {
-    registry: {},
-  };
-
-  const hook = register.bind(null, state);
-  bindApi(hook, state);
-
-  return hook;
-}
-
-var Hook = { Singular, Collection: Collection$1 };
-
-// pkg/dist-src/defaults.js
-
-// pkg/dist-src/version.js
-var VERSION$7 = "0.0.0-development";
-
-// pkg/dist-src/defaults.js
-var userAgent = `octokit-endpoint.js/${VERSION$7} ${getUserAgent()}`;
-var DEFAULTS = {
-  method: "GET",
-  baseUrl: "https://api.github.com",
-  headers: {
-    accept: "application/vnd.github.v3+json",
-    "user-agent": userAgent
-  },
-  mediaType: {
-    format: ""
-  }
-};
-
-// pkg/dist-src/util/lowercase-keys.js
-function lowercaseKeys(object) {
-  if (!object) {
-    return {};
-  }
-  return Object.keys(object).reduce((newObj, key) => {
-    newObj[key.toLowerCase()] = object[key];
-    return newObj;
-  }, {});
-}
-
-// pkg/dist-src/util/is-plain-object.js
-function isPlainObject$1(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/util/merge-deep.js
-function mergeDeep(defaults, options) {
-  const result = Object.assign({}, defaults);
-  Object.keys(options).forEach((key) => {
-    if (isPlainObject$1(options[key])) {
-      if (!(key in defaults))
-        Object.assign(result, { [key]: options[key] });
-      else
-        result[key] = mergeDeep(defaults[key], options[key]);
-    } else {
-      Object.assign(result, { [key]: options[key] });
-    }
-  });
-  return result;
-}
-
-// pkg/dist-src/util/remove-undefined-properties.js
-function removeUndefinedProperties(obj) {
-  for (const key in obj) {
-    if (obj[key] === void 0) {
-      delete obj[key];
-    }
-  }
-  return obj;
-}
-
-// pkg/dist-src/merge.js
-function merge(defaults, route, options) {
-  if (typeof route === "string") {
-    let [method, url] = route.split(" ");
-    options = Object.assign(url ? { method, url } : { url: method }, options);
-  } else {
-    options = Object.assign({}, route);
-  }
-  options.headers = lowercaseKeys(options.headers);
-  removeUndefinedProperties(options);
-  removeUndefinedProperties(options.headers);
-  const mergedOptions = mergeDeep(defaults || {}, options);
-  if (options.url === "/graphql") {
-    if (defaults && defaults.mediaType.previews?.length) {
-      mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(
-        (preview) => !mergedOptions.mediaType.previews.includes(preview)
-      ).concat(mergedOptions.mediaType.previews);
-    }
-    mergedOptions.mediaType.previews = (mergedOptions.mediaType.previews || []).map((preview) => preview.replace(/-preview/, ""));
-  }
-  return mergedOptions;
-}
-
-// pkg/dist-src/util/add-query-parameters.js
-function addQueryParameters(url, parameters) {
-  const separator = /\?/.test(url) ? "&" : "?";
-  const names = Object.keys(parameters);
-  if (names.length === 0) {
-    return url;
-  }
-  return url + separator + names.map((name) => {
-    if (name === "q") {
-      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
-    }
-    return `${name}=${encodeURIComponent(parameters[name])}`;
-  }).join("&");
-}
-
-// pkg/dist-src/util/extract-url-variable-names.js
-var urlVariableRegex = /\{[^}]+\}/g;
-function removeNonChars(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
-}
-function extractUrlVariableNames(url) {
-  const matches = url.match(urlVariableRegex);
-  if (!matches) {
-    return [];
-  }
-  return matches.map(removeNonChars).reduce((a, b) => a.concat(b), []);
-}
-
-// pkg/dist-src/util/omit.js
-function omit(object, keysToOmit) {
-  const result = { __proto__: null };
-  for (const key of Object.keys(object)) {
-    if (keysToOmit.indexOf(key) === -1) {
-      result[key] = object[key];
-    }
-  }
-  return result;
-}
-
-// pkg/dist-src/util/url-template.js
-function encodeReserved(str) {
-  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function(part) {
-    if (!/%[0-9A-Fa-f]/.test(part)) {
-      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
-    }
-    return part;
-  }).join("");
-}
-function encodeUnreserved(str) {
-  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
-    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
-  });
-}
-function encodeValue(operator, value, key) {
-  value = operator === "+" || operator === "#" ? encodeReserved(value) : encodeUnreserved(value);
-  if (key) {
-    return encodeUnreserved(key) + "=" + value;
-  } else {
-    return value;
-  }
-}
-function isDefined(value) {
-  return value !== void 0 && value !== null;
-}
-function isKeyOperator(operator) {
-  return operator === ";" || operator === "&" || operator === "?";
-}
-function getValues(context, operator, key, modifier) {
-  var value = context[key], result = [];
-  if (isDefined(value) && value !== "") {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      value = value.toString();
-      if (modifier && modifier !== "*") {
-        value = value.substring(0, parseInt(modifier, 10));
-      }
-      result.push(
-        encodeValue(operator, value, isKeyOperator(operator) ? key : "")
-      );
-    } else {
-      if (modifier === "*") {
-        if (Array.isArray(value)) {
-          value.filter(isDefined).forEach(function(value2) {
-            result.push(
-              encodeValue(operator, value2, isKeyOperator(operator) ? key : "")
-            );
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined(value[k])) {
-              result.push(encodeValue(operator, value[k], k));
-            }
-          });
-        }
-      } else {
-        const tmp = [];
-        if (Array.isArray(value)) {
-          value.filter(isDefined).forEach(function(value2) {
-            tmp.push(encodeValue(operator, value2));
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined(value[k])) {
-              tmp.push(encodeUnreserved(k));
-              tmp.push(encodeValue(operator, value[k].toString()));
-            }
-          });
-        }
-        if (isKeyOperator(operator)) {
-          result.push(encodeUnreserved(key) + "=" + tmp.join(","));
-        } else if (tmp.length !== 0) {
-          result.push(tmp.join(","));
-        }
-      }
-    }
-  } else {
-    if (operator === ";") {
-      if (isDefined(value)) {
-        result.push(encodeUnreserved(key));
-      }
-    } else if (value === "" && (operator === "&" || operator === "?")) {
-      result.push(encodeUnreserved(key) + "=");
-    } else if (value === "") {
-      result.push("");
-    }
-  }
-  return result;
-}
-function parseUrl(template) {
-  return {
-    expand: expand$1.bind(null, template)
-  };
-}
-function expand$1(template, context) {
-  var operators = ["+", "#", ".", "/", ";", "?", "&"];
-  template = template.replace(
-    /\{([^\{\}]+)\}|([^\{\}]+)/g,
-    function(_, expression, literal) {
-      if (expression) {
-        let operator = "";
-        const values = [];
-        if (operators.indexOf(expression.charAt(0)) !== -1) {
-          operator = expression.charAt(0);
-          expression = expression.substr(1);
-        }
-        expression.split(/,/g).forEach(function(variable) {
-          var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-          values.push(getValues(context, operator, tmp[1], tmp[2] || tmp[3]));
-        });
-        if (operator && operator !== "+") {
-          var separator = ",";
-          if (operator === "?") {
-            separator = "&";
-          } else if (operator !== "#") {
-            separator = operator;
-          }
-          return (values.length !== 0 ? operator : "") + values.join(separator);
-        } else {
-          return values.join(",");
-        }
-      } else {
-        return encodeReserved(literal);
-      }
-    }
-  );
-  if (template === "/") {
-    return template;
-  } else {
-    return template.replace(/\/$/, "");
-  }
-}
-
-// pkg/dist-src/parse.js
-function parse$4(options) {
-  let method = options.method.toUpperCase();
-  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
-  let headers = Object.assign({}, options.headers);
-  let body;
-  let parameters = omit(options, [
-    "method",
-    "baseUrl",
-    "url",
-    "headers",
-    "request",
-    "mediaType"
-  ]);
-  const urlVariableNames = extractUrlVariableNames(url);
-  url = parseUrl(url).expand(parameters);
-  if (!/^http/.test(url)) {
-    url = options.baseUrl + url;
-  }
-  const omittedParameters = Object.keys(options).filter((option) => urlVariableNames.includes(option)).concat("baseUrl");
-  const remainingParameters = omit(parameters, omittedParameters);
-  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
-  if (!isBinaryRequest) {
-    if (options.mediaType.format) {
-      headers.accept = headers.accept.split(/,/).map(
-        (format) => format.replace(
-          /application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/,
-          `application/vnd$1$2.${options.mediaType.format}`
-        )
-      ).join(",");
-    }
-    if (url.endsWith("/graphql")) {
-      if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
-        headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
-          const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
-          return `application/vnd.github.${preview}-preview${format}`;
-        }).join(",");
-      }
-    }
-  }
-  if (["GET", "HEAD"].includes(method)) {
-    url = addQueryParameters(url, remainingParameters);
-  } else {
-    if ("data" in remainingParameters) {
-      body = remainingParameters.data;
-    } else {
-      if (Object.keys(remainingParameters).length) {
-        body = remainingParameters;
-      }
-    }
-  }
-  if (!headers["content-type"] && typeof body !== "undefined") {
-    headers["content-type"] = "application/json; charset=utf-8";
-  }
-  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
-    body = "";
-  }
-  return Object.assign(
-    { method, url, headers },
-    typeof body !== "undefined" ? { body } : null,
-    options.request ? { request: options.request } : null
-  );
-}
-
-// pkg/dist-src/endpoint-with-defaults.js
-function endpointWithDefaults(defaults, route, options) {
-  return parse$4(merge(defaults, route, options));
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$2(oldDefaults, newDefaults) {
-  const DEFAULTS2 = merge(oldDefaults, newDefaults);
-  const endpoint2 = endpointWithDefaults.bind(null, DEFAULTS2);
-  return Object.assign(endpoint2, {
-    DEFAULTS: DEFAULTS2,
-    defaults: withDefaults$2.bind(null, DEFAULTS2),
-    merge: merge.bind(null, DEFAULTS2),
-    parse: parse$4
-  });
-}
-
-// pkg/dist-src/index.js
-var endpoint = withDefaults$2(null, DEFAULTS);
-
-class RequestError extends Error {
-  name;
-  /**
-   * http status code
-   */
-  status;
-  /**
-   * Request options that lead to the error.
-   */
-  request;
-  /**
-   * Response object if a response was received
-   */
-  response;
-  constructor(message, statusCode, options) {
-    super(message);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-    this.name = "HttpError";
-    this.status = statusCode;
-    if ("response" in options) {
-      this.response = options.response;
-    }
-    const requestCopy = Object.assign({}, options.request);
-    if (options.request.headers.authorization) {
-      requestCopy.headers = Object.assign({}, options.request.headers, {
-        authorization: options.request.headers.authorization.replace(
-          / .*$/,
-          " [REDACTED]"
-        )
-      });
-    }
-    requestCopy.url = requestCopy.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy;
-  }
-}
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$6 = "0.0.0-development";
-
-// pkg/dist-src/is-plain-object.js
-function isPlainObject(value) {
-  if (typeof value !== "object" || value === null)
-    return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]")
-    return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null)
-    return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/get-buffer-response.js
-function getBufferResponse(response) {
-  return response.arrayBuffer();
-}
-
-// pkg/dist-src/fetch-wrapper.js
-function fetchWrapper(requestOptions) {
-  const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
-  const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  if (isPlainObject(requestOptions.body) || Array.isArray(requestOptions.body)) {
-    requestOptions.body = JSON.stringify(requestOptions.body);
-  }
-  let headers = {};
-  let status;
-  let url;
-  let { fetch } = globalThis;
-  if (requestOptions.request?.fetch) {
-    fetch = requestOptions.request.fetch;
-  }
-  if (!fetch) {
-    throw new Error(
-      "fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). Learn more at https://github.com/octokit/octokit.js/#fetch-missing"
-    );
-  }
-  return fetch(requestOptions.url, {
-    method: requestOptions.method,
-    body: requestOptions.body,
-    redirect: requestOptions.request?.redirect,
-    // Header values must be `string`
-    headers: Object.fromEntries(
-      Object.entries(requestOptions.headers).map(([name, value]) => [
-        name,
-        String(value)
-      ])
-    ),
-    signal: requestOptions.request?.signal,
-    // duplex must be set if request.body is ReadableStream or Async Iterables.
-    // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
-    ...requestOptions.body && { duplex: "half" }
-  }).then(async (response) => {
-    url = response.url;
-    status = response.status;
-    for (const keyAndValue of response.headers) {
-      headers[keyAndValue[0]] = keyAndValue[1];
-    }
-    if ("deprecation" in headers) {
-      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
-      const deprecationLink = matches && matches.pop();
-      log.warn(
-        `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
-      );
-    }
-    if (status === 204 || status === 205) {
-      return;
-    }
-    if (requestOptions.method === "HEAD") {
-      if (status < 400) {
-        return;
-      }
-      throw new RequestError(response.statusText, status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: void 0
-        },
-        request: requestOptions
-      });
-    }
-    if (status === 304) {
-      throw new RequestError("Not modified", status, {
-        response: {
-          url,
-          status,
-          headers,
-          data: await getResponseData(response)
-        },
-        request: requestOptions
-      });
-    }
-    if (status >= 400) {
-      const data = await getResponseData(response);
-      const error = new RequestError(toErrorMessage(data), status, {
-        response: {
-          url,
-          status,
-          headers,
-          data
-        },
-        request: requestOptions
-      });
-      throw error;
-    }
-    return parseSuccessResponseBody ? await getResponseData(response) : response.body;
-  }).then((data) => {
-    return {
-      status,
-      url,
-      headers,
-      data
-    };
-  }).catch((error) => {
-    if (error instanceof RequestError)
-      throw error;
-    else if (error.name === "AbortError")
-      throw error;
-    let message = error.message;
-    if (error.name === "TypeError" && "cause" in error) {
-      if (error.cause instanceof Error) {
-        message = error.cause.message;
-      } else if (typeof error.cause === "string") {
-        message = error.cause;
-      }
-    }
-    throw new RequestError(message, 500, {
-      request: requestOptions
-    });
-  });
-}
-async function getResponseData(response) {
-  const contentType = response.headers.get("content-type");
-  if (/application\/json/.test(contentType)) {
-    return response.json().catch(() => response.text()).catch(() => "");
-  }
-  if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
-    return response.text();
-  }
-  return getBufferResponse(response);
-}
-function toErrorMessage(data) {
-  if (typeof data === "string")
-    return data;
-  let suffix;
-  if ("documentation_url" in data) {
-    suffix = ` - ${data.documentation_url}`;
-  } else {
-    suffix = "";
-  }
-  if ("message" in data) {
-    if (Array.isArray(data.errors)) {
-      return `${data.message}: ${data.errors.map(JSON.stringify).join(", ")}${suffix}`;
-    }
-    return `${data.message}${suffix}`;
-  }
-  return `Unknown error: ${JSON.stringify(data)}`;
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$1(oldEndpoint, newDefaults) {
-  const endpoint2 = oldEndpoint.defaults(newDefaults);
-  const newApi = function(route, parameters) {
-    const endpointOptions = endpoint2.merge(route, parameters);
-    if (!endpointOptions.request || !endpointOptions.request.hook) {
-      return fetchWrapper(endpoint2.parse(endpointOptions));
-    }
-    const request2 = (route2, parameters2) => {
-      return fetchWrapper(
-        endpoint2.parse(endpoint2.merge(route2, parameters2))
-      );
-    };
-    Object.assign(request2, {
-      endpoint: endpoint2,
-      defaults: withDefaults$1.bind(null, endpoint2)
-    });
-    return endpointOptions.request.hook(request2, endpointOptions);
-  };
-  return Object.assign(newApi, {
-    endpoint: endpoint2,
-    defaults: withDefaults$1.bind(null, endpoint2)
-  });
-}
-
-// pkg/dist-src/index.js
-var request = withDefaults$1(endpoint, {
-  headers: {
-    "user-agent": `octokit-request.js/${VERSION$6} ${getUserAgent()}`
-  }
-});
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$5 = "0.0.0-development";
-
-// pkg/dist-src/error.js
-function _buildMessageForResponseErrors(data) {
-  return `Request failed due to following response errors:
-` + data.errors.map((e) => ` - ${e.message}`).join("\n");
-}
-var GraphqlResponseError = class extends Error {
-  constructor(request2, headers, response) {
-    super(_buildMessageForResponseErrors(response));
-    this.request = request2;
-    this.headers = headers;
-    this.response = response;
-    this.errors = response.errors;
-    this.data = response.data;
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-  }
-  name = "GraphqlResponseError";
-  errors;
-  data;
-};
-
-// pkg/dist-src/graphql.js
-var NON_VARIABLE_OPTIONS = [
-  "method",
-  "baseUrl",
-  "url",
-  "headers",
-  "request",
-  "query",
-  "mediaType"
-];
-var FORBIDDEN_VARIABLE_OPTIONS = ["query", "method", "url"];
-var GHES_V3_SUFFIX_REGEX = /\/api\/v3\/?$/;
-function graphql(request2, query, options) {
-  if (options) {
-    if (typeof query === "string" && "query" in options) {
-      return Promise.reject(
-        new Error(`[@octokit/graphql] "query" cannot be used as variable name`)
-      );
-    }
-    for (const key in options) {
-      if (!FORBIDDEN_VARIABLE_OPTIONS.includes(key))
-        continue;
-      return Promise.reject(
-        new Error(
-          `[@octokit/graphql] "${key}" cannot be used as variable name`
-        )
-      );
-    }
-  }
-  const parsedOptions = typeof query === "string" ? Object.assign({ query }, options) : query;
-  const requestOptions = Object.keys(
-    parsedOptions
-  ).reduce((result, key) => {
-    if (NON_VARIABLE_OPTIONS.includes(key)) {
-      result[key] = parsedOptions[key];
-      return result;
-    }
-    if (!result.variables) {
-      result.variables = {};
-    }
-    result.variables[key] = parsedOptions[key];
-    return result;
-  }, {});
-  const baseUrl = parsedOptions.baseUrl || request2.endpoint.DEFAULTS.baseUrl;
-  if (GHES_V3_SUFFIX_REGEX.test(baseUrl)) {
-    requestOptions.url = baseUrl.replace(GHES_V3_SUFFIX_REGEX, "/api/graphql");
-  }
-  return request2(requestOptions).then((response) => {
-    if (response.data.errors) {
-      const headers = {};
-      for (const key of Object.keys(response.headers)) {
-        headers[key] = response.headers[key];
-      }
-      throw new GraphqlResponseError(
-        requestOptions,
-        headers,
-        response.data
-      );
-    }
-    return response.data.data;
-  });
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults(request2, newDefaults) {
-  const newRequest = request2.defaults(newDefaults);
-  const newApi = (query, options) => {
-    return graphql(newRequest, query, options);
-  };
-  return Object.assign(newApi, {
-    defaults: withDefaults.bind(null, newRequest),
-    endpoint: newRequest.endpoint
-  });
-}
-
-// pkg/dist-src/index.js
-withDefaults(request, {
-  headers: {
-    "user-agent": `octokit-graphql.js/${VERSION$5} ${getUserAgent()}`
-  },
-  method: "POST",
-  url: "/graphql"
-});
-function withCustomRequest(customRequest) {
-  return withDefaults(customRequest, {
-    method: "POST",
-    url: "/graphql"
-  });
-}
-
-// pkg/dist-src/auth.js
-var REGEX_IS_INSTALLATION_LEGACY = /^v1\./;
-var REGEX_IS_INSTALLATION = /^ghs_/;
-var REGEX_IS_USER_TO_SERVER = /^ghu_/;
-async function auth$1(token) {
-  const isApp = token.split(/\./).length === 3;
-  const isInstallation = REGEX_IS_INSTALLATION_LEGACY.test(token) || REGEX_IS_INSTALLATION.test(token);
-  const isUserToServer = REGEX_IS_USER_TO_SERVER.test(token);
-  const tokenType = isApp ? "app" : isInstallation ? "installation" : isUserToServer ? "user-to-server" : "oauth";
-  return {
-    type: "token",
-    token,
-    tokenType
-  };
-}
-
-// pkg/dist-src/with-authorization-prefix.js
-function withAuthorizationPrefix(token) {
-  if (token.split(/\./).length === 3) {
-    return `bearer ${token}`;
-  }
-  return `token ${token}`;
-}
-
-// pkg/dist-src/hook.js
-async function hook$1(token, request, route, parameters) {
-  const endpoint = request.endpoint.merge(
-    route,
-    parameters
-  );
-  endpoint.headers.authorization = withAuthorizationPrefix(token);
-  return request(endpoint);
-}
-
-// pkg/dist-src/index.js
-var createTokenAuth = function createTokenAuth2(token) {
-  if (!token) {
-    throw new Error("[@octokit/auth-token] No token passed to createTokenAuth");
-  }
-  if (typeof token !== "string") {
-    throw new Error(
-      "[@octokit/auth-token] Token passed to createTokenAuth is not a string"
-    );
-  }
-  token = token.replace(/^(token|bearer) +/i, "");
-  return Object.assign(auth$1.bind(null, token), {
-    hook: hook$1.bind(null, token)
-  });
-};
-
-const VERSION$4 = "6.1.2";
-
-const noop$1 = () => {
-};
-const consoleWarn = console.warn.bind(console);
-const consoleError = console.error.bind(console);
-const userAgentTrail = `octokit-core.js/${VERSION$4} ${getUserAgent()}`;
-class Octokit$1 {
-  static VERSION = VERSION$4;
-  static defaults(defaults) {
-    const OctokitWithDefaults = class extends this {
-      constructor(...args) {
-        const options = args[0] || {};
-        if (typeof defaults === "function") {
-          super(defaults(options));
-          return;
-        }
-        super(
-          Object.assign(
-            {},
-            defaults,
-            options,
-            options.userAgent && defaults.userAgent ? {
-              userAgent: `${options.userAgent} ${defaults.userAgent}`
-            } : null
-          )
-        );
-      }
-    };
-    return OctokitWithDefaults;
-  }
-  static plugins = [];
-  /**
-   * Attach a plugin (or many) to your Octokit instance.
-   *
-   * @example
-   * const API = Octokit.plugin(plugin1, plugin2, plugin3, ...)
-   */
-  static plugin(...newPlugins) {
-    const currentPlugins = this.plugins;
-    const NewOctokit = class extends this {
-      static plugins = currentPlugins.concat(
-        newPlugins.filter((plugin) => !currentPlugins.includes(plugin))
-      );
-    };
-    return NewOctokit;
-  }
-  constructor(options = {}) {
-    const hook = new Hook.Collection();
-    const requestDefaults = {
-      baseUrl: request.endpoint.DEFAULTS.baseUrl,
-      headers: {},
-      request: Object.assign({}, options.request, {
-        // @ts-ignore internal usage only, no need to type
-        hook: hook.bind(null, "request")
-      }),
-      mediaType: {
-        previews: [],
-        format: ""
-      }
-    };
-    requestDefaults.headers["user-agent"] = options.userAgent ? `${options.userAgent} ${userAgentTrail}` : userAgentTrail;
-    if (options.baseUrl) {
-      requestDefaults.baseUrl = options.baseUrl;
-    }
-    if (options.previews) {
-      requestDefaults.mediaType.previews = options.previews;
-    }
-    if (options.timeZone) {
-      requestDefaults.headers["time-zone"] = options.timeZone;
-    }
-    this.request = request.defaults(requestDefaults);
-    this.graphql = withCustomRequest(this.request).defaults(requestDefaults);
-    this.log = Object.assign(
-      {
-        debug: noop$1,
-        info: noop$1,
-        warn: consoleWarn,
-        error: consoleError
-      },
-      options.log
-    );
-    this.hook = hook;
-    if (!options.authStrategy) {
-      if (!options.auth) {
-        this.auth = async () => ({
-          type: "unauthenticated"
-        });
-      } else {
-        const auth = createTokenAuth(options.auth);
-        hook.wrap("request", auth.hook);
-        this.auth = auth;
-      }
-    } else {
-      const { authStrategy, ...otherOptions } = options;
-      const auth = authStrategy(
-        Object.assign(
-          {
-            request: this.request,
-            log: this.log,
-            // we pass the current octokit instance as well as its constructor options
-            // to allow for authentication strategies that return a new octokit instance
-            // that shares the same internal state as the current one. The original
-            // requirement for this was the "event-octokit" authentication strategy
-            // of https://github.com/probot/octokit-auth-probot.
-            octokit: this,
-            octokitOptions: otherOptions
-          },
-          options.auth
-        )
-      );
-      hook.wrap("request", auth.hook);
-      this.auth = auth;
-    }
-    const classConstructor = this.constructor;
-    for (let i = 0; i < classConstructor.plugins.length; ++i) {
-      Object.assign(this, classConstructor.plugins[i](this, options));
-    }
-  }
-  // assigned during constructor
-  request;
-  graphql;
-  log;
-  hook;
-  // TODO: type `octokit.auth` based on passed options.authStrategy
-  auth;
-}
-
-// pkg/dist-src/auth.js
-async function auth(reason) {
-  return {
-    type: "unauthenticated",
-    reason
-  };
-}
-function isRateLimitError(error) {
-  if (error.status !== 403) {
-    return false;
-  }
-  if (!error.response) {
-    return false;
-  }
-  return error.response.headers["x-ratelimit-remaining"] === "0";
-}
-var REGEX_ABUSE_LIMIT_MESSAGE = /\babuse\b/i;
-function isAbuseLimitError(error) {
-  if (error.status !== 403) {
-    return false;
-  }
-  return REGEX_ABUSE_LIMIT_MESSAGE.test(error.message);
-}
-
-// pkg/dist-src/hook.js
-async function hook(reason, request, route, parameters) {
-  const endpoint = request.endpoint.merge(
-    route,
-    parameters
-  );
-  return request(endpoint).catch((error) => {
-    if (error.status === 404) {
-      error.message = `Not found. May be due to lack of authentication. Reason: ${reason}`;
-      throw error;
-    }
-    if (isRateLimitError(error)) {
-      error.message = `API rate limit exceeded. This maybe caused by the lack of authentication. Reason: ${reason}`;
-      throw error;
-    }
-    if (isAbuseLimitError(error)) {
-      error.message = `You have triggered an abuse detection mechanism. This maybe caused by the lack of authentication. Reason: ${reason}`;
-      throw error;
-    }
-    if (error.status === 401) {
-      error.message = `Unauthorized. "${endpoint.method} ${endpoint.url}" failed most likely due to lack of authentication. Reason: ${reason}`;
-      throw error;
-    }
-    if (error.status >= 400 && error.status < 500) {
-      error.message = error.message.replace(
-        /\.?$/,
-        `. May be caused by lack of authentication (${reason}).`
-      );
-    }
-    throw error;
-  });
-}
-
-// pkg/dist-src/index.js
-var createUnauthenticatedAuth = function createUnauthenticatedAuth2(options) {
-  if (!options || !options.reason) {
-    throw new Error(
-      "[@octokit/auth-unauthenticated] No reason passed to createUnauthenticatedAuth"
-    );
-  }
-  return Object.assign(auth.bind(null, options.reason), {
-    hook: hook.bind(null, options.reason)
-  });
-};
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$3 = "7.1.2";
-
-// pkg/dist-src/add-event-handler.js
-function addEventHandler(state, eventName, eventHandler) {
-  if (Array.isArray(eventName)) {
-    for (const singleEventName of eventName) {
-      addEventHandler(state, singleEventName, eventHandler);
-    }
-    return;
-  }
-  if (!state.eventHandlers[eventName]) {
-    state.eventHandlers[eventName] = [];
-  }
-  state.eventHandlers[eventName].push(eventHandler);
-}
-var OAuthAppOctokit = Octokit$1.defaults({
-  userAgent: `octokit-oauth-app.js/${VERSION$3} ${getUserAgent()}`
-});
-
-// pkg/dist-src/emit-event.js
-async function emitEvent(state, context) {
-  const { name, action } = context;
-  if (state.eventHandlers[`${name}.${action}`]) {
-    for (const eventHandler of state.eventHandlers[`${name}.${action}`]) {
-      await eventHandler(context);
-    }
-  }
-  if (state.eventHandlers[name]) {
-    for (const eventHandler of state.eventHandlers[name]) {
-      await eventHandler(context);
-    }
-  }
-}
-
-// pkg/dist-src/methods/get-user-octokit.js
-async function getUserOctokitWithState(state, options) {
-  return state.octokit.auth({
-    type: "oauth-user",
-    ...options,
-    async factory(options2) {
-      const octokit = new state.Octokit({
-        authStrategy: createOAuthUserAuth,
-        auth: options2
-      });
-      const authentication = await octokit.auth({
-        type: "get"
-      });
-      await emitEvent(state, {
-        name: "token",
-        action: "created",
-        token: authentication.token,
-        scopes: authentication.scopes,
-        authentication,
-        octokit
-      });
-      return octokit;
-    }
-  });
-}
-function getWebFlowAuthorizationUrlWithState(state, options) {
-  const optionsWithDefaults = {
-    clientId: state.clientId,
-    request: state.octokit.request,
-    ...options,
-    allowSignup: state.allowSignup ?? options.allowSignup,
-    redirectUrl: options.redirectUrl ?? state.redirectUrl,
-    scopes: options.scopes ?? state.defaultScopes
-  };
-  return getWebFlowAuthorizationUrl({
-    clientType: state.clientType,
-    ...optionsWithDefaults
-  });
-}
-async function createTokenWithState(state, options) {
-  const authentication = await state.octokit.auth({
-    type: "oauth-user",
-    ...options
-  });
-  await emitEvent(state, {
-    name: "token",
-    action: "created",
-    token: authentication.token,
-    scopes: authentication.scopes,
-    authentication,
-    octokit: new state.Octokit({
-      authStrategy: createOAuthUserAuth,
-      auth: {
-        clientType: state.clientType,
-        clientId: state.clientId,
-        clientSecret: state.clientSecret,
-        token: authentication.token,
-        scopes: authentication.scopes,
-        refreshToken: authentication.refreshToken,
-        expiresAt: authentication.expiresAt,
-        refreshTokenExpiresAt: authentication.refreshTokenExpiresAt
-      }
-    })
-  });
-  return { authentication };
-}
-async function checkTokenWithState(state, options) {
-  const result = await checkToken({
-    // @ts-expect-error not worth the extra code to appease TS
-    clientType: state.clientType,
-    clientId: state.clientId,
-    clientSecret: state.clientSecret,
-    request: state.octokit.request,
-    ...options
-  });
-  Object.assign(result.authentication, { type: "token", tokenType: "oauth" });
-  return result;
-}
-async function resetTokenWithState(state, options) {
-  const optionsWithDefaults = {
-    clientId: state.clientId,
-    clientSecret: state.clientSecret,
-    request: state.octokit.request,
-    ...options
-  };
-  if (state.clientType === "oauth-app") {
-    const response2 = await resetToken({
-      clientType: "oauth-app",
-      ...optionsWithDefaults
-    });
-    const authentication2 = Object.assign(response2.authentication, {
-      type: "token",
-      tokenType: "oauth"
-    });
-    await emitEvent(state, {
-      name: "token",
-      action: "reset",
-      token: response2.authentication.token,
-      scopes: response2.authentication.scopes || void 0,
-      authentication: authentication2,
-      octokit: new state.Octokit({
-        authStrategy: createOAuthUserAuth,
-        auth: {
-          clientType: state.clientType,
-          clientId: state.clientId,
-          clientSecret: state.clientSecret,
-          token: response2.authentication.token,
-          scopes: response2.authentication.scopes
-        }
-      })
-    });
-    return { ...response2, authentication: authentication2 };
-  }
-  const response = await resetToken({
-    clientType: "github-app",
-    ...optionsWithDefaults
-  });
-  const authentication = Object.assign(response.authentication, {
-    type: "token",
-    tokenType: "oauth"
-  });
-  await emitEvent(state, {
-    name: "token",
-    action: "reset",
-    token: response.authentication.token,
-    authentication,
-    octokit: new state.Octokit({
-      authStrategy: createOAuthUserAuth,
-      auth: {
-        clientType: state.clientType,
-        clientId: state.clientId,
-        clientSecret: state.clientSecret,
-        token: response.authentication.token
-      }
-    })
-  });
-  return { ...response, authentication };
-}
-async function refreshTokenWithState(state, options) {
-  if (state.clientType === "oauth-app") {
-    throw new Error(
-      "[@octokit/oauth-app] app.refreshToken() is not supported for OAuth Apps"
-    );
-  }
-  const response = await refreshToken({
-    clientType: "github-app",
-    clientId: state.clientId,
-    clientSecret: state.clientSecret,
-    request: state.octokit.request,
-    refreshToken: options.refreshToken
-  });
-  const authentication = Object.assign(response.authentication, {
-    type: "token",
-    tokenType: "oauth"
-  });
-  await emitEvent(state, {
-    name: "token",
-    action: "refreshed",
-    token: response.authentication.token,
-    authentication,
-    octokit: new state.Octokit({
-      authStrategy: createOAuthUserAuth,
-      auth: {
-        clientType: state.clientType,
-        clientId: state.clientId,
-        clientSecret: state.clientSecret,
-        token: response.authentication.token
-      }
-    })
-  });
-  return { ...response, authentication };
-}
-async function scopeTokenWithState(state, options) {
-  if (state.clientType === "oauth-app") {
-    throw new Error(
-      "[@octokit/oauth-app] app.scopeToken() is not supported for OAuth Apps"
-    );
-  }
-  const response = await scopeToken({
-    clientType: "github-app",
-    clientId: state.clientId,
-    clientSecret: state.clientSecret,
-    request: state.octokit.request,
-    ...options
-  });
-  const authentication = Object.assign(response.authentication, {
-    type: "token",
-    tokenType: "oauth"
-  });
-  await emitEvent(state, {
-    name: "token",
-    action: "scoped",
-    token: response.authentication.token,
-    authentication,
-    octokit: new state.Octokit({
-      authStrategy: createOAuthUserAuth,
-      auth: {
-        clientType: state.clientType,
-        clientId: state.clientId,
-        clientSecret: state.clientSecret,
-        token: response.authentication.token
-      }
-    })
-  });
-  return { ...response, authentication };
-}
-async function deleteTokenWithState(state, options) {
-  const optionsWithDefaults = {
-    clientId: state.clientId,
-    clientSecret: state.clientSecret,
-    request: state.octokit.request,
-    ...options
-  };
-  const response = state.clientType === "oauth-app" ? await deleteToken({
-    clientType: "oauth-app",
-    ...optionsWithDefaults
-  }) : (
-    // istanbul ignore next
-    await deleteToken({
-      clientType: "github-app",
-      ...optionsWithDefaults
-    })
-  );
-  await emitEvent(state, {
-    name: "token",
-    action: "deleted",
-    token: options.token,
-    octokit: new state.Octokit({
-      authStrategy: createUnauthenticatedAuth,
-      auth: {
-        reason: `Handling "token.deleted" event. The access for the token has been revoked.`
-      }
-    })
-  });
-  return response;
-}
-async function deleteAuthorizationWithState(state, options) {
-  const optionsWithDefaults = {
-    clientId: state.clientId,
-    clientSecret: state.clientSecret,
-    request: state.octokit.request,
-    ...options
-  };
-  const response = state.clientType === "oauth-app" ? await deleteAuthorization({
-    clientType: "oauth-app",
-    ...optionsWithDefaults
-  }) : (
-    // istanbul ignore next
-    await deleteAuthorization({
-      clientType: "github-app",
-      ...optionsWithDefaults
-    })
-  );
-  await emitEvent(state, {
-    name: "token",
-    action: "deleted",
-    token: options.token,
-    octokit: new state.Octokit({
-      authStrategy: createUnauthenticatedAuth,
-      auth: {
-        reason: `Handling "token.deleted" event. The access for the token has been revoked.`
-      }
-    })
-  });
-  await emitEvent(state, {
-    name: "authorization",
-    action: "deleted",
-    token: options.token,
-    octokit: new state.Octokit({
-      authStrategy: createUnauthenticatedAuth,
-      auth: {
-        reason: `Handling "authorization.deleted" event. The access for the app has been revoked.`
-      }
-    })
-  });
-  return response;
-}
-
-// pkg/dist-src/index.js
-var OAuthApp = class {
-  static VERSION = VERSION$3;
-  static defaults(defaults) {
-    const OAuthAppWithDefaults = class extends this {
-      constructor(...args) {
-        super({
-          ...defaults,
-          ...args[0]
-        });
-      }
-    };
-    return OAuthAppWithDefaults;
-  }
-  constructor(options) {
-    const Octokit2 = options.Octokit || OAuthAppOctokit;
-    this.type = options.clientType || "oauth-app";
-    const octokit = new Octokit2({
-      authStrategy: createOAuthAppAuth,
-      auth: {
-        clientType: this.type,
-        clientId: options.clientId,
-        clientSecret: options.clientSecret
-      }
-    });
-    const state = {
-      clientType: this.type,
-      clientId: options.clientId,
-      clientSecret: options.clientSecret,
-      // @ts-expect-error defaultScopes not permitted for GitHub Apps
-      defaultScopes: options.defaultScopes || [],
-      allowSignup: options.allowSignup,
-      baseUrl: options.baseUrl,
-      redirectUrl: options.redirectUrl,
-      log: options.log,
-      Octokit: Octokit2,
-      octokit,
-      eventHandlers: {}
-    };
-    this.on = addEventHandler.bind(null, state);
-    this.octokit = octokit;
-    this.getUserOctokit = getUserOctokitWithState.bind(null, state);
-    this.getWebFlowAuthorizationUrl = getWebFlowAuthorizationUrlWithState.bind(
-      null,
-      state
-    );
-    this.createToken = createTokenWithState.bind(
-      null,
-      state
-    );
-    this.checkToken = checkTokenWithState.bind(
-      null,
-      state
-    );
-    this.resetToken = resetTokenWithState.bind(
-      null,
-      state
-    );
-    this.refreshToken = refreshTokenWithState.bind(
-      null,
-      state
-    );
-    this.scopeToken = scopeTokenWithState.bind(
-      null,
-      state
-    );
-    this.deleteToken = deleteTokenWithState.bind(null, state);
-    this.deleteAuthorization = deleteAuthorizationWithState.bind(null, state);
-  }
-  // assigned during constructor
-  type;
-  on;
-  octokit;
-  getUserOctokit;
-  getWebFlowAuthorizationUrl;
-  createToken;
-  checkToken;
-  resetToken;
-  refreshToken;
-  scopeToken;
-  deleteToken;
-  deleteAuthorization;
-};
-
-function indentString(string, count = 1, options = {}) {
-	const {
-		indent = ' ',
-		includeEmptyLines = false
-	} = options;
-
-	if (typeof string !== 'string') {
-		throw new TypeError(
-			`Expected \`input\` to be a \`string\`, got \`${typeof string}\``
-		);
-	}
-
-	if (typeof count !== 'number') {
-		throw new TypeError(
-			`Expected \`count\` to be a \`number\`, got \`${typeof count}\``
-		);
-	}
-
-	if (count < 0) {
-		throw new RangeError(
-			`Expected \`count\` to be at least 0, got \`${count}\``
-		);
-	}
-
-	if (typeof indent !== 'string') {
-		throw new TypeError(
-			`Expected \`options.indent\` to be a \`string\`, got \`${typeof indent}\``
-		);
-	}
-
-	if (count === 0) {
-		return string;
-	}
-
-	const regex = includeEmptyLines ? /^/gm : /^(?!\s*$)/gm;
-
-	return string.replace(regex, indent.repeat(count));
-}
-
-function escapeStringRegexp(string) {
-	if (typeof string !== 'string') {
-		throw new TypeError('Expected a string');
-	}
-
-	// Escape characters with special meaning either inside or outside character sets.
-	// Use a simple backslash escape when it’s always valid, and a `\xnn` escape when the simpler form would be disallowed by Unicode patterns’ stricter grammar.
-	return string
-		.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
-		.replace(/-/g, '\\x2d');
-}
-
-const getHomeDirectory = () => os.homedir().replace(/\\/g, '/');
-
-const extractPathRegex = /\s+at.*[(\s](.*)\)?/;
-const pathRegex = /^(?:(?:(?:node|node:[\w/]+|(?:(?:node:)?internal\/[\w/]*|.*node_modules\/(?:babel-polyfill|pirates)\/.*)?\w+)(?:\.js)?:\d+:\d+)|native)/;
-
-function cleanStack(stack, {pretty = false, basePath, pathFilter} = {}) {
-	const basePathRegex = basePath && new RegExp(`(file://)?${escapeStringRegexp(basePath.replace(/\\/g, '/'))}/?`, 'g');
-	const homeDirectory = pretty ? getHomeDirectory() : '';
-
-	if (typeof stack !== 'string') {
-		return undefined;
-	}
-
-	return stack.replace(/\\/g, '/')
-		.split('\n')
-		.filter(line => {
-			const pathMatches = line.match(extractPathRegex);
-			if (pathMatches === null || !pathMatches[1]) {
-				return true;
-			}
-
-			const match = pathMatches[1];
-
-			// Electron
-			if (
-				match.includes('.app/Contents/Resources/electron.asar')
-				|| match.includes('.app/Contents/Resources/default_app.asar')
-				|| match.includes('node_modules/electron/dist/resources/electron.asar')
-				|| match.includes('node_modules/electron/dist/resources/default_app.asar')
-			) {
-				return false;
-			}
-
-			return pathFilter
-				? !pathRegex.test(match) && pathFilter(match)
-				: !pathRegex.test(match);
-		})
-		.filter(line => line.trim() !== '')
-		.map(line => {
-			if (basePathRegex) {
-				line = line.replace(basePathRegex, '');
-			}
-
-			if (pretty) {
-				line = line.replace(extractPathRegex, (m, p1) => m.replace(p1, p1.replace(homeDirectory, '~')));
-			}
-
-			return line;
-		})
-		.join('\n');
-}
-
-const cleanInternalStack = stack => stack.replaceAll(/\s+at .*aggregate-error\/index.js:\d+:\d+\)?/g, '');
-
-class AggregateError extends Error {
-	#errors;
-
-	name = 'AggregateError';
-
-	constructor(errors) {
-		if (!Array.isArray(errors)) {
-			throw new TypeError(`Expected input to be an Array, got ${typeof errors}`);
-		}
-
-		errors = errors.map(error => {
-			if (error instanceof Error) {
-				return error;
-			}
-
-			if (error !== null && typeof error === 'object') {
-				// Handle plain error objects with message property and/or possibly other metadata
-				return Object.assign(new Error(error.message), error);
-			}
-
-			return new Error(error);
-		});
-
-		let message = errors
-			.map(error =>
-				// The `stack` property is not standardized, so we can't assume it exists
-				typeof error.stack === 'string' && error.stack.length > 0 ? cleanInternalStack(cleanStack(error.stack)) : String(error),
-			)
-			.join('\n');
-		message = '\n' + indentString(message, 4);
-		super(message);
-
-		this.#errors = errors;
-	}
-
-	get errors() {
-		return [...this.#errors];
-	}
-}
-
-// pkg/dist-src/node/sign.js
-
-// pkg/dist-src/version.js
-var VERSION$2 = "5.1.0";
-
-// pkg/dist-src/node/sign.js
-async function sign(secret, payload) {
-  if (!secret || !payload) {
-    throw new TypeError(
-      "[@octokit/webhooks-methods] secret & payload required for sign()"
-    );
-  }
-  if (typeof payload !== "string") {
-    throw new TypeError("[@octokit/webhooks-methods] payload must be a string");
-  }
-  const algorithm = "sha256";
-  return `${algorithm}=${createHmac(algorithm, secret).update(payload).digest("hex")}`;
-}
-sign.VERSION = VERSION$2;
-async function verify(secret, eventPayload, signature) {
-  if (!secret || !eventPayload || !signature) {
-    throw new TypeError(
-      "[@octokit/webhooks-methods] secret, eventPayload & signature required"
-    );
-  }
-  if (typeof eventPayload !== "string") {
-    throw new TypeError(
-      "[@octokit/webhooks-methods] eventPayload must be a string"
-    );
-  }
-  const signatureBuffer = Buffer$1.from(signature);
-  const verificationBuffer = Buffer$1.from(await sign(secret, eventPayload));
-  if (signatureBuffer.length !== verificationBuffer.length) {
-    return false;
-  }
-  return timingSafeEqual(signatureBuffer, verificationBuffer);
-}
-verify.VERSION = VERSION$2;
-
-// pkg/dist-src/createLogger.js
-var createLogger = (logger) => ({
-  debug: () => {
-  },
-  info: () => {
-  },
-  warn: console.warn.bind(console),
-  error: console.error.bind(console),
-  ...logger
-});
-
-// pkg/dist-src/generated/webhook-names.js
-var emitterEventNames = [
-  "branch_protection_configuration",
-  "branch_protection_configuration.disabled",
-  "branch_protection_configuration.enabled",
-  "branch_protection_rule",
-  "branch_protection_rule.created",
-  "branch_protection_rule.deleted",
-  "branch_protection_rule.edited",
-  "check_run",
-  "check_run.completed",
-  "check_run.created",
-  "check_run.requested_action",
-  "check_run.rerequested",
-  "check_suite",
-  "check_suite.completed",
-  "check_suite.requested",
-  "check_suite.rerequested",
-  "code_scanning_alert",
-  "code_scanning_alert.appeared_in_branch",
-  "code_scanning_alert.closed_by_user",
-  "code_scanning_alert.created",
-  "code_scanning_alert.fixed",
-  "code_scanning_alert.reopened",
-  "code_scanning_alert.reopened_by_user",
-  "commit_comment",
-  "commit_comment.created",
-  "create",
-  "custom_property",
-  "custom_property.created",
-  "custom_property.deleted",
-  "custom_property.updated",
-  "custom_property_values",
-  "custom_property_values.updated",
-  "delete",
-  "dependabot_alert",
-  "dependabot_alert.auto_dismissed",
-  "dependabot_alert.auto_reopened",
-  "dependabot_alert.created",
-  "dependabot_alert.dismissed",
-  "dependabot_alert.fixed",
-  "dependabot_alert.reintroduced",
-  "dependabot_alert.reopened",
-  "deploy_key",
-  "deploy_key.created",
-  "deploy_key.deleted",
-  "deployment",
-  "deployment.created",
-  "deployment_protection_rule",
-  "deployment_protection_rule.requested",
-  "deployment_review",
-  "deployment_review.approved",
-  "deployment_review.rejected",
-  "deployment_review.requested",
-  "deployment_status",
-  "deployment_status.created",
-  "discussion",
-  "discussion.answered",
-  "discussion.category_changed",
-  "discussion.closed",
-  "discussion.created",
-  "discussion.deleted",
-  "discussion.edited",
-  "discussion.labeled",
-  "discussion.locked",
-  "discussion.pinned",
-  "discussion.reopened",
-  "discussion.transferred",
-  "discussion.unanswered",
-  "discussion.unlabeled",
-  "discussion.unlocked",
-  "discussion.unpinned",
-  "discussion_comment",
-  "discussion_comment.created",
-  "discussion_comment.deleted",
-  "discussion_comment.edited",
-  "fork",
-  "github_app_authorization",
-  "github_app_authorization.revoked",
-  "gollum",
-  "installation",
-  "installation.created",
-  "installation.deleted",
-  "installation.new_permissions_accepted",
-  "installation.suspend",
-  "installation.unsuspend",
-  "installation_repositories",
-  "installation_repositories.added",
-  "installation_repositories.removed",
-  "installation_target",
-  "installation_target.renamed",
-  "issue_comment",
-  "issue_comment.created",
-  "issue_comment.deleted",
-  "issue_comment.edited",
-  "issues",
-  "issues.assigned",
-  "issues.closed",
-  "issues.deleted",
-  "issues.demilestoned",
-  "issues.edited",
-  "issues.labeled",
-  "issues.locked",
-  "issues.milestoned",
-  "issues.opened",
-  "issues.pinned",
-  "issues.reopened",
-  "issues.transferred",
-  "issues.unassigned",
-  "issues.unlabeled",
-  "issues.unlocked",
-  "issues.unpinned",
-  "label",
-  "label.created",
-  "label.deleted",
-  "label.edited",
-  "marketplace_purchase",
-  "marketplace_purchase.cancelled",
-  "marketplace_purchase.changed",
-  "marketplace_purchase.pending_change",
-  "marketplace_purchase.pending_change_cancelled",
-  "marketplace_purchase.purchased",
-  "member",
-  "member.added",
-  "member.edited",
-  "member.removed",
-  "membership",
-  "membership.added",
-  "membership.removed",
-  "merge_group",
-  "merge_group.checks_requested",
-  "merge_group.destroyed",
-  "meta",
-  "meta.deleted",
-  "milestone",
-  "milestone.closed",
-  "milestone.created",
-  "milestone.deleted",
-  "milestone.edited",
-  "milestone.opened",
-  "org_block",
-  "org_block.blocked",
-  "org_block.unblocked",
-  "organization",
-  "organization.deleted",
-  "organization.member_added",
-  "organization.member_invited",
-  "organization.member_removed",
-  "organization.renamed",
-  "package",
-  "package.published",
-  "package.updated",
-  "page_build",
-  "personal_access_token_request",
-  "personal_access_token_request.approved",
-  "personal_access_token_request.cancelled",
-  "personal_access_token_request.created",
-  "personal_access_token_request.denied",
-  "ping",
-  "project",
-  "project.closed",
-  "project.created",
-  "project.deleted",
-  "project.edited",
-  "project.reopened",
-  "project_card",
-  "project_card.converted",
-  "project_card.created",
-  "project_card.deleted",
-  "project_card.edited",
-  "project_card.moved",
-  "project_column",
-  "project_column.created",
-  "project_column.deleted",
-  "project_column.edited",
-  "project_column.moved",
-  "projects_v2",
-  "projects_v2.closed",
-  "projects_v2.created",
-  "projects_v2.deleted",
-  "projects_v2.edited",
-  "projects_v2.reopened",
-  "projects_v2_item",
-  "projects_v2_item.archived",
-  "projects_v2_item.converted",
-  "projects_v2_item.created",
-  "projects_v2_item.deleted",
-  "projects_v2_item.edited",
-  "projects_v2_item.reordered",
-  "projects_v2_item.restored",
-  "public",
-  "pull_request",
-  "pull_request.assigned",
-  "pull_request.auto_merge_disabled",
-  "pull_request.auto_merge_enabled",
-  "pull_request.closed",
-  "pull_request.converted_to_draft",
-  "pull_request.demilestoned",
-  "pull_request.dequeued",
-  "pull_request.edited",
-  "pull_request.enqueued",
-  "pull_request.labeled",
-  "pull_request.locked",
-  "pull_request.milestoned",
-  "pull_request.opened",
-  "pull_request.ready_for_review",
-  "pull_request.reopened",
-  "pull_request.review_request_removed",
-  "pull_request.review_requested",
-  "pull_request.synchronize",
-  "pull_request.unassigned",
-  "pull_request.unlabeled",
-  "pull_request.unlocked",
-  "pull_request_review",
-  "pull_request_review.dismissed",
-  "pull_request_review.edited",
-  "pull_request_review.submitted",
-  "pull_request_review_comment",
-  "pull_request_review_comment.created",
-  "pull_request_review_comment.deleted",
-  "pull_request_review_comment.edited",
-  "pull_request_review_thread",
-  "pull_request_review_thread.resolved",
-  "pull_request_review_thread.unresolved",
-  "push",
-  "registry_package",
-  "registry_package.published",
-  "registry_package.updated",
-  "release",
-  "release.created",
-  "release.deleted",
-  "release.edited",
-  "release.prereleased",
-  "release.published",
-  "release.released",
-  "release.unpublished",
-  "repository",
-  "repository.archived",
-  "repository.created",
-  "repository.deleted",
-  "repository.edited",
-  "repository.privatized",
-  "repository.publicized",
-  "repository.renamed",
-  "repository.transferred",
-  "repository.unarchived",
-  "repository_advisory",
-  "repository_advisory.published",
-  "repository_advisory.reported",
-  "repository_dispatch",
-  "repository_dispatch.sample.collected",
-  "repository_import",
-  "repository_ruleset",
-  "repository_ruleset.created",
-  "repository_ruleset.deleted",
-  "repository_ruleset.edited",
-  "repository_vulnerability_alert",
-  "repository_vulnerability_alert.create",
-  "repository_vulnerability_alert.dismiss",
-  "repository_vulnerability_alert.reopen",
-  "repository_vulnerability_alert.resolve",
-  "secret_scanning_alert",
-  "secret_scanning_alert.created",
-  "secret_scanning_alert.reopened",
-  "secret_scanning_alert.resolved",
-  "secret_scanning_alert.revoked",
-  "secret_scanning_alert.validated",
-  "secret_scanning_alert_location",
-  "secret_scanning_alert_location.created",
-  "security_advisory",
-  "security_advisory.published",
-  "security_advisory.updated",
-  "security_advisory.withdrawn",
-  "security_and_analysis",
-  "sponsorship",
-  "sponsorship.cancelled",
-  "sponsorship.created",
-  "sponsorship.edited",
-  "sponsorship.pending_cancellation",
-  "sponsorship.pending_tier_change",
-  "sponsorship.tier_changed",
-  "star",
-  "star.created",
-  "star.deleted",
-  "status",
-  "team",
-  "team.added_to_repository",
-  "team.created",
-  "team.deleted",
-  "team.edited",
-  "team.removed_from_repository",
-  "team_add",
-  "watch",
-  "watch.started",
-  "workflow_dispatch",
-  "workflow_job",
-  "workflow_job.completed",
-  "workflow_job.in_progress",
-  "workflow_job.queued",
-  "workflow_job.waiting",
-  "workflow_run",
-  "workflow_run.completed",
-  "workflow_run.in_progress",
-  "workflow_run.requested"
-];
-
-// pkg/dist-src/event-handler/on.js
-function handleEventHandlers(state, webhookName, handler) {
-  if (!state.hooks[webhookName]) {
-    state.hooks[webhookName] = [];
-  }
-  state.hooks[webhookName].push(handler);
-}
-function receiverOn(state, webhookNameOrNames, handler) {
-  if (Array.isArray(webhookNameOrNames)) {
-    webhookNameOrNames.forEach(
-      (webhookName) => receiverOn(state, webhookName, handler)
-    );
-    return;
-  }
-  if (["*", "error"].includes(webhookNameOrNames)) {
-    const webhookName = webhookNameOrNames === "*" ? "any" : webhookNameOrNames;
-    const message = `Using the "${webhookNameOrNames}" event with the regular Webhooks.on() function is not supported. Please use the Webhooks.on${webhookName.charAt(0).toUpperCase() + webhookName.slice(1)}() method instead`;
-    throw new Error(message);
-  }
-  if (!emitterEventNames.includes(webhookNameOrNames)) {
-    state.log.warn(
-      `"${webhookNameOrNames}" is not a known webhook name (https://developer.github.com/v3/activity/events/types/)`
-    );
-  }
-  handleEventHandlers(state, webhookNameOrNames, handler);
-}
-function receiverOnAny(state, handler) {
-  handleEventHandlers(state, "*", handler);
-}
-function receiverOnError(state, handler) {
-  handleEventHandlers(state, "error", handler);
-}
-
-// pkg/dist-src/event-handler/wrap-error-handler.js
-function wrapErrorHandler(handler, error) {
-  let returnValue;
-  try {
-    returnValue = handler(error);
-  } catch (error2) {
-    console.log('FATAL: Error occurred in "error" event handler');
-    console.log(error2);
-  }
-  if (returnValue && returnValue.catch) {
-    returnValue.catch((error2) => {
-      console.log('FATAL: Error occurred in "error" event handler');
-      console.log(error2);
-    });
-  }
-}
-
-// pkg/dist-src/event-handler/receive.js
-function getHooks(state, eventPayloadAction, eventName) {
-  const hooks = [state.hooks[eventName], state.hooks["*"]];
-  if (eventPayloadAction) {
-    hooks.unshift(state.hooks[`${eventName}.${eventPayloadAction}`]);
-  }
-  return [].concat(...hooks.filter(Boolean));
-}
-function receiverHandle(state, event) {
-  const errorHandlers = state.hooks.error || [];
-  if (event instanceof Error) {
-    const error = Object.assign(new AggregateError([event]), {
-      event
-    });
-    errorHandlers.forEach((handler) => wrapErrorHandler(handler, error));
-    return Promise.reject(error);
-  }
-  if (!event || !event.name) {
-    throw new AggregateError(["Event name not passed"]);
-  }
-  if (!event.payload) {
-    throw new AggregateError(["Event payload not passed"]);
-  }
-  const hooks = getHooks(
-    state,
-    "action" in event.payload ? event.payload.action : null,
-    event.name
-  );
-  if (hooks.length === 0) {
-    return Promise.resolve();
-  }
-  const errors = [];
-  const promises = hooks.map((handler) => {
-    let promise = Promise.resolve(event);
-    if (state.transform) {
-      promise = promise.then(state.transform);
-    }
-    return promise.then((event2) => {
-      return handler(event2);
-    }).catch((error) => errors.push(Object.assign(error, { event })));
-  });
-  return Promise.all(promises).then(() => {
-    if (errors.length === 0) {
-      return;
-    }
-    const error = new AggregateError(errors);
-    Object.assign(error, {
-      event
-    });
-    errorHandlers.forEach((handler) => wrapErrorHandler(handler, error));
-    throw error;
-  });
-}
-
-// pkg/dist-src/event-handler/remove-listener.js
-function removeListener(state, webhookNameOrNames, handler) {
-  if (Array.isArray(webhookNameOrNames)) {
-    webhookNameOrNames.forEach(
-      (webhookName) => removeListener(state, webhookName, handler)
-    );
-    return;
-  }
-  if (!state.hooks[webhookNameOrNames]) {
-    return;
-  }
-  for (let i = state.hooks[webhookNameOrNames].length - 1; i >= 0; i--) {
-    if (state.hooks[webhookNameOrNames][i] === handler) {
-      state.hooks[webhookNameOrNames].splice(i, 1);
-      return;
-    }
-  }
-}
-
-// pkg/dist-src/event-handler/index.js
-function createEventHandler(options) {
-  const state = {
-    hooks: {},
-    log: createLogger(options && options.log)
-  };
-  if (options && options.transform) {
-    state.transform = options.transform;
-  }
-  return {
-    on: receiverOn.bind(null, state),
-    onAny: receiverOnAny.bind(null, state),
-    onError: receiverOnError.bind(null, state),
-    removeListener: removeListener.bind(null, state),
-    receive: receiverHandle.bind(null, state)
-  };
-}
-async function verifyAndReceive(state, event) {
-  const matchesSignature = await verify(
-    state.secret,
-    event.payload,
-    event.signature
-  ).catch(() => false);
-  if (!matchesSignature) {
-    const error = new Error(
-      "[@octokit/webhooks] signature does not match event payload and secret"
-    );
-    return state.eventHandler.receive(
-      Object.assign(error, { event, status: 400 })
-    );
-  }
-  let payload;
-  try {
-    payload = JSON.parse(event.payload);
-  } catch (error) {
-    error.message = "Invalid JSON";
-    error.status = 400;
-    throw new AggregateError([error]);
-  }
-  return state.eventHandler.receive({
-    id: event.id,
-    name: event.name,
-    payload
-  });
-}
-
-// pkg/dist-src/index.js
-var Webhooks = class {
-  sign;
-  verify;
-  on;
-  onAny;
-  onError;
-  removeListener;
-  receive;
-  verifyAndReceive;
-  constructor(options) {
-    if (!options || !options.secret) {
-      throw new Error("[@octokit/webhooks] options.secret required");
-    }
-    const state = {
-      eventHandler: createEventHandler(options),
-      secret: options.secret,
-      hooks: {},
-      log: createLogger(options.log)
-    };
-    this.sign = sign.bind(null, options.secret);
-    this.verify = verify.bind(null, options.secret);
-    this.on = state.eventHandler.on;
-    this.onAny = state.eventHandler.onAny;
-    this.onError = state.eventHandler.onError;
-    this.removeListener = state.eventHandler.removeListener;
-    this.receive = state.eventHandler.receive;
-    this.verifyAndReceive = verifyAndReceive.bind(null, state);
-  }
-};
-
-// pkg/dist-src/version.js
-
-// pkg/dist-src/normalize-paginated-list-response.js
-function normalizePaginatedListResponse(response) {
-  if (!response.data) {
-    return {
-      ...response,
-      data: []
-    };
-  }
-  const responseNeedsNormalization = "total_count" in response.data && !("url" in response.data);
-  if (!responseNeedsNormalization)
-    return response;
-  const incompleteResults = response.data.incomplete_results;
-  const repositorySelection = response.data.repository_selection;
-  const totalCount = response.data.total_count;
-  delete response.data.incomplete_results;
-  delete response.data.repository_selection;
-  delete response.data.total_count;
-  const namespaceKey = Object.keys(response.data)[0];
-  const data = response.data[namespaceKey];
-  response.data = data;
-  if (typeof incompleteResults !== "undefined") {
-    response.data.incomplete_results = incompleteResults;
-  }
-  if (typeof repositorySelection !== "undefined") {
-    response.data.repository_selection = repositorySelection;
-  }
-  response.data.total_count = totalCount;
-  return response;
-}
-
-// pkg/dist-src/iterator.js
-function iterator(octokit, route, parameters) {
-  const options = typeof route === "function" ? route.endpoint(parameters) : octokit.request.endpoint(route, parameters);
-  const requestMethod = typeof route === "function" ? route : octokit.request;
-  const method = options.method;
-  const headers = options.headers;
-  let url = options.url;
-  return {
-    [Symbol.asyncIterator]: () => ({
-      async next() {
-        if (!url)
-          return { done: true };
-        try {
-          const response = await requestMethod({ method, url, headers });
-          const normalizedResponse = normalizePaginatedListResponse(response);
-          url = ((normalizedResponse.headers.link || "").match(
-            /<([^>]+)>;\s*rel="next"/
-          ) || [])[1];
-          return { value: normalizedResponse };
-        } catch (error) {
-          if (error.status !== 409)
-            throw error;
-          url = "";
-          return {
-            value: {
-              status: 200,
-              headers: {},
-              data: []
-            }
-          };
-        }
-      }
-    })
-  };
-}
-
-// pkg/dist-src/paginate.js
-function paginate(octokit, route, parameters, mapFn) {
-  if (typeof parameters === "function") {
-    mapFn = parameters;
-    parameters = void 0;
-  }
-  return gather(
-    octokit,
-    [],
-    iterator(octokit, route, parameters)[Symbol.asyncIterator](),
-    mapFn
-  );
-}
-function gather(octokit, results, iterator2, mapFn) {
-  return iterator2.next().then((result) => {
-    if (result.done) {
-      return results;
-    }
-    let earlyExit = false;
-    function done() {
-      earlyExit = true;
-    }
-    results = results.concat(
-      mapFn ? mapFn(result.value, done) : result.value.data
-    );
-    if (earlyExit) {
-      return results;
-    }
-    return gather(octokit, results, iterator2, mapFn);
-  });
-}
-
-// pkg/dist-src/compose-paginate.js
-var composePaginateRest = Object.assign(paginate, {
-  iterator
-});
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$1 = "15.0.1";
-function webhooks(appOctokit, options) {
-  return new Webhooks({
-    secret: options.secret,
-    transform: async (event) => {
-      if (!("installation" in event.payload) || typeof event.payload.installation !== "object") {
-        const octokit2 = new appOctokit.constructor({
-          authStrategy: createUnauthenticatedAuth,
-          auth: {
-            reason: `"installation" key missing in webhook event payload`
-          }
-        });
-        return {
-          ...event,
-          octokit: octokit2
-        };
-      }
-      const installationId = event.payload.installation.id;
-      const octokit = await appOctokit.auth({
-        type: "installation",
-        installationId,
-        factory(auth) {
-          return new auth.octokit.constructor({
-            ...auth.octokitOptions,
-            authStrategy: createAppAuth,
-            ...{
-              auth: {
-                ...auth,
-                installationId
-              }
-            }
-          });
-        }
-      });
-      octokit.hook.before("request", (options2) => {
-        options2.headers["x-github-delivery"] = event.id;
-      });
-      return {
-        ...event,
-        octokit
-      };
-    }
-  });
-}
-async function getInstallationOctokit(app, installationId) {
-  return app.octokit.auth({
-    type: "installation",
-    installationId,
-    factory(auth) {
-      const options = {
-        ...auth.octokitOptions,
-        authStrategy: createAppAuth,
-        ...{ auth: { ...auth, installationId } }
-      };
-      return new auth.octokit.constructor(options);
-    }
-  });
-}
-
-// pkg/dist-src/each-installation.js
-function eachInstallationFactory(app) {
-  return Object.assign(eachInstallation.bind(null, app), {
-    iterator: eachInstallationIterator.bind(null, app)
-  });
-}
-async function eachInstallation(app, callback) {
-  const i = eachInstallationIterator(app)[Symbol.asyncIterator]();
-  let result = await i.next();
-  while (!result.done) {
-    await callback(result.value);
-    result = await i.next();
-  }
-}
-function eachInstallationIterator(app) {
-  return {
-    async *[Symbol.asyncIterator]() {
-      const iterator = composePaginateRest.iterator(
-        app.octokit,
-        "GET /app/installations"
-      );
-      for await (const { data: installations } of iterator) {
-        for (const installation of installations) {
-          const installationOctokit = await getInstallationOctokit(
-            app,
-            installation.id
-          );
-          yield { octokit: installationOctokit, installation };
-        }
-      }
-    }
-  };
-}
-function eachRepositoryFactory(app) {
-  return Object.assign(eachRepository.bind(null, app), {
-    iterator: eachRepositoryIterator.bind(null, app)
-  });
-}
-async function eachRepository(app, queryOrCallback, callback) {
-  const i = eachRepositoryIterator(
-    app,
-    callback ? queryOrCallback : void 0
-  )[Symbol.asyncIterator]();
-  let result = await i.next();
-  while (!result.done) {
-    if (callback) {
-      await callback(result.value);
-    } else {
-      await queryOrCallback(result.value);
-    }
-    result = await i.next();
-  }
-}
-function singleInstallationIterator(app, installationId) {
-  return {
-    async *[Symbol.asyncIterator]() {
-      yield {
-        octokit: await app.getInstallationOctokit(installationId)
-      };
-    }
-  };
-}
-function eachRepositoryIterator(app, query) {
-  return {
-    async *[Symbol.asyncIterator]() {
-      const iterator = query ? singleInstallationIterator(app, query.installationId) : app.eachInstallation.iterator();
-      for await (const { octokit } of iterator) {
-        const repositoriesIterator = composePaginateRest.iterator(
-          octokit,
-          "GET /installation/repositories"
-        );
-        for await (const { data: repositories } of repositoriesIterator) {
-          for (const repository of repositories) {
-            yield { octokit, repository };
-          }
-        }
-      }
-    }
-  };
-}
-
-// pkg/dist-src/index.js
-var App = class {
-  static VERSION = VERSION$1;
-  static defaults(defaults) {
-    const AppWithDefaults = class extends this {
-      constructor(...args) {
-        super({
-          ...defaults,
-          ...args[0]
-        });
-      }
-    };
-    return AppWithDefaults;
-  }
-  octokit;
-  // @ts-ignore calling app.webhooks will throw a helpful error when options.webhooks is not set
-  webhooks;
-  // @ts-ignore calling app.oauth will throw a helpful error when options.oauth is not set
-  oauth;
-  getInstallationOctokit;
-  eachInstallation;
-  eachRepository;
-  log;
-  constructor(options) {
-    const Octokit = options.Octokit || Octokit$2;
-    const authOptions = Object.assign(
-      {
-        appId: options.appId,
-        privateKey: options.privateKey
-      },
-      options.oauth ? {
-        clientId: options.oauth.clientId,
-        clientSecret: options.oauth.clientSecret
-      } : {}
-    );
-    this.octokit = new Octokit({
-      authStrategy: createAppAuth,
-      auth: authOptions,
-      log: options.log
-    });
-    this.log = Object.assign(
-      {
-        debug: () => {
-        },
-        info: () => {
-        },
-        warn: console.warn.bind(console),
-        error: console.error.bind(console)
-      },
-      options.log
-    );
-    if (options.webhooks) {
-      this.webhooks = webhooks(this.octokit, options.webhooks);
-    } else {
-      Object.defineProperty(this, "webhooks", {
-        get() {
-          throw new Error("[@octokit/app] webhooks option not set");
-        }
-      });
-    }
-    if (options.oauth) {
-      this.oauth = new OAuthApp({
-        ...options.oauth,
-        clientType: "github-app",
-        Octokit
-      });
-    } else {
-      Object.defineProperty(this, "oauth", {
-        get() {
-          throw new Error(
-            "[@octokit/app] oauth.clientId / oauth.clientSecret options are not set"
-          );
-        }
-      });
-    }
-    this.getInstallationOctokit = getInstallationOctokit.bind(
-      null,
-      this
-    );
-    this.eachInstallation = eachInstallationFactory(
-      this
-    );
-    this.eachRepository = eachRepositoryFactory(
-      this
-    );
-  }
-};
-
-// pkg/dist-src/octokit.js
-
-// pkg/dist-src/version.js
-var VERSION = "0.0.0-development";
-var Octokit = Octokit$3.plugin(
-  restEndpointMethods,
-  paginateRest,
-  paginateGraphQL,
-  retry,
-  throttling
-).defaults({
-  userAgent: `octokit.js/${VERSION}`,
-  throttle: {
-    onRateLimit,
-    onSecondaryRateLimit
-  }
-});
-function onRateLimit(retryAfter, options, octokit) {
-  octokit.log.warn(
-    `Request quota exhausted for request ${options.method} ${options.url}`
-  );
-  if (options.request.retryCount === 0) {
-    octokit.log.info(`Retrying after ${retryAfter} seconds!`);
-    return true;
-  }
-}
-function onSecondaryRateLimit(retryAfter, options, octokit) {
-  octokit.log.warn(
-    `SecondaryRateLimit detected for request ${options.method} ${options.url}`
-  );
-  if (options.request.retryCount === 0) {
-    octokit.log.info(`Retrying after ${retryAfter} seconds!`);
-    return true;
-  }
-}
-App.defaults({ Octokit });
-OAuthApp.defaults({ Octokit });
 
 const ALIAS = Symbol.for('yaml.alias');
 const DOC = Symbol.for('yaml.document');
@@ -44240,6 +30702,7 @@ function applyReviver(reviver, obj, key, val) {
             for (let i = 0, len = val.length; i < len; ++i) {
                 const v0 = val[i];
                 const v1 = applyReviver(reviver, val, String(i), v0);
+                // eslint-disable-next-line @typescript-eslint/no-array-delete
                 if (v1 === undefined)
                     delete val[i];
                 else if (v1 !== v0)
@@ -44723,7 +31186,6 @@ class Collection extends Node.NodeBase {
         }
     }
 }
-Collection.maxFlowStringSingleLineLength = 60;
 
 var Collection_2 = Collection;
 var collectionFromPath_1 = collectionFromPath;
@@ -44775,6 +31237,8 @@ const FOLD_QUOTED = 'quoted';
 function foldFlowLines(text, indent, mode = 'flow', { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
     if (!lineWidth || lineWidth < 0)
         return text;
+    if (lineWidth < minContentWidth)
+        minContentWidth = 0;
     const endStep = Math.max(1 + minContentWidth, 1 + lineWidth - indent.length);
     if (text.length <= endStep)
         return text;
@@ -45137,23 +31601,32 @@ function blockString({ comment, type, value }, ctx, onComment, onChompKeep) {
         start = start.replace(/\n+/g, `$&${indent}`);
     }
     const indentSize = indent ? '2' : '1'; // root is at -1
-    let header = (literal ? '|' : '>') + (startWithSpace ? indentSize : '') + chomp;
+    // Leading | or > is added later
+    let header = (startWithSpace ? indentSize : '') + chomp;
     if (comment) {
         header += ' ' + commentString(comment.replace(/ ?[\r\n]+/g, ' '));
         if (onComment)
             onComment();
     }
-    if (literal) {
-        value = value.replace(/\n+/g, `$&${indent}`);
-        return `${header}\n${indent}${start}${value}${end}`;
+    if (!literal) {
+        const foldedValue = value
+            .replace(/\n+/g, '\n$&')
+            .replace(/(?:^|\n)([\t ].*)(?:([\n\t ]*)\n(?![\n\t ]))?/g, '$1$2') // more-indented lines aren't folded
+            //                ^ more-ind. ^ empty     ^ capture next empty lines only at end of indent
+            .replace(/\n+/g, `$&${indent}`);
+        let literalFallback = false;
+        const foldOptions = getFoldOptions(ctx, true);
+        if (blockQuote !== 'folded' && type !== Scalar_1$1.Scalar.BLOCK_FOLDED) {
+            foldOptions.onOverflow = () => {
+                literalFallback = true;
+            };
+        }
+        const body = foldFlowLines_1.foldFlowLines(`${start}${foldedValue}${end}`, indent, foldFlowLines_1.FOLD_BLOCK, foldOptions);
+        if (!literalFallback)
+            return `>${header}\n${indent}${body}`;
     }
-    value = value
-        .replace(/\n+/g, '\n$&')
-        .replace(/(?:^|\n)([\t ].*)(?:([\n\t ]*)\n(?![\n\t ]))?/g, '$1$2') // more-indented lines aren't folded
-        //                ^ more-ind. ^ empty     ^ capture next empty lines only at end of indent
-        .replace(/\n+/g, `$&${indent}`);
-    const body = foldFlowLines_1.foldFlowLines(`${start}${value}${end}`, indent, foldFlowLines_1.FOLD_BLOCK, getFoldOptions(ctx, true));
-    return `${header}\n${indent}${body}`;
+    value = value.replace(/\n+/g, `$&${indent}`);
+    return `|${header}\n${indent}${start}${value}${end}`;
 }
 function plainString(item, ctx, onComment, onChompKeep) {
     const { type, value } = item;
@@ -45300,7 +31773,12 @@ function getTagObject(tags, item) {
     let obj;
     if (identity.isScalar(item)) {
         obj = item.value;
-        const match = tags.filter(t => t.identify?.(obj));
+        let match = tags.filter(t => t.identify?.(obj));
+        if (match.length > 1) {
+            const testMatch = match.filter(t => t.test);
+            if (testMatch.length > 0)
+                match = testMatch;
+        }
         tagObj =
             match.find(t => t.format === item.format) ?? match.find(t => !t.format);
     }
@@ -45531,10 +32009,8 @@ function debug(logLevel, ...messages) {
 }
 function warn(logLevel, warning) {
     if (logLevel === 'debug' || logLevel === 'warn') {
-        // https://github.com/typescript-eslint/typescript-eslint/issues/7478
-        // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-        if (typeof process !== 'undefined' && process.emitWarning)
-            process.emitWarning(warning);
+        if (typeof node_process.emitWarning === 'function')
+            node_process.emitWarning(warning);
         else
             console.warn(warning);
     }
@@ -45548,19 +32024,82 @@ var log = {
 	warn: warn_1
 };
 
+// If the value associated with a merge key is a single mapping node, each of
+// its key/value pairs is inserted into the current mapping, unless the key
+// already exists in it. If the value associated with the merge key is a
+// sequence, then this sequence is expected to contain mapping nodes and each
+// of these nodes is merged in turn according to its order in the sequence.
+// Keys in mapping nodes earlier in the sequence override keys specified in
+// later mapping nodes. -- http://yaml.org/type/merge.html
 const MERGE_KEY = '<<';
-function addPairToJSMap(ctx, map, { key, value }) {
-    if (ctx?.doc.schema.merge && isMergeKey(key)) {
-        value = identity.isAlias(value) ? value.resolve(ctx.doc) : value;
-        if (identity.isSeq(value))
-            for (const it of value.items)
-                mergeToJSMap(ctx, map, it);
-        else if (Array.isArray(value))
-            for (const it of value)
-                mergeToJSMap(ctx, map, it);
-        else
-            mergeToJSMap(ctx, map, value);
+const merge = {
+    identify: value => value === MERGE_KEY ||
+        (typeof value === 'symbol' && value.description === MERGE_KEY),
+    default: 'key',
+    tag: 'tag:yaml.org,2002:merge',
+    test: /^<<$/,
+    resolve: () => Object.assign(new Scalar_1$1.Scalar(Symbol(MERGE_KEY)), {
+        addToJSMap: addMergeToJSMap
+    }),
+    stringify: () => MERGE_KEY
+};
+const isMergeKey = (ctx, key) => (merge.identify(key) ||
+    (identity.isScalar(key) &&
+        (!key.type || key.type === Scalar_1$1.Scalar.PLAIN) &&
+        merge.identify(key.value))) &&
+    ctx?.doc.schema.tags.some(tag => tag.tag === merge.tag && tag.default);
+function addMergeToJSMap(ctx, map, value) {
+    value = ctx && identity.isAlias(value) ? value.resolve(ctx.doc) : value;
+    if (identity.isSeq(value))
+        for (const it of value.items)
+            mergeValue(ctx, map, it);
+    else if (Array.isArray(value))
+        for (const it of value)
+            mergeValue(ctx, map, it);
+    else
+        mergeValue(ctx, map, value);
+}
+function mergeValue(ctx, map, value) {
+    const source = ctx && identity.isAlias(value) ? value.resolve(ctx.doc) : value;
+    if (!identity.isMap(source))
+        throw new Error('Merge sources must be maps or map aliases');
+    const srcMap = source.toJSON(null, ctx, Map);
+    for (const [key, value] of srcMap) {
+        if (map instanceof Map) {
+            if (!map.has(key))
+                map.set(key, value);
+        }
+        else if (map instanceof Set) {
+            map.add(key);
+        }
+        else if (!Object.prototype.hasOwnProperty.call(map, key)) {
+            Object.defineProperty(map, key, {
+                value,
+                writable: true,
+                enumerable: true,
+                configurable: true
+            });
+        }
     }
+    return map;
+}
+
+var addMergeToJSMap_1 = addMergeToJSMap;
+var isMergeKey_1 = isMergeKey;
+var merge_2 = merge;
+
+var merge_1 = {
+	addMergeToJSMap: addMergeToJSMap_1,
+	isMergeKey: isMergeKey_1,
+	merge: merge_2
+};
+
+function addPairToJSMap(ctx, map, { key, value }) {
+    if (identity.isNode(key) && key.addToJSMap)
+        key.addToJSMap(ctx, map, value);
+    // TODO: Should drop this special case for bare << handling
+    else if (merge_1.isMergeKey(ctx, key))
+        merge_1.addMergeToJSMap(ctx, map, value);
     else {
         const jsKey = toJS_1.toJS(key, '', ctx);
         if (map instanceof Map) {
@@ -45581,41 +32120,6 @@ function addPairToJSMap(ctx, map, { key, value }) {
                 });
             else
                 map[stringKey] = jsValue;
-        }
-    }
-    return map;
-}
-const isMergeKey = (key) => key === MERGE_KEY ||
-    (identity.isScalar(key) &&
-        key.value === MERGE_KEY &&
-        (!key.type || key.type === Scalar_1$1.Scalar.PLAIN));
-// If the value associated with a merge key is a single mapping node, each of
-// its key/value pairs is inserted into the current mapping, unless the key
-// already exists in it. If the value associated with the merge key is a
-// sequence, then this sequence is expected to contain mapping nodes and each
-// of these nodes is merged in turn according to its order in the sequence.
-// Keys in mapping nodes earlier in the sequence override keys specified in
-// later mapping nodes. -- http://yaml.org/type/merge.html
-function mergeToJSMap(ctx, map, value) {
-    const source = ctx && identity.isAlias(value) ? value.resolve(ctx.doc) : value;
-    if (!identity.isMap(source))
-        throw new Error('Merge sources must be maps or map aliases');
-    const srcMap = source.toJSON(null, ctx, Map);
-    for (const [key, value] of srcMap) {
-        if (map instanceof Map) {
-            if (!map.has(key))
-                map.set(key, value);
-        }
-        else if (map instanceof Set) {
-            map.add(key);
-        }
-        else if (!Object.prototype.hasOwnProperty.call(map, key)) {
-            Object.defineProperty(map, key, {
-                value,
-                writable: true,
-                enumerable: true,
-                configurable: true
-            });
         }
     }
     return map;
@@ -46351,7 +32855,7 @@ const jsonScalars = [
         identify: value => typeof value === 'boolean',
         default: true,
         tag: 'tag:yaml.org,2002:bool',
-        test: /^true|false$/,
+        test: /^true$|^false$/,
         resolve: str => str === 'true',
         stringify: stringifyJSON
     },
@@ -46402,8 +32906,8 @@ const binary = {
      *   document.querySelector('#photo').src = URL.createObjectURL(blob)
      */
     resolve(src, onError) {
-        if (typeof Buffer === 'function') {
-            return Buffer.from(src, 'base64');
+        if (typeof node_buffer.Buffer === 'function') {
+            return node_buffer.Buffer.from(src, 'base64');
         }
         else if (typeof atob === 'function') {
             // On IE 11, atob() can't handle newlines
@@ -46421,11 +32925,11 @@ const binary = {
     stringify({ comment, type, value }, ctx, onComment, onChompKeep) {
         const buf = value; // checked earlier by binary.identify()
         let str;
-        if (typeof Buffer === 'function') {
+        if (typeof node_buffer.Buffer === 'function') {
             str =
-                buf instanceof Buffer
+                buf instanceof node_buffer.Buffer
                     ? buf.toString('base64')
-                    : Buffer.from(buf.buffer).toString('base64');
+                    : node_buffer.Buffer.from(buf.buffer).toString('base64');
         }
         else if (typeof btoa === 'function') {
             let s = '';
@@ -46968,7 +33472,7 @@ const timestamp = {
         }
         return new Date(date);
     },
-    stringify: ({ value }) => value.toISOString().replace(/((T00:00)?:00)?\.000Z$/, '')
+    stringify: ({ value }) => value.toISOString().replace(/(T00:00:00)?\.000Z$/, '')
 };
 
 var floatTime_1 = floatTime;
@@ -46996,6 +33500,7 @@ const schema = [
     float_1.floatExp,
     float_1.float,
     binary_1.binary,
+    merge_1.merge,
     omap_1.omap,
     pairs_1.pairs,
     set_1.set,
@@ -47029,6 +33534,7 @@ const tagsByName = {
     intOct: int_1$1.intOct,
     intTime: timestamp_1.intTime,
     map: map_1.map,
+    merge: merge_1.merge,
     null: _null.nullTag,
     omap: omap_1.omap,
     pairs: pairs_1.pairs,
@@ -47038,13 +33544,20 @@ const tagsByName = {
 };
 const coreKnownTags = {
     'tag:yaml.org,2002:binary': binary_1.binary,
+    'tag:yaml.org,2002:merge': merge_1.merge,
     'tag:yaml.org,2002:omap': omap_1.omap,
     'tag:yaml.org,2002:pairs': pairs_1.pairs,
     'tag:yaml.org,2002:set': set_1.set,
     'tag:yaml.org,2002:timestamp': timestamp_1.timestamp
 };
-function getTags(customTags, schemaName) {
-    let tags = schemas.get(schemaName);
+function getTags(customTags, schemaName, addMergeTag) {
+    const schemaTags = schemas.get(schemaName);
+    if (schemaTags && !customTags) {
+        return addMergeTag && !schemaTags.includes(merge_1.merge)
+            ? schemaTags.concat(merge_1.merge)
+            : schemaTags.slice();
+    }
+    let tags = schemaTags;
     if (!tags) {
         if (Array.isArray(customTags))
             tags = [];
@@ -47063,17 +33576,21 @@ function getTags(customTags, schemaName) {
     else if (typeof customTags === 'function') {
         tags = customTags(tags.slice());
     }
-    return tags.map(tag => {
-        if (typeof tag !== 'string')
-            return tag;
-        const tagObj = tagsByName[tag];
-        if (tagObj)
-            return tagObj;
-        const keys = Object.keys(tagsByName)
-            .map(key => JSON.stringify(key))
-            .join(', ');
-        throw new Error(`Unknown custom tag "${tag}"; use one of ${keys}`);
-    });
+    if (addMergeTag)
+        tags = tags.concat(merge_1.merge);
+    return tags.reduce((tags, tag) => {
+        const tagObj = typeof tag === 'string' ? tagsByName[tag] : tag;
+        if (!tagObj) {
+            const tagName = JSON.stringify(tag);
+            const keys = Object.keys(tagsByName)
+                .map(key => JSON.stringify(key))
+                .join(', ');
+            throw new Error(`Unknown custom tag ${tagName}; use one of ${keys}`);
+        }
+        if (!tags.includes(tagObj))
+            tags.push(tagObj);
+        return tags;
+    }, []);
 }
 
 var coreKnownTags_1 = coreKnownTags;
@@ -47092,10 +33609,9 @@ class Schema {
             : compat
                 ? tags.getTags(null, compat)
                 : null;
-        this.merge = !!merge;
         this.name = (typeof schema === 'string' && schema) || 'core';
         this.knownTags = resolveKnownTags ? tags.coreKnownTags : {};
-        this.tags = tags.getTags(customTags, this.name);
+        this.tags = tags.getTags(customTags, this.name, merge);
         this.toStringOptions = toStringDefaults ?? null;
         Object.defineProperty(this, identity.MAP, { value: map_1.map });
         Object.defineProperty(this, identity.SCALAR, { value: string_1.string });
@@ -47232,6 +33748,7 @@ class Document {
             logLevel: 'warn',
             prettyErrors: true,
             strict: true,
+            stringKeys: false,
             uniqueKeys: true,
             version: '1.2'
         }, options);
@@ -47455,7 +33972,7 @@ class Document {
                     this.directives.yaml.version = '1.1';
                 else
                     this.directives = new directives.Directives({ version: '1.1' });
-                opt = { merge: true, resolveKnownTags: false, schema: 'yaml-1.1' };
+                opt = { resolveKnownTags: false, schema: 'yaml-1.1' };
                 break;
             case '1.2':
             case 'next':
@@ -47463,7 +33980,7 @@ class Document {
                     this.directives.yaml.version = version;
                 else
                     this.directives = new directives.Directives({ version });
-                opt = { merge: false, resolveKnownTags: true, schema: 'core' };
+                opt = { resolveKnownTags: true, schema: 'core' };
                 break;
             case null:
                 if (this.directives)
@@ -47602,17 +34119,18 @@ var errors = {
 	prettifyError: prettifyError_1
 };
 
-function resolveProps(tokens, { flow, indicator, next, offset, onError, startOnNewline }) {
+function resolveProps(tokens, { flow, indicator, next, offset, onError, parentIndent, startOnNewline }) {
     let spaceBefore = false;
     let atNewline = startOnNewline;
     let hasSpace = startOnNewline;
     let comment = '';
     let commentSep = '';
     let hasNewline = false;
-    let hasNewlineAfterProp = false;
     let reqSpace = false;
+    let tab = null;
     let anchor = null;
     let tag = null;
+    let newlineAfterProp = null;
     let comma = null;
     let found = null;
     let start = null;
@@ -47624,16 +34142,22 @@ function resolveProps(tokens, { flow, indicator, next, offset, onError, startOnN
                 onError(token.offset, 'MISSING_CHAR', 'Tags and anchors must be separated from the next token by white space');
             reqSpace = false;
         }
+        if (tab) {
+            if (atNewline && token.type !== 'comment' && token.type !== 'newline') {
+                onError(tab, 'TAB_AS_INDENT', 'Tabs are not allowed as indentation');
+            }
+            tab = null;
+        }
         switch (token.type) {
             case 'space':
                 // At the doc level, tabs at line start may be parsed
                 // as leading white space rather than indentation.
                 // In a flow collection, only the parser handles indent.
                 if (!flow &&
-                    atNewline &&
-                    indicator !== 'doc-start' &&
-                    token.source[0] === '\t')
-                    onError(token, 'TAB_AS_INDENT', 'Tabs are not allowed as indentation');
+                    (indicator !== 'doc-start' || next?.type !== 'flow-collection') &&
+                    token.source.includes('\t')) {
+                    tab = token;
+                }
                 hasSpace = true;
                 break;
             case 'comment': {
@@ -47652,7 +34176,7 @@ function resolveProps(tokens, { flow, indicator, next, offset, onError, startOnN
                 if (atNewline) {
                     if (comment)
                         comment += token.source;
-                    else
+                    else if (!found || indicator !== 'seq-item-ind')
                         spaceBefore = true;
                 }
                 else
@@ -47660,7 +34184,7 @@ function resolveProps(tokens, { flow, indicator, next, offset, onError, startOnN
                 atNewline = true;
                 hasNewline = true;
                 if (anchor || tag)
-                    hasNewlineAfterProp = true;
+                    newlineAfterProp = token;
                 hasSpace = true;
                 break;
             case 'anchor':
@@ -47693,7 +34217,8 @@ function resolveProps(tokens, { flow, indicator, next, offset, onError, startOnN
                 if (found)
                     onError(token, 'UNEXPECTED_TOKEN', `Unexpected ${token.source} in ${flow ?? 'collection'}`);
                 found = token;
-                atNewline = false;
+                atNewline =
+                    indicator === 'seq-item-ind' || indicator === 'explicit-key-ind';
                 hasSpace = false;
                 break;
             case 'comma':
@@ -47719,17 +34244,23 @@ function resolveProps(tokens, { flow, indicator, next, offset, onError, startOnN
         next.type !== 'space' &&
         next.type !== 'newline' &&
         next.type !== 'comma' &&
-        (next.type !== 'scalar' || next.source !== ''))
+        (next.type !== 'scalar' || next.source !== '')) {
         onError(next.offset, 'MISSING_CHAR', 'Tags and anchors must be separated from the next token by white space');
+    }
+    if (tab &&
+        ((atNewline && tab.indent <= parentIndent) ||
+            next?.type === 'block-map' ||
+            next?.type === 'block-seq'))
+        onError(tab, 'TAB_AS_INDENT', 'Tabs are not allowed as indentation');
     return {
         comma,
         found,
         spaceBefore,
         comment,
         hasNewline,
-        hasNewlineAfterProp,
         anchor,
         tag,
+        newlineAfterProp,
         end,
         start: start ?? end
     };
@@ -47804,11 +34335,7 @@ function mapIncludes(ctx, items, search) {
         return false;
     const isEqual = typeof uniqueKeys === 'function'
         ? uniqueKeys
-        : (a, b) => a === b ||
-            (identity.isScalar(a) &&
-                identity.isScalar(b) &&
-                a.value === b.value &&
-                !(a.value === '<<' && ctx.schema.merge));
+        : (a, b) => a === b || (identity.isScalar(a) && identity.isScalar(b) && a.value === b.value);
     return items.some(pair => isEqual(pair.key, search));
 }
 
@@ -47834,6 +34361,7 @@ function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError, ta
             next: key ?? sep?.[0],
             offset,
             onError,
+            parentIndent: bm.indent,
             startOnNewline: true
         });
         const implicitKey = !keyProps.found;
@@ -47854,7 +34382,7 @@ function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError, ta
                 }
                 continue;
             }
-            if (keyProps.hasNewlineAfterProp || utilContainsNewline.containsNewline(key)) {
+            if (keyProps.newlineAfterProp || utilContainsNewline.containsNewline(key)) {
                 onError(key ?? start[start.length - 1], 'MULTILINE_IMPLICIT_KEY', 'Implicit keys need to be on a single line');
             }
         }
@@ -47862,12 +34390,14 @@ function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError, ta
             onError(offset, 'BAD_INDENT', startColMsg);
         }
         // key value
+        ctx.atKey = true;
         const keyStart = keyProps.end;
         const keyNode = key
             ? composeNode(ctx, key, keyProps, onError)
             : composeEmptyNode(ctx, keyStart, start, null, keyProps, onError);
         if (ctx.schema.compat)
             utilFlowIndentCheck.flowIndentCheck(bm.indent, key, onError);
+        ctx.atKey = false;
         if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
             onError(keyStart, 'DUPLICATE_KEY', 'Map keys must be unique');
         // value properties
@@ -47876,6 +34406,7 @@ function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError, ta
             next: value,
             offset: keyNode.range[2],
             onError,
+            parentIndent: bm.indent,
             startOnNewline: !key || key.type === 'block-scalar'
         });
         offset = valueProps.end;
@@ -47932,6 +34463,8 @@ function resolveBlockSeq({ composeNode, composeEmptyNode }, ctx, bs, onError, ta
     const seq = new NodeClass(ctx.schema);
     if (ctx.atRoot)
         ctx.atRoot = false;
+    if (ctx.atKey)
+        ctx.atKey = false;
     let offset = bs.offset;
     let commentEnd = null;
     for (const { start, value } of bs.items) {
@@ -47940,6 +34473,7 @@ function resolveBlockSeq({ composeNode, composeEmptyNode }, ctx, bs, onError, ta
             next: value,
             offset,
             onError,
+            parentIndent: bs.indent,
             startOnNewline: true
         });
         if (!props.found) {
@@ -48027,6 +34561,8 @@ function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onErr
     const atRoot = ctx.atRoot;
     if (atRoot)
         ctx.atRoot = false;
+    if (ctx.atKey)
+        ctx.atKey = false;
     let offset = fc.offset + fc.start.source.length;
     for (let i = 0; i < fc.items.length; ++i) {
         const collItem = fc.items[i];
@@ -48037,6 +34573,7 @@ function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onErr
             next: key ?? sep?.[0],
             offset,
             onError,
+            parentIndent: fc.indent,
             startOnNewline: false
         });
         if (!props.found) {
@@ -48105,12 +34642,14 @@ function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onErr
         else {
             // item is a key+value pair
             // key value
+            ctx.atKey = true;
             const keyStart = props.end;
             const keyNode = key
                 ? composeNode(ctx, key, props, onError)
                 : composeEmptyNode(ctx, keyStart, start, null, props, onError);
             if (isBlock(key))
                 onError(keyNode.range, 'BLOCK_IN_FLOW', blockMsg);
+            ctx.atKey = false;
             // value properties
             const valueProps = resolveProps_1.resolveProps(sep ?? [], {
                 flow: fcName,
@@ -48118,6 +34657,7 @@ function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onErr
                 next: value,
                 offset: keyNode.range[2],
                 onError,
+                parentIndent: fc.indent,
                 startOnNewline: false
             });
             if (valueProps.found) {
@@ -48170,6 +34710,8 @@ function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onErr
                 const map = new YAMLMap_1$1.YAMLMap(ctx.schema);
                 map.flow = true;
                 map.items.push(pair);
+                const endRange = (valueNode ?? keyNode).range;
+                map.range = [keyNode.range[0], endRange[1], endRange[2]];
                 coll.items.push(map);
             }
             offset = valueNode ? valueNode.range[2] : valueProps.end;
@@ -48228,10 +34770,23 @@ function resolveCollection(CN, ctx, token, onError, tagName, tag) {
         coll.tag = tagName;
     return coll;
 }
-function composeCollection(CN, ctx, token, tagToken, onError) {
+function composeCollection(CN, ctx, token, props, onError) {
+    const tagToken = props.tag;
     const tagName = !tagToken
         ? null
         : ctx.directives.tagName(tagToken.source, msg => onError(tagToken, 'TAG_RESOLVE_FAILED', msg));
+    if (token.type === 'block-seq') {
+        const { anchor, newlineAfterProp: nl } = props;
+        const lastProp = anchor && tagToken
+            ? anchor.offset > tagToken.offset
+                ? anchor
+                : tagToken
+            : (anchor ?? tagToken);
+        if (lastProp && (!nl || nl.offset < lastProp.offset)) {
+            const message = 'Missing newline after block sequence props';
+            onError(lastProp, 'MISSING_CHAR', message);
+        }
+    }
     const expType = token.type === 'block-map'
         ? 'map'
         : token.type === 'block-seq'
@@ -48245,8 +34800,7 @@ function composeCollection(CN, ctx, token, tagToken, onError) {
         !tagName ||
         tagName === '!' ||
         (tagName === YAMLMap_1$1.YAMLMap.tagName && expType === 'map') ||
-        (tagName === YAMLSeq_1$1.YAMLSeq.tagName && expType === 'seq') ||
-        !expType) {
+        (tagName === YAMLSeq_1$1.YAMLSeq.tagName && expType === 'seq')) {
         return resolveCollection(CN, ctx, token, onError, tagName);
     }
     let tag = ctx.schema.tags.find(t => t.tag === tagName && t.collection === expType);
@@ -48284,9 +34838,9 @@ var composeCollection_1 = {
 	composeCollection: composeCollection_2
 };
 
-function resolveBlockScalar(scalar, strict, onError) {
+function resolveBlockScalar(ctx, scalar, onError) {
     const start = scalar.offset;
-    const header = parseBlockScalarHeader(scalar, strict, onError);
+    const header = parseBlockScalarHeader(scalar, ctx.options.strict, onError);
     if (!header)
         return { value: '', type: null, comment: '', range: [start, start, start] };
     const type = header.mode === '>' ? Scalar_1$1.Scalar.BLOCK_FOLDED : Scalar_1$1.Scalar.BLOCK_LITERAL;
@@ -48328,6 +34882,10 @@ function resolveBlockScalar(scalar, strict, onError) {
             if (header.indent === 0)
                 trimIndent = indent.length;
             contentStart = i;
+            if (trimIndent === 0 && !ctx.atRoot) {
+                const message = 'Block scalar values in collections must be indented';
+                onError(offset, 'BAD_INDENT', message);
+            }
             break;
         }
         offset += indent.length + content.length + 1;
@@ -48564,7 +35122,7 @@ function foldLines(source) {
         first = new RegExp('(.*?)(?<![ \t])[ \t]*\r?\n', 'sy');
         line = new RegExp('[ \t]*(.*?)(?:(?<![ \t])[ \t]*)?\r?\n', 'sy');
     }
-    catch (_) {
+    catch {
         first = /(.*?)[ \t]*\r?\n/sy;
         line = /[ \t]*(.*?)[ \t]*\r?\n/sy;
     }
@@ -48708,16 +35266,21 @@ var resolveFlowScalar_1 = {
 
 function composeScalar(ctx, token, tagToken, onError) {
     const { value, type, comment, range } = token.type === 'block-scalar'
-        ? resolveBlockScalar_1.resolveBlockScalar(token, ctx.options.strict, onError)
+        ? resolveBlockScalar_1.resolveBlockScalar(ctx, token, onError)
         : resolveFlowScalar_1.resolveFlowScalar(token, ctx.options.strict, onError);
     const tagName = tagToken
         ? ctx.directives.tagName(tagToken.source, msg => onError(tagToken, 'TAG_RESOLVE_FAILED', msg))
         : null;
-    const tag = tagToken && tagName
-        ? findScalarTagByName(ctx.schema, value, tagName, tagToken, onError)
-        : token.type === 'scalar'
-            ? findScalarTagByTest(ctx, value, token, onError)
-            : ctx.schema[identity.SCALAR];
+    let tag;
+    if (ctx.options.stringKeys && ctx.atKey) {
+        tag = ctx.schema[identity.SCALAR];
+    }
+    else if (tagName)
+        tag = findScalarTagByName(ctx.schema, value, tagName, tagToken, onError);
+    else if (token.type === 'scalar')
+        tag = findScalarTagByTest(ctx, value, token, onError);
+    else
+        tag = ctx.schema[identity.SCALAR];
     let scalar;
     try {
         const res = tag.resolve(value, msg => onError(tagToken ?? token, 'TAG_RESOLVE_FAILED', msg), ctx.options);
@@ -48765,8 +35328,9 @@ function findScalarTagByName(schema, value, tagName, tagToken, onError) {
     onError(tagToken, 'TAG_RESOLVE_FAILED', `Unresolved tag: ${tagName}`, tagName !== 'tag:yaml.org,2002:str');
     return schema[identity.SCALAR];
 }
-function findScalarTagByTest({ directives, schema }, value, token, onError) {
-    const tag = schema.tags.find(tag => tag.default && tag.test?.test(value)) || schema[identity.SCALAR];
+function findScalarTagByTest({ atKey, directives, schema }, value, token, onError) {
+    const tag = schema.tags.find(tag => (tag.default === true || (atKey && tag.default === 'key')) &&
+        tag.test?.test(value)) || schema[identity.SCALAR];
     if (schema.compat) {
         const compat = schema.compat.find(tag => tag.default && tag.test?.test(value)) ??
             schema[identity.SCALAR];
@@ -48820,6 +35384,7 @@ var utilEmptyScalarPosition = {
 
 const CN = { composeNode, composeEmptyNode };
 function composeNode(ctx, token, props, onError) {
+    const atKey = ctx.atKey;
     const { spaceBefore, comment, anchor, tag } = props;
     let node;
     let isSrcToken = true;
@@ -48840,7 +35405,7 @@ function composeNode(ctx, token, props, onError) {
         case 'block-map':
         case 'block-seq':
         case 'flow-collection':
-            node = composeCollection_1.composeCollection(CN, ctx, token, tag, onError);
+            node = composeCollection_1.composeCollection(CN, ctx, token, props, onError);
             if (anchor)
                 node.anchor = anchor.source.substring(1);
             break;
@@ -48855,6 +35420,14 @@ function composeNode(ctx, token, props, onError) {
     }
     if (anchor && node.anchor === '')
         onError(anchor, 'BAD_ALIAS', 'Anchor cannot be an empty string');
+    if (atKey &&
+        ctx.options.stringKeys &&
+        (!identity.isScalar(node) ||
+            typeof node.value !== 'string' ||
+            (node.tag && node.tag !== 'tag:yaml.org,2002:str'))) {
+        const msg = 'With stringKeys, all keys must be strings';
+        onError(tag ?? token, 'NON_STRING_KEY', msg);
+    }
     if (spaceBefore)
         node.spaceBefore = true;
     if (comment) {
@@ -48915,6 +35488,7 @@ function composeDoc(options, directives, { offset, start, value, end }, onError)
     const opts = Object.assign({ _directives: directives }, options);
     const doc = new Document_1$1.Document(undefined, opts);
     const ctx = {
+        atKey: false,
         atRoot: true,
         directives: doc.directives,
         options: doc.options,
@@ -48925,6 +35499,7 @@ function composeDoc(options, directives, { offset, start, value, end }, onError)
         next: value ?? end?.[0],
         offset,
         onError,
+        parentIndent: 0,
         startOnNewline: true
     });
     if (props.found) {
@@ -49078,7 +35653,7 @@ class Composer$1 {
     }
     /** Advance the composer by one CST token. */
     *next(token) {
-        if (process.env.LOG_STREAM)
+        if (node_process.env.LOG_STREAM)
             console.dir(token, { depth: null });
         switch (token.type) {
             case 'directive':
@@ -49184,7 +35759,7 @@ function resolveAsScalar$1(token, strict = true, onError) {
             case 'double-quoted-scalar':
                 return resolveFlowScalar_1.resolveFlowScalar(token, strict, _onError);
             case 'block-scalar':
-                return resolveBlockScalar_1.resolveBlockScalar(token, strict, _onError);
+                return resolveBlockScalar_1.resolveBlockScalar({ options: { strict } }, token, _onError);
         }
     }
     return null;
@@ -49757,11 +36332,11 @@ function isEmpty(ch) {
             return false;
     }
 }
-const hexDigits = '0123456789ABCDEFabcdef'.split('');
-const tagChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-#;/?:@&=+$_.!~*'()".split('');
-const invalidFlowScalarChars = ',[]{}'.split('');
-const invalidAnchorChars = ' ,[]{}\n\r\t'.split('');
-const isNotAnchorChar = (ch) => !ch || invalidAnchorChars.includes(ch);
+const hexDigits = new Set('0123456789ABCDEFabcdef');
+const tagChars = new Set("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-#;/?:@&=+$_.!~*'()");
+const flowIndicatorChars = new Set(',[]{}');
+const invalidAnchorChars = new Set(' ,[]{}\n\r\t');
+const isNotAnchorChar = (ch) => !ch || invalidAnchorChars.has(ch);
 /**
  * Splits an input string into lexical tokens, i.e. smaller strings that are
  * easily identifiable by `tokens.tokenType()`.
@@ -49968,15 +36543,11 @@ class Lexer$1 {
             if (!this.atEnd && !this.hasChars(4))
                 return this.setNext('line-start');
             const s = this.peek(3);
-            if (s === '---' && isEmpty(this.charAt(3))) {
+            if ((s === '---' || s === '...') && isEmpty(this.charAt(3))) {
                 yield* this.pushCount(3);
                 this.indentValue = 0;
                 this.indentNext = 0;
-                return 'doc';
-            }
-            else if (s === '...' && isEmpty(this.charAt(3))) {
-                yield* this.pushCount(3);
-                return 'stream';
+                return s === '---' ? 'doc' : 'stream';
             }
         }
         this.indentValue = yield* this.pushSpaces(false);
@@ -50203,8 +36774,10 @@ class Lexer$1 {
         if (indent >= this.indentNext) {
             if (this.blockScalarIndent === -1)
                 this.indentNext = indent;
-            else
-                this.indentNext += this.blockScalarIndent;
+            else {
+                this.indentNext =
+                    this.blockScalarIndent + (this.indentNext === 0 ? 1 : this.indentNext);
+            }
             do {
                 const cs = this.continueScalar(nl + 1);
                 if (cs === -1)
@@ -50217,14 +36790,25 @@ class Lexer$1 {
                 nl = this.buffer.length;
             }
         }
-        if (!this.blockScalarKeep) {
+        // Trailing insufficiently indented tabs are invalid.
+        // To catch that during parsing, we include them in the block scalar value.
+        let i = nl + 1;
+        ch = this.buffer[i];
+        while (ch === ' ')
+            ch = this.buffer[++i];
+        if (ch === '\t') {
+            while (ch === '\t' || ch === ' ' || ch === '\r' || ch === '\n')
+                ch = this.buffer[++i];
+            nl = i - 1;
+        }
+        else if (!this.blockScalarKeep) {
             do {
                 let i = nl - 1;
                 let ch = this.buffer[i];
                 if (ch === '\r')
                     ch = this.buffer[--i];
                 const lastChar = i; // Drop the line if last char not more indented
-                while (ch === ' ' || ch === '\t')
+                while (ch === ' ')
                     ch = this.buffer[--i];
                 if (ch === '\n' && i >= this.pos && i + 1 + indent > lastChar)
                     nl = i;
@@ -50244,7 +36828,7 @@ class Lexer$1 {
         while ((ch = this.buffer[++i])) {
             if (ch === ':') {
                 const next = this.buffer[i + 1];
-                if (isEmpty(next) || (inFlow && next === ','))
+                if (isEmpty(next) || (inFlow && flowIndicatorChars.has(next)))
                     break;
                 end = i;
             }
@@ -50259,7 +36843,7 @@ class Lexer$1 {
                     else
                         end = i;
                 }
-                if (next === '#' || (inFlow && invalidFlowScalarChars.includes(next)))
+                if (next === '#' || (inFlow && flowIndicatorChars.has(next)))
                     break;
                 if (ch === '\n') {
                     const cs = this.continueScalar(i + 1);
@@ -50269,7 +36853,7 @@ class Lexer$1 {
                 }
             }
             else {
-                if (inFlow && invalidFlowScalarChars.includes(ch))
+                if (inFlow && flowIndicatorChars.has(ch))
                     break;
                 end = i;
             }
@@ -50314,7 +36898,7 @@ class Lexer$1 {
             case ':': {
                 const inFlow = this.flowLevel > 0;
                 const ch1 = this.charAt(1);
-                if (isEmpty(ch1) || (inFlow && invalidFlowScalarChars.includes(ch1))) {
+                if (isEmpty(ch1) || (inFlow && flowIndicatorChars.has(ch1))) {
                     if (!inFlow)
                         this.indentNext = this.indentValue + 1;
                     else if (this.flowKey)
@@ -50339,11 +36923,11 @@ class Lexer$1 {
             let i = this.pos + 1;
             let ch = this.buffer[i];
             while (ch) {
-                if (tagChars.includes(ch))
+                if (tagChars.has(ch))
                     ch = this.buffer[++i];
                 else if (ch === '%' &&
-                    hexDigits.includes(this.buffer[i + 1]) &&
-                    hexDigits.includes(this.buffer[i + 2])) {
+                    hexDigits.has(this.buffer[i + 1]) &&
+                    hexDigits.has(this.buffer[i + 2])) {
                     ch = this.buffer[(i += 3)];
                 }
                 else
@@ -50596,7 +37180,7 @@ class Parser$1 {
      */
     *next(source) {
         this.source = source;
-        if (process.env.LOG_TOKENS)
+        if (node_process.env.LOG_TOKENS)
             console.log('|', cst.prettyToken(source));
         if (this.atScalar) {
             this.atScalar = false;
@@ -50738,7 +37322,7 @@ class Parser$1 {
                     }
                     else {
                         Object.assign(it, { key: token, sep: [] });
-                        this.onKeyLine = !includesToken(it.start, 'explicit-key-ind');
+                        this.onKeyLine = !it.explicitKey;
                         return;
                     }
                     break;
@@ -50947,9 +37531,9 @@ class Parser$1 {
                 return;
         }
         if (this.indent >= map.indent) {
-            const atNextItem = !this.onKeyLine &&
-                this.indent === map.indent &&
-                it.sep &&
+            const atMapIndent = !this.onKeyLine && this.indent === map.indent;
+            const atNextItem = atMapIndent &&
+                (it.sep || it.explicitKey) &&
                 this.type !== 'seq-item-ind';
             // For empty nodes, assign newline-separated not indented empty tokens to following node
             let start = [];
@@ -50990,25 +37574,26 @@ class Parser$1 {
                     }
                     return;
                 case 'explicit-key-ind':
-                    if (!it.sep && !includesToken(it.start, 'explicit-key-ind')) {
+                    if (!it.sep && !it.explicitKey) {
                         it.start.push(this.sourceToken);
+                        it.explicitKey = true;
                     }
                     else if (atNextItem || it.value) {
                         start.push(this.sourceToken);
-                        map.items.push({ start });
+                        map.items.push({ start, explicitKey: true });
                     }
                     else {
                         this.stack.push({
                             type: 'block-map',
                             offset: this.offset,
                             indent: this.indent,
-                            items: [{ start: [this.sourceToken] }]
+                            items: [{ start: [this.sourceToken], explicitKey: true }]
                         });
                     }
                     this.onKeyLine = true;
                     return;
                 case 'map-value-ind':
-                    if (includesToken(it.start, 'explicit-key-ind')) {
+                    if (it.explicitKey) {
                         if (!it.sep) {
                             if (includesToken(it.start, 'newline')) {
                                 Object.assign(it, { key: null, sep: [this.sourceToken] });
@@ -51041,7 +37626,9 @@ class Parser$1 {
                             const sep = it.sep;
                             sep.push(this.sourceToken);
                             // @ts-expect-error type guard is wrong here
-                            delete it.key, delete it.sep;
+                            delete it.key;
+                            // @ts-expect-error type guard is wrong here
+                            delete it.sep;
                             this.stack.push({
                                 type: 'block-map',
                                 offset: this.offset,
@@ -51099,9 +37686,7 @@ class Parser$1 {
                 default: {
                     const bv = this.startBlockValue(map);
                     if (bv) {
-                        if (atNextItem &&
-                            bv.type !== 'block-seq' &&
-                            includesToken(it.start, 'explicit-key-ind')) {
+                        if (atMapIndent && bv.type !== 'block-seq') {
                             map.items.push({ start });
                         }
                         this.stack.push(bv);
@@ -51322,7 +37907,7 @@ class Parser$1 {
                     type: 'block-map',
                     offset: this.offset,
                     indent: this.indent,
-                    items: [{ start }]
+                    items: [{ start, explicitKey: true }]
                 };
             }
             case 'map-value-ind': {
@@ -51478,6 +38063,8 @@ function stringify$3(value, replacer, options) {
         if (!keepUndefined)
             return undefined;
     }
+    if (identity.isDocument(value) && !_replacer)
+        return value.toString(options);
     return new Document_1$1.Document(value, _replacer, options).toString(options);
 }
 
@@ -51819,7 +38406,7 @@ function unixify(filepath) {
 }
 exports.unixify = unixify;
 function makeAbsolute(cwd, filepath) {
-    return path$1.resolve(cwd, filepath);
+    return path.resolve(cwd, filepath);
 }
 exports.makeAbsolute = makeAbsolute;
 function removeLeadingDotSegment(entry) {
@@ -52026,7 +38613,7 @@ var isGlob = function isGlob(str, options) {
   return check(str);
 };
 
-var pathPosixDirname = path$1.posix.dirname;
+var pathPosixDirname = path.posix.dirname;
 var isWin32 = require$$0.platform() === 'win32';
 
 var slash$1 = '/';
@@ -53633,7 +40220,7 @@ var constants$1 = {
   CHAR_VERTICAL_LINE: 124, /* | */
   CHAR_ZERO_WIDTH_NOBREAK_SPACE: 65279, /* \uFEFF */
 
-  SEP: path$1.sep,
+  SEP: path.sep,
 
   /**
    * Create EXTGLOB_CHARS
@@ -53693,7 +40280,7 @@ exports.isWindows = options => {
   if (options && typeof options.windows === 'boolean') {
     return options.windows;
   }
-  return win32 === true || path$1.sep === '\\';
+  return win32 === true || path.sep === '\\';
 };
 
 exports.escapeLast = (input, char, lastIdx) => {
@@ -55355,7 +41942,7 @@ picomatch$1.test = (input, regex, options, { glob, posix } = {}) => {
 
 picomatch$1.matchBase = (input, glob, options, posix = utils$2.isWindows(options)) => {
   const regex = glob instanceof RegExp ? glob : picomatch$1.makeRe(glob, options);
-  return regex.test(path$1.basename(input));
+  return regex.test(path.basename(input));
 };
 
 /**
@@ -55538,7 +42125,11 @@ var picomatch_1 = picomatch$1;
 
 var picomatch = picomatch_1;
 
-const isEmptyString = val => val === '' || val === './';
+const isEmptyString = v => v === '' || v === './';
+const hasBraces = v => {
+  const index = v.indexOf('{');
+  return index > -1 && v.indexOf('}', index) > -1;
+};
 
 /**
  * Returns an array of strings that match one or more glob patterns.
@@ -55979,7 +42570,7 @@ micromatch.parse = (patterns, options) => {
 
 micromatch.braces = (pattern, options) => {
   if (typeof pattern !== 'string') throw new TypeError('Expected a string');
-  if ((options && options.nobrace === true) || !/\{.*\}/.test(pattern)) {
+  if ((options && options.nobrace === true) || !hasBraces(pattern)) {
     return [pattern];
   }
   return braces_1(pattern, options);
@@ -55998,6 +42589,8 @@ micromatch.braceExpand = (pattern, options) => {
  * Expose micromatch
  */
 
+// exposed for tests
+micromatch.hasBraces = hasBraces;
 var micromatch_1 = micromatch;
 
 var pattern = createCommonjsModule(function (module, exports) {
@@ -56125,7 +42718,7 @@ function endsWithSlashGlobStar(pattern) {
 }
 exports.endsWithSlashGlobStar = endsWithSlashGlobStar;
 function isAffectDepthOfReadingPattern(pattern) {
-    const basename = path$1.basename(pattern);
+    const basename = path.basename(pattern);
     return endsWithSlashGlobStar(pattern) || isStaticPattern(basename);
 }
 exports.isAffectDepthOfReadingPattern = isAffectDepthOfReadingPattern;
@@ -56795,7 +43388,7 @@ class Settings$1 {
         this._options = _options;
         this.followSymbolicLinks = this._getValue(this._options.followSymbolicLinks, false);
         this.fs = fs_1.createFileSystemAdapter(this._options.fs);
-        this.pathSegmentSeparator = this._getValue(this._options.pathSegmentSeparator, path$1.sep);
+        this.pathSegmentSeparator = this._getValue(this._options.pathSegmentSeparator, path.sep);
         this.stats = this._getValue(this._options.stats, false);
         this.throwErrorOnBrokenSymbolicLink = this._getValue(this._options.throwErrorOnBrokenSymbolicLink, true);
         this.fsStatSettings = new out$3.Settings({
@@ -57476,7 +44069,7 @@ class Settings {
         this.deepFilter = this._getValue(this._options.deepFilter, null);
         this.entryFilter = this._getValue(this._options.entryFilter, null);
         this.errorFilter = this._getValue(this._options.errorFilter, null);
-        this.pathSegmentSeparator = this._getValue(this._options.pathSegmentSeparator, path$1.sep);
+        this.pathSegmentSeparator = this._getValue(this._options.pathSegmentSeparator, path.sep);
         this.fsScandirSettings = new out$2.Settings({
             followSymbolicLinks: this._options.followSymbolicLinks,
             fs: this._options.fs,
@@ -57541,7 +44134,7 @@ class Reader {
         });
     }
     _getFullEntryPath(filepath) {
-        return path$1.resolve(this._settings.cwd, filepath);
+        return path.resolve(this._settings.cwd, filepath);
     }
     _makeEntry(stats, pattern) {
         const entry = {
@@ -57922,7 +44515,7 @@ class Provider {
         this.entryTransformer = new entry.default(this._settings);
     }
     _getRootDirectory(task) {
-        return path$1.resolve(this._settings.cwd, task.base);
+        return path.resolve(this._settings.cwd, task.base);
     }
     _getReaderOptions(task) {
         const basePath = task.base === '.' ? '' : task.base;
@@ -58292,11 +44885,11 @@ const getExtensions = extensions => extensions.length > 1 ? `{${extensions.join(
 
 const getPath = (filepath, cwd) => {
 	const pth = filepath[0] === '!' ? filepath.slice(1) : filepath;
-	return path$1.isAbsolute(pth) ? pth : path$1.join(cwd, pth);
+	return path.isAbsolute(pth) ? pth : path.join(cwd, pth);
 };
 
 const addExtensions = (file, extensions) => {
-	if (path$1.extname(file)) {
+	if (path.extname(file)) {
 		return `**/${file}`;
 	}
 
@@ -58313,18 +44906,18 @@ const getGlob = (directory, options) => {
 	}
 
 	if (options.files && options.extensions) {
-		return options.files.map(x => path$1.posix.join(directory, addExtensions(x, options.extensions)));
+		return options.files.map(x => path.posix.join(directory, addExtensions(x, options.extensions)));
 	}
 
 	if (options.files) {
-		return options.files.map(x => path$1.posix.join(directory, `**/${x}`));
+		return options.files.map(x => path.posix.join(directory, `**/${x}`));
 	}
 
 	if (options.extensions) {
-		return [path$1.posix.join(directory, `**/*.${getExtensions(options.extensions)}`)];
+		return [path.posix.join(directory, `**/*.${getExtensions(options.extensions)}`)];
 	}
 
-	return [path$1.posix.join(directory, '**')];
+	return [path.posix.join(directory, '**')];
 };
 
 var dirGlob = async (input, options) => {
@@ -59017,11 +45610,11 @@ const ignoreFilesGlobOptions = {
 const GITIGNORE_FILES_PATTERN = '**/.gitignore';
 
 const applyBaseToPattern = (pattern, base) => isNegativePattern(pattern)
-	? '!' + path$2.posix.join(base, pattern.slice(1))
-	: path$2.posix.join(base, pattern);
+	? '!' + path$1.posix.join(base, pattern.slice(1))
+	: path$1.posix.join(base, pattern);
 
 const parseIgnoreFile = (file, cwd) => {
-	const base = slash(path$2.relative(cwd, path$2.dirname(file.filePath)));
+	const base = slash(path$1.relative(cwd, path$1.dirname(file.filePath)));
 
 	return file.content
 		.split(/\r?\n/)
@@ -59031,9 +45624,9 @@ const parseIgnoreFile = (file, cwd) => {
 
 const toRelativePath = (fileOrDirectory, cwd) => {
 	cwd = slash(cwd);
-	if (path$2.isAbsolute(fileOrDirectory)) {
+	if (path$1.isAbsolute(fileOrDirectory)) {
 		if (slash(fileOrDirectory).startsWith(cwd)) {
-			return path$2.relative(cwd, fileOrDirectory);
+			return path$1.relative(cwd, fileOrDirectory);
 		}
 
 		throw new Error(`Path ${fileOrDirectory} is not in cwd ${cwd}`);
@@ -59054,7 +45647,7 @@ const getIsIgnoredPredicate = (files, cwd) => {
 };
 
 const normalizeOptions$1 = (options = {}) => ({
-	cwd: toPath(options.cwd) || process$1.cwd(),
+	cwd: toPath(options.cwd) || node_process.cwd(),
 	suppressErrors: Boolean(options.suppressErrors),
 	deep: typeof options.deep === 'number' ? options.deep : Number.POSITIVE_INFINITY,
 });
@@ -59143,7 +45736,7 @@ const createFilterFunction = isIgnored => {
 
 	return fastGlobResult => {
 		const path = fastGlobResult.path || fastGlobResult;
-		const pathKey = path$2.normalize(path);
+		const pathKey = path$1.normalize(path);
 		const seenOrIgnored = seen.has(pathKey) || (isIgnored && isIgnored(path));
 		seen.add(pathKey);
 		return !seenOrIgnored;
@@ -60074,7 +46667,7 @@ async function push (octokit, {
   inputs
 }) {
   const newContent = [];
-  main: for (const [repo, remoteFiles] of changedRepositories.entries()) {
+  for (const [repo, remoteFiles] of changedRepositories.entries()) {
     for (const path of remoteFiles.keys()) {
       // add file to update tree
       newContent.push({
@@ -60086,7 +46679,7 @@ async function push (octokit, {
     }
 
     // dry run
-    if (inputs.dry === 'true') continue main;
+    if (inputs.dry === 'true') continue;
     let default_branch, sha, tree, newTree, newCommit;
 
     // get the default branch
@@ -60102,7 +46695,7 @@ async function push (octokit, {
     } catch (err) {
       var _err$response;
       core$1.warning(`❌ failed to detect default branch for ${repo}: ${((_err$response = err.response) == null || (_err$response = _err$response.data) == null ? void 0 : _err$response.message) || err.message}`);
-      continue main;
+      continue;
     }
     core$1.debug(`${repo}: default branch: ${default_branch}`);
 
@@ -60121,8 +46714,8 @@ async function push (octokit, {
       }));
     } catch (err) {
       var _err$response2;
-      core$1.warning(`❌ failed to fetch commit info for ${repo}:${path}: ${((_err$response2 = err.response) == null || (_err$response2 = _err$response2.data) == null ? void 0 : _err$response2.message) || err.message}`);
-      continue main;
+      core$1.warning(`❌ failed to fetch commit info for ${repo}: ${((_err$response2 = err.response) == null || (_err$response2 = _err$response2.data) == null ? void 0 : _err$response2.message) || err.message}`);
+      continue;
     }
     core$1.debug(`${repo}: latest commit: { sha: ${sha}, tree.sha: ${tree.sha} }`);
 
@@ -60139,13 +46732,13 @@ async function push (octokit, {
     } catch (err) {
       var _err$response3;
       core$1.warning(`❌ failed to create a tree in ${repo}:${tree.sha} ${((_err$response3 = err.response) == null || (_err$response3 = _err$response3.data) == null ? void 0 : _err$response3.message) || err.message}`);
-      continue main;
+      continue;
     }
     core$1.debug(`${repo}: new tree: ${newTree.sha}`);
     core$1.debug(inspect(newTree));
     let commitMessage = `chore(template): sync with ${github$1.context.repo.owner}/${github$1.context.repo.repo}`;
     if (inputs.skipCi === 'true') {
-      commitMessage += ` [skip ci]`;
+      commitMessage += ' [skip ci]';
     }
 
     // Make a new commit with the delta tree
@@ -60162,7 +46755,7 @@ async function push (octokit, {
     } catch (err) {
       var _err$response4;
       core$1.warning(`❌ failed to create a new commit in ${repo}: ${((_err$response4 = err.response) == null || (_err$response4 = _err$response4.data) == null ? void 0 : _err$response4.message) || err.message}`);
-      continue main;
+      continue;
     }
     core$1.debug(`${repo}: new commit: ${newCommit.sha}`);
     core$1.debug(inspect(newCommit));
@@ -60178,7 +46771,7 @@ async function push (octokit, {
     } catch (err) {
       var _err$response5;
       core$1.warning(`❌ failed to update brach head in ${repo}: ${((_err$response5 = err.response) == null || (_err$response5 = _err$response5.data) == null ? void 0 : _err$response5.message) || err.message}`);
-      continue main;
+      continue;
     }
     core$1.info(`✅ ${repo} is updated`);
   }
@@ -60217,8 +46810,24 @@ async function repos (octokit, options) {
 
   core$1.debug(`repo owner type is "${type}" with ${repositories.length} repositories`);
 
+  // we need to fetch `/repos/{owner}/{repo}` in order to get the `template_repository` object
+
+  for (const repo of repositories) {
+    const {
+      data: {
+        template_repository
+      }
+    } = await octokit.request('GET /repos/{owner}/{repo}', {
+      owner: github$1.context.repo.owner,
+      repo: repo.name
+    });
+
+    // add to our array
+    repo.template_repository = template_repository == null ? void 0 : template_repository.full_name;
+  }
+
   // find all repos that mark this template as their source
-  let dependents = repositories.filter(repo => repo.template_repository && repo.template_repository.full_name === full_name).map(repo => repo.name);
+  let dependents = repositories.filter(repo => repo.template_repository && repo.template_repository === full_name).map(repo => repo.name);
 
   // run filter
   if (options.dependents.length > 0) dependents = micromatch_1(dependents, options.dependents);
@@ -60353,7 +46962,7 @@ const options = config({
 });
 
 // init octokit
-const octokit = new Octokit({
+const octokit = github$1.getOctokit(null, {
   auth: inputs.token
 });
 
