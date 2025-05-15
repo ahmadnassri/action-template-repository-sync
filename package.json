@@ -28,7 +28,7 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
-    "diff": "^5.1.0",
+    "diff": "^8.0.1",
     "globby": "^13.2.2",
     "micromatch": "^4.0.8",
     "yaml": "^2.8.0"
