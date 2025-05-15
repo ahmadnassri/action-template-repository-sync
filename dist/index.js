@@ -1,4 +1,4 @@
-import nodeUtil, { inspect } from 'util';
+import util$7, { inspect } from 'util';
 import require$$0 from 'os';
 import require$$0$1 from 'crypto';
 import fs$2, { existsSync, readFileSync } from 'fs';
@@ -10,14 +10,14 @@ import tls$1 from 'tls';
 import EE from 'events';
 import assert from 'assert';
 import stream$6 from 'stream';
-import require$$0$2 from 'buffer';
+import node_buffer from 'buffer';
 import require$$4 from 'querystring';
 import require$$11 from 'stream/web';
 import diagnosticsChannel from 'diagnostics_channel';
-import require$$0$4 from 'node:stream';
+import require$$0$3 from 'node:stream';
 import require$$1 from 'node:util';
-import require$$0$3 from 'node:events';
-import require$$0$5 from 'worker_threads';
+import require$$0$2 from 'node:events';
+import require$$0$4 from 'worker_threads';
 import require$$2 from 'perf_hooks';
 import require$$4$1 from 'util/types';
 import require$$10 from 'node:crypto';
@@ -29,11 +29,11 @@ import zlib from 'zlib';
 import string_decoder_1 from 'string_decoder';
 import require$$2$2 from 'child_process';
 import timers_1 from 'timers';
-import node_process from 'node:process';
-import node_buffer from 'node:buffer';
+import node_process from 'process';
 import { readFile } from 'fs/promises';
 import fs$3 from 'node:fs';
 import path$1 from 'node:path';
+import process$1 from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -394,7 +394,7 @@ function TunnelingAgent(options) {
     self.removeSocket(socket);
   });
 }
-nodeUtil.inherits(TunnelingAgent, EE.EventEmitter);
+util$7.inherits(TunnelingAgent, EE.EventEmitter);
 
 TunnelingAgent.prototype.addRequest = function addRequest(req, host, port, localAddress) {
   var self = this;
@@ -1014,7 +1014,7 @@ const { IncomingMessage } = http;
 
 
 const { InvalidArgumentError: InvalidArgumentError$k } = errors$1;
-const { Blob: Blob$5 } = require$$0$2;
+const { Blob: Blob$5 } = node_buffer;
 
 const { stringify: stringify$9 } = require$$4;
 const { headerNameLowerCasedRecord } = constants$7;
@@ -1352,7 +1352,7 @@ function isErrored$2 (body) {
   return !!(body && (
     stream$6.isErrored
       ? stream$6.isErrored(body)
-      : /state: 'errored'/.test(nodeUtil.inspect(body)
+      : /state: 'errored'/.test(util$7.inspect(body)
       )))
 }
 
@@ -1360,7 +1360,7 @@ function isReadable$1 (body) {
   return !!(body && (
     stream$6.isReadable
       ? stream$6.isReadable(body)
-      : /state: 'readable'/.test(nodeUtil.inspect(body)
+      : /state: 'readable'/.test(util$7.inspect(body)
       )))
 }
 
@@ -1466,8 +1466,8 @@ const hasToWellFormed = !!String.prototype.toWellFormed;
 function toUSVString$5 (val) {
   if (hasToWellFormed) {
     return `${val}`.toWellFormed()
-  } else if (nodeUtil.toUSVString) {
-    return nodeUtil.toUSVString(val)
+  } else if (util$7.toUSVString) {
+    return util$7.toUSVString(val)
   }
 
   return `${val}`
@@ -1651,7 +1651,7 @@ var timers = {
  * Based heavily on the Streaming Boyer-Moore-Horspool C++ implementation
  * by Hongli Lai at: https://github.com/FooBarWidget/boyer-moore-horspool
  */
-const EventEmitter$1 = require$$0$3.EventEmitter;
+const EventEmitter$1 = require$$0$2.EventEmitter;
 const inherits$5 = require$$1.inherits;
 
 function SBMH (needle) {
@@ -1853,7 +1853,7 @@ SBMH.prototype._sbmh_memcmp = function (data, pos, len) {
 var sbmh = SBMH;
 
 const inherits$4 = require$$1.inherits;
-const ReadableStream$4 = require$$0$4.Readable;
+const ReadableStream$4 = require$$0$3.Readable;
 
 function PartStream (opts) {
   ReadableStream$4.call(this, opts);
@@ -1879,7 +1879,7 @@ var getLimit = function getLimit (limits, name, defaultLimit) {
   return limits[name]
 };
 
-const EventEmitter = require$$0$3.EventEmitter;
+const EventEmitter = require$$0$2.EventEmitter;
 const inherits$3 = require$$1.inherits;
 
 
@@ -1978,7 +1978,7 @@ HeaderParser.prototype._parseHeader = function () {
 
 var HeaderParser_1 = HeaderParser;
 
-const WritableStream$1 = require$$0$4.Writable;
+const WritableStream$1 = require$$0$3.Writable;
 const inherits$2 = require$$1.inherits;
 
 
@@ -2519,7 +2519,7 @@ var basename = function basename (path) {
 //  * support limits.fieldNameSize
 //     -- this will require modifications to utils.parseParams
 
-const { Readable: Readable$3 } = require$$0$4;
+const { Readable: Readable$3 } = require$$0$3;
 const { inherits: inherits$1 } = require$$1;
 
 
@@ -3055,7 +3055,7 @@ UrlEncoded.prototype.end = function () {
 
 var urlencoded = UrlEncoded;
 
-const WritableStream = require$$0$4.Writable;
+const WritableStream = require$$0$3.Writable;
 const { inherits } = require$$1;
 
 
@@ -3142,7 +3142,7 @@ main.default = _default$n;
 main.Busboy = Busboy_1;
 main.Dicer = Dicer_1;
 
-const { MessageChannel, receiveMessageOnPort } = require$$0$5;
+const { MessageChannel, receiveMessageOnPort } = require$$0$4;
 
 const corsSafeListedMethods = ['GET', 'HEAD', 'POST'];
 const corsSafeListedMethodsSet$1 = new Set(corsSafeListedMethods);
@@ -4482,7 +4482,7 @@ var symbols$3 = {
   kRealm: Symbol('realm')
 };
 
-const { types: types$4 } = nodeUtil;
+const { types: types$4 } = util$7;
 const { hasOwn, toUSVString: toUSVString$3 } = util$5;
 
 /** @type {import('../../types/webidl').Webidl} */
@@ -5127,7 +5127,7 @@ var webidl_1 = {
   webidl: webidl$e
 };
 
-const { atob: atob$1 } = require$$0$2;
+const { atob: atob$1 } = node_buffer;
 const { isomorphicDecode } = util$5;
 
 const encoder$1 = new TextEncoder();
@@ -5754,8 +5754,8 @@ var dataURL = {
   serializeAMimeType: serializeAMimeType$4
 };
 
-const { Blob: Blob$4, File: NativeFile$2 } = require$$0$2;
-const { types: types$3 } = nodeUtil;
+const { Blob: Blob$4, File: NativeFile$2 } = node_buffer;
+const { types: types$3 } = util$7;
 const { kState: kState$9 } = symbols$3;
 const { isBlobLike: isBlobLike$5 } = util$5;
 const { webidl: webidl$d } = webidl_1;
@@ -6101,7 +6101,7 @@ const { isBlobLike: isBlobLike$4, toUSVString: toUSVString$2, makeIterator: make
 const { kState: kState$8 } = symbols$3;
 const { File: UndiciFile$1, FileLike, isFileLike } = file;
 const { webidl: webidl$c } = webidl_1;
-const { Blob: Blob$3, File: NativeFile$1 } = require$$0$2;
+const { Blob: Blob$3, File: NativeFile$1 } = node_buffer;
 
 /** @type {globalThis['File']} */
 const File$1 = NativeFile$1 ?? UndiciFile$1;
@@ -6373,7 +6373,7 @@ const { FormData: FormData$1 } = formdata;
 const { kState: kState$7 } = symbols$3;
 const { webidl: webidl$b } = webidl_1;
 const { DOMException: DOMException$5, structuredClone } = constants$6;
-const { Blob: Blob$2, File: NativeFile } = require$$0$2;
+const { Blob: Blob$2, File: NativeFile } = node_buffer;
 const { kBodyUsed: kBodyUsed$1 } = symbols$4;
 
 const { isErrored: isErrored$1 } = util$6;
@@ -11066,6 +11066,20 @@ class Pool extends PoolBase$1 {
       ? { ...options.interceptors }
       : undefined;
     this[kFactory$3] = factory;
+
+    this.on('connectionError', (origin, targets, error) => {
+      // If a connection error occurs, we remove the client from the pool,
+      // and emit a connectionError event. They will not be re-used.
+      // Fixes https://github.com/nodejs/undici/issues/3895
+      for (const target of targets) {
+        // Do not use kRemoveClient here, as it will close the client,
+        // but the client cannot be closed in this state.
+        const idx = this[kClients$3].indexOf(target);
+        if (idx !== -1) {
+          this[kClients$3].splice(idx, 1);
+        }
+      }
+    });
   }
 
   [kGetDispatcher$1] () {
@@ -11752,7 +11766,7 @@ function consumeEnd (consume) {
       resolve(dst.buffer);
     } else if (type === 'blob') {
       if (!Blob$1) {
-        Blob$1 = require$$0$2.Blob;
+        Blob$1 = node_buffer.Blob;
       }
       resolve(new Blob$1(body, { type: stream[kContentType] }));
     }
@@ -12807,7 +12821,7 @@ const {
   types: {
     isPromise
   }
-} = nodeUtil;
+} = util$7;
 
 function matchValue$1 (match, value) {
   if (typeof match === 'string') {
@@ -13353,7 +13367,7 @@ var mockInterceptor = {
 	MockScope: MockScope_1
 };
 
-const { promisify: promisify$2 } = nodeUtil;
+const { promisify: promisify$2 } = util$7;
 
 const { buildMockDispatch: buildMockDispatch$1 } = mockUtils;
 const {
@@ -13411,7 +13425,7 @@ class MockClient extends client {
 
 var mockClient = MockClient;
 
-const { promisify: promisify$1 } = nodeUtil;
+const { promisify: promisify$1 } = util$7;
 
 const { buildMockDispatch } = mockUtils;
 const {
@@ -14294,7 +14308,7 @@ var DecoratorHandler_1 = class DecoratorHandler {
   }
 };
 
-const { kHeadersList: kHeadersList$6, kConstruct: kConstruct$4 } = symbols$4;
+const { kHeadersList: kHeadersList$5, kConstruct: kConstruct$4 } = symbols$4;
 const { kGuard: kGuard$4 } = symbols$3;
 const { kEnumerableProperty: kEnumerableProperty$7 } = util$6;
 const {
@@ -14302,6 +14316,7 @@ const {
   isValidHeaderName: isValidHeaderName$1,
   isValidHeaderValue
 } = util$5;
+
 const { webidl: webidl$a } = webidl_1;
 
 
@@ -14403,7 +14418,7 @@ function appendHeader (headers, name, value) {
   //    forbidden response-header name, return.
 
   // 7. Append (name, value) to headers’s header list.
-  return headers[kHeadersList$6].append(name, value)
+  return headers[kHeadersList$5].append(name, value)
 
   // 8. If headers’s guard is "request-no-cors", then remove
   //    privileged no-CORS request headers from headers
@@ -14532,7 +14547,7 @@ class Headers$5 {
     if (init === kConstruct$4) {
       return
     }
-    this[kHeadersList$6] = new HeadersList$2();
+    this[kHeadersList$5] = new HeadersList$2();
 
     // The new Headers(init) constructor steps are:
 
@@ -14591,14 +14606,14 @@ class Headers$5 {
 
     // 6. If this’s header list does not contain name, then
     //    return.
-    if (!this[kHeadersList$6].contains(name)) {
+    if (!this[kHeadersList$5].contains(name)) {
       return
     }
 
     // 7. Delete name from this’s header list.
     // 8. If this’s guard is "request-no-cors", then remove
     //    privileged no-CORS request headers from this.
-    this[kHeadersList$6].delete(name);
+    this[kHeadersList$5].delete(name);
   }
 
   // https://fetch.spec.whatwg.org/#dom-headers-get
@@ -14620,7 +14635,7 @@ class Headers$5 {
 
     // 2. Return the result of getting name from this’s header
     //    list.
-    return this[kHeadersList$6].get(name)
+    return this[kHeadersList$5].get(name)
   }
 
   // https://fetch.spec.whatwg.org/#dom-headers-has
@@ -14642,7 +14657,7 @@ class Headers$5 {
 
     // 2. Return true if this’s header list contains name;
     //    otherwise false.
-    return this[kHeadersList$6].contains(name)
+    return this[kHeadersList$5].contains(name)
   }
 
   // https://fetch.spec.whatwg.org/#dom-headers-set
@@ -14689,7 +14704,7 @@ class Headers$5 {
     // 7. Set (name, value) in this’s header list.
     // 8. If this’s guard is "request-no-cors", then remove
     //    privileged no-CORS request headers from this
-    this[kHeadersList$6].set(name, value);
+    this[kHeadersList$5].set(name, value);
   }
 
   // https://fetch.spec.whatwg.org/#dom-headers-getsetcookie
@@ -14700,7 +14715,7 @@ class Headers$5 {
     // 2. Return the values of all headers in this’s header list whose name is
     //    a byte-case-insensitive match for `Set-Cookie`, in order.
 
-    const list = this[kHeadersList$6].cookies;
+    const list = this[kHeadersList$5].cookies;
 
     if (list) {
       return [...list]
@@ -14711,8 +14726,8 @@ class Headers$5 {
 
   // https://fetch.spec.whatwg.org/#concept-header-list-sort-and-combine
   get [kHeadersSortedMap] () {
-    if (this[kHeadersList$6][kHeadersSortedMap]) {
-      return this[kHeadersList$6][kHeadersSortedMap]
+    if (this[kHeadersList$5][kHeadersSortedMap]) {
+      return this[kHeadersList$5][kHeadersSortedMap]
     }
 
     // 1. Let headers be an empty list of headers with the key being the name
@@ -14721,8 +14736,8 @@ class Headers$5 {
 
     // 2. Let names be the result of convert header names to a sorted-lowercase
     //    set with all the names of the headers in list.
-    const names = [...this[kHeadersList$6]].sort((a, b) => a[0] < b[0] ? -1 : 1);
-    const cookies = this[kHeadersList$6].cookies;
+    const names = [...this[kHeadersList$5]].sort((a, b) => a[0] < b[0] ? -1 : 1);
+    const cookies = this[kHeadersList$5].cookies;
 
     // 3. For each name of names:
     for (let i = 0; i < names.length; ++i) {
@@ -14750,7 +14765,7 @@ class Headers$5 {
       }
     }
 
-    this[kHeadersList$6][kHeadersSortedMap] = headers;
+    this[kHeadersList$5][kHeadersSortedMap] = headers;
 
     // 4. Return headers.
     return headers
@@ -14827,7 +14842,7 @@ class Headers$5 {
   [Symbol.for('nodejs.util.inspect.custom')] () {
     webidl$a.brandCheck(this, Headers$5);
 
-    return this[kHeadersList$6]
+    return this[kHeadersList$5]
   }
 }
 
@@ -14848,6 +14863,9 @@ Object.defineProperties(Headers$5.prototype, {
   [Symbol.toStringTag]: {
     value: 'Headers',
     configurable: true
+  },
+  [util$7.inspect.custom]: {
+    enumerable: false
   }
 });
 
@@ -14896,9 +14914,9 @@ const { webidl: webidl$9 } = webidl_1;
 const { FormData } = formdata;
 const { getGlobalOrigin: getGlobalOrigin$2 } = global$2;
 const { URLSerializer: URLSerializer$3 } = dataURL;
-const { kHeadersList: kHeadersList$5, kConstruct: kConstruct$3 } = symbols$4;
+const { kHeadersList: kHeadersList$4, kConstruct: kConstruct$3 } = symbols$4;
 
-const { types: types$2 } = nodeUtil;
+const { types: types$2 } = util$7;
 
 const ReadableStream$1 = globalThis.ReadableStream || require$$11.ReadableStream;
 const textEncoder = new TextEncoder('utf-8');
@@ -14916,7 +14934,7 @@ class Response$2 {
     const responseObject = new Response$2();
     responseObject[kState$6] = makeNetworkError$1();
     responseObject[kRealm$3] = relevantRealm;
-    responseObject[kHeaders$3][kHeadersList$5] = responseObject[kState$6].headersList;
+    responseObject[kHeaders$3][kHeadersList$4] = responseObject[kState$6].headersList;
     responseObject[kHeaders$3][kGuard$3] = 'immutable';
     responseObject[kHeaders$3][kRealm$3] = relevantRealm;
     return responseObject
@@ -15019,7 +15037,7 @@ class Response$2 {
     // is "response".
     this[kHeaders$3] = new Headers$4(kConstruct$3);
     this[kHeaders$3][kGuard$3] = 'response';
-    this[kHeaders$3][kHeadersList$5] = this[kState$6].headersList;
+    this[kHeaders$3][kHeadersList$4] = this[kState$6].headersList;
     this[kHeaders$3][kRealm$3] = this[kRealm$3];
 
     // 3. Let bodyWithType be null.
@@ -15136,7 +15154,7 @@ class Response$2 {
     const clonedResponseObject = new Response$2();
     clonedResponseObject[kState$6] = clonedResponse;
     clonedResponseObject[kRealm$3] = this[kRealm$3];
-    clonedResponseObject[kHeaders$3][kHeadersList$5] = clonedResponse.headersList;
+    clonedResponseObject[kHeaders$3][kHeadersList$4] = clonedResponse.headersList;
     clonedResponseObject[kHeaders$3][kGuard$3] = this[kHeaders$3][kGuard$3];
     clonedResponseObject[kHeaders$3][kRealm$3] = this[kHeaders$3][kRealm$3];
 
@@ -15471,7 +15489,7 @@ const { kHeaders: kHeaders$2, kSignal, kState: kState$5, kGuard: kGuard$2, kReal
 const { webidl: webidl$8 } = webidl_1;
 const { getGlobalOrigin: getGlobalOrigin$1 } = global$2;
 const { URLSerializer: URLSerializer$2 } = dataURL;
-const { kHeadersList: kHeadersList$4, kConstruct: kConstruct$2 } = symbols$4;
+const { kHeadersList: kHeadersList$3, kConstruct: kConstruct$2 } = symbols$4;
 
 const { getMaxListeners, setMaxListeners, getEventListeners, defaultMaxListeners } = EE;
 
@@ -15841,7 +15859,7 @@ class Request$2 {
     // Realm, whose header list is request’s header list and guard is
     // "request".
     this[kHeaders$2] = new Headers$3(kConstruct$2);
-    this[kHeaders$2][kHeadersList$4] = request.headersList;
+    this[kHeaders$2][kHeadersList$3] = request.headersList;
     this[kHeaders$2][kGuard$2] = 'request';
     this[kHeaders$2][kRealm$2] = this[kRealm$2];
 
@@ -15862,7 +15880,7 @@ class Request$2 {
     // 32. If init is not empty, then:
     if (initHasKey) {
       /** @type {HeadersList} */
-      const headersList = this[kHeaders$2][kHeadersList$4];
+      const headersList = this[kHeaders$2][kHeadersList$3];
       // 1. Let headers be a copy of this’s headers and its associated header
       // list.
       // 2. If init["headers"] exists, then set headers to init["headers"].
@@ -15916,7 +15934,7 @@ class Request$2 {
       // 3, If Content-Type is non-null and this’s headers’s header list does
       // not contain `Content-Type`, then append `Content-Type`/Content-Type to
       // this’s headers.
-      if (contentType && !this[kHeaders$2][kHeadersList$4].contains('content-type')) {
+      if (contentType && !this[kHeaders$2][kHeadersList$3].contains('content-type')) {
         this[kHeaders$2].append('content-type', contentType);
       }
     }
@@ -16171,7 +16189,7 @@ class Request$2 {
     clonedRequestObject[kState$5] = clonedRequest;
     clonedRequestObject[kRealm$2] = this[kRealm$2];
     clonedRequestObject[kHeaders$2] = new Headers$3(kConstruct$2);
-    clonedRequestObject[kHeaders$2][kHeadersList$4] = clonedRequest.headersList;
+    clonedRequestObject[kHeaders$2][kHeadersList$3] = clonedRequest.headersList;
     clonedRequestObject[kHeaders$2][kGuard$2] = this[kHeaders$2][kGuard$2];
     clonedRequestObject[kHeaders$2][kRealm$2] = this[kHeaders$2][kRealm$2];
 
@@ -16439,7 +16457,7 @@ const {
   subresourceSet,
   DOMException: DOMException$3
 } = constants$6;
-const { kHeadersList: kHeadersList$3 } = symbols$4;
+const { kHeadersList: kHeadersList$2 } = symbols$4;
 
 const { Readable, pipeline } = stream$6;
 const { addAbortListener, isErrored, isReadable, nodeMajor, nodeMinor } = util$6;
@@ -16621,7 +16639,7 @@ function fetch (input, init = {}) {
     responseObject = new Response$1();
     responseObject[kState$4] = response;
     responseObject[kRealm$1] = relevantRealm;
-    responseObject[kHeaders$1][kHeadersList$3] = response.headersList;
+    responseObject[kHeaders$1][kHeadersList$2] = response.headersList;
     responseObject[kHeaders$1][kGuard$1] = 'immutable';
     responseObject[kHeaders$1][kRealm$1] = relevantRealm;
 
@@ -17167,7 +17185,7 @@ function schemeFetch (fetchParams) {
     }
     case 'blob:': {
       if (!resolveObjectURL) {
-        resolveObjectURL = require$$0$2.resolveObjectURL;
+        resolveObjectURL = node_buffer.resolveObjectURL;
       }
 
       // 1. Let blobURLEntry be request’s current URL’s blob URL entry.
@@ -18293,7 +18311,7 @@ async function httpNetworkFetch (
                 location = val;
               }
 
-              headers[kHeadersList$3].append(key, val);
+              headers[kHeadersList$2].append(key, val);
             }
           } else {
             const keys = Object.keys(headersList);
@@ -18307,7 +18325,7 @@ async function httpNetworkFetch (
                 location = val;
               }
 
-              headers[kHeadersList$3].append(key, val);
+              headers[kHeadersList$2].append(key, val);
             }
           }
 
@@ -18346,7 +18364,7 @@ async function httpNetworkFetch (
           resolve({
             status,
             statusText,
-            headersList: headers[kHeadersList$3],
+            headersList: headers[kHeadersList$2],
             body: decoders.length
               ? pipeline(this.body, ...decoders, () => { })
               : this.body.on('error', () => {})
@@ -18411,13 +18429,13 @@ async function httpNetworkFetch (
             const key = headersList[n + 0].toString('latin1');
             const val = headersList[n + 1].toString('latin1');
 
-            headers[kHeadersList$3].append(key, val);
+            headers[kHeadersList$2].append(key, val);
           }
 
           resolve({
             status,
             statusText: STATUS_CODES[status],
-            headersList: headers[kHeadersList$3],
+            headersList: headers[kHeadersList$2],
             socket
           });
 
@@ -18821,9 +18839,9 @@ const { ProgressEvent } = progressevent;
 const { getEncoding } = encoding;
 const { DOMException: DOMException$2 } = constants$6;
 const { serializeAMimeType, parseMIMEType } = dataURL;
-const { types: types$1 } = nodeUtil;
+const { types: types$1 } = util$7;
 const { StringDecoder } = string_decoder_1;
-const { btoa: btoa$1 } = require$$0$2;
+const { btoa: btoa$1 } = node_buffer;
 
 /** @type {PropertyDescriptor} */
 const staticPropertyDescriptors$3 = {
@@ -19598,7 +19616,7 @@ var util$2 = {
 const { kConstruct: kConstruct$1 } = symbols$1;
 const { urlEquals, fieldValues: getFieldValues } = util$2;
 const { kEnumerableProperty: kEnumerableProperty$3, isDisturbed } = util$6;
-const { kHeadersList: kHeadersList$2 } = symbols$4;
+const { kHeadersList: kHeadersList$1 } = symbols$4;
 const { webidl: webidl$4 } = webidl_1;
 const { Response, cloneResponse } = response;
 const { Request } = request$1;
@@ -19711,7 +19729,7 @@ class Cache$1 {
       const body = responseObject[kState].body;
       responseObject[kState] = response;
       responseObject[kState].body = body;
-      responseObject[kHeaders][kHeadersList$2] = response.headersList;
+      responseObject[kHeaders][kHeadersList$1] = response.headersList;
       responseObject[kHeaders][kGuard] = 'immutable';
 
       responseList.push(responseObject);
@@ -20150,7 +20168,7 @@ class Cache$1 {
       for (const request of requests) {
         const requestObject = new Request('https://a');
         requestObject[kState] = request;
-        requestObject[kHeaders][kHeadersList$2] = request.headersList;
+        requestObject[kHeaders][kHeadersList$1] = request.headersList;
         requestObject[kHeaders][kGuard] = 'immutable';
         requestObject[kRealm] = request.client;
 
@@ -20586,8 +20604,10 @@ var constants$4 = {
   maxNameValuePairSize: maxNameValuePairSize$1
 };
 
-const { kHeadersList: kHeadersList$1 } = symbols$4;
-
+/**
+ * @param {string} value
+ * @returns {boolean}
+ */
 function isCTLExcludingHtab$1 (value) {
   if (value.length === 0) {
     return false
@@ -20848,31 +20868,13 @@ function stringify$8 (cookie) {
   return out.join('; ')
 }
 
-let kHeadersListNode;
-
-function getHeadersList$1 (headers) {
-  if (headers[kHeadersList$1]) {
-    return headers[kHeadersList$1]
-  }
-
-  if (!kHeadersListNode) {
-    kHeadersListNode = Object.getOwnPropertySymbols(headers).find(
-      (symbol) => symbol.description === 'headers list'
-    );
-
-    assert(kHeadersListNode, 'Headers cannot be parsed');
-  }
-
-  const headersList = headers[kHeadersListNode];
-  assert(headersList);
-
-  return headersList
-}
-
 var util$1 = {
   isCTLExcludingHtab: isCTLExcludingHtab$1,
-  stringify: stringify$8,
-  getHeadersList: getHeadersList$1
+  validateCookieName,
+  validateCookiePath,
+  validateCookieValue,
+  toIMFDate,
+  stringify: stringify$8
 };
 
 const { maxNameValuePairSize, maxAttributeValueSize } = constants$4;
@@ -21192,7 +21194,7 @@ var parse$5 = {
 };
 
 const { parseSetCookie } = parse$5;
-const { stringify: stringify$7, getHeadersList } = util$1;
+const { stringify: stringify$7 } = util$1;
 const { webidl: webidl$2 } = webidl_1;
 const { Headers: Headers$1 } = headers;
 
@@ -21268,14 +21270,13 @@ function getSetCookies (headers) {
 
   webidl$2.brandCheck(headers, Headers$1, { strict: false });
 
-  const cookies = getHeadersList(headers).cookies;
+  const cookies = headers.getSetCookie();
 
   if (!cookies) {
     return []
   }
 
-  // In older versions of undici, cookies is a list of name:value.
-  return cookies.map((pair) => parseSetCookie(Array.isArray(pair) ? pair[1] : pair))
+  return cookies.map((pair) => parseSetCookie(pair))
 }
 
 /**
@@ -21437,7 +21438,7 @@ var symbols = {
 
 const { webidl: webidl$1 } = webidl_1;
 const { kEnumerableProperty: kEnumerableProperty$1 } = util$6;
-const { MessagePort } = require$$0$5;
+const { MessagePort } = require$$0$4;
 
 /**
  * @see https://html.spec.whatwg.org/multipage/comms.html#messageevent
@@ -22660,7 +22661,7 @@ const { WebsocketFrameSend } = frame;
 const { ByteParser } = receiver;
 const { kEnumerableProperty, isBlobLike } = util$6;
 const { getGlobalDispatcher } = global$1;
-const { types } = nodeUtil;
+const { types } = util$7;
 
 let experimentalWarned = false;
 
@@ -30656,8 +30657,7 @@ function createNodeAnchors(doc, prefix) {
     return {
         onAnchor: (source) => {
             aliasObjects.push(source);
-            if (!prevAnchors)
-                prevAnchors = anchorNames(doc);
+            prevAnchors ?? (prevAnchors = anchorNames(doc));
             const anchor = findNewAnchor(prefix, prevAnchors);
             prevAnchors.add(anchor);
             return anchor;
@@ -30851,23 +30851,36 @@ class Alias extends Node.NodeBase {
      * Resolve the value of this alias within `doc`, finding the last
      * instance of the `source` anchor before this node.
      */
-    resolve(doc) {
+    resolve(doc, ctx) {
+        let nodes;
+        if (ctx?.aliasResolveCache) {
+            nodes = ctx.aliasResolveCache;
+        }
+        else {
+            nodes = [];
+            visit_1$2.visit(doc, {
+                Node: (_key, node) => {
+                    if (identity.isAlias(node) || identity.hasAnchor(node))
+                        nodes.push(node);
+                }
+            });
+            if (ctx)
+                ctx.aliasResolveCache = nodes;
+        }
         let found = undefined;
-        visit_1$2.visit(doc, {
-            Node: (_key, node) => {
-                if (node === this)
-                    return visit_1$2.visit.BREAK;
-                if (node.anchor === this.source)
-                    found = node;
-            }
-        });
+        for (const node of nodes) {
+            if (node === this)
+                break;
+            if (node.anchor === this.source)
+                found = node;
+        }
         return found;
     }
     toJSON(_arg, ctx) {
         if (!ctx)
             return { source: this.source };
         const { anchors, doc, maxAliasCount } = ctx;
-        const source = this.resolve(doc);
+        const source = this.resolve(doc, ctx);
         if (!source) {
             const msg = `Unresolved alias (the anchor must be set before the alias): ${this.source}`;
             throw new ReferenceError(msg);
@@ -31000,8 +31013,7 @@ function createNode(value, tagName, ctx) {
     if (aliasDuplicateObjects && value && typeof value === 'object') {
         ref = sourceObjects.get(value);
         if (ref) {
-            if (!ref.anchor)
-                ref.anchor = onAnchor(value);
+            ref.anchor ?? (ref.anchor = onAnchor(value));
             return new Alias_1$1.Alias(ref.anchor);
         }
         else {
@@ -31644,10 +31656,9 @@ function plainString(item, ctx, onComment, onChompKeep) {
         (inFlow && /[[\]{},]/.test(value))) {
         return quotedString(value, ctx);
     }
-    if (!value ||
-        /^[\n\t ,[\]{}#&*!|>'"%@`]|^[?-]$|^[?-][ \t]|[\n:][ \t]|[ \t]\n|[\n\t ]#|[\n\t :]$/.test(value)) {
+    if (/^[\n\t ,[\]{}#&*!|>'"%@`]|^[?-]$|^[?-][ \t]|[\n:][ \t]|[ \t]\n|[\n\t ]#|[\n\t :]$/.test(value)) {
         // not allowed:
-        // - empty string, '-' or '?'
+        // - '-' or '?'
         // - start with an indicator character (except [?:-]) or /[?-] /
         // - '\n ', ': ' or ' \n' anywhere
         // - '#' not preceded by a non-space char
@@ -31796,7 +31807,7 @@ function getTagObject(tags, item) {
         tagObj = tags.find(t => t.nodeClass && obj instanceof t.nodeClass);
     }
     if (!tagObj) {
-        const name = obj?.constructor?.name ?? typeof obj;
+        const name = obj?.constructor?.name ?? (obj === null ? 'null' : typeof obj);
         throw new Error(`Tag not resolved for ${name} value`);
     }
     return tagObj;
@@ -31811,7 +31822,7 @@ function stringifyProps(node, tagObj, { anchors: anchors$1, doc }) {
         anchors$1.add(anchor);
         props.push(`&${anchor}`);
     }
-    const tag = node.tag ? node.tag : tagObj.default ? null : tagObj.tag;
+    const tag = node.tag ?? (tagObj.default ? null : tagObj.tag);
     if (tag)
         props.push(doc.directives.tagString(tag));
     return props.join(' ');
@@ -31837,8 +31848,7 @@ function stringify$6(item, ctx, onComment, onChompKeep) {
     const node = identity.isNode(item)
         ? item
         : ctx.doc.createNode(item, { onTagObj: o => (tagObj = o) });
-    if (!tagObj)
-        tagObj = getTagObject(ctx.doc.schema.tags, node);
+    tagObj ?? (tagObj = getTagObject(ctx.doc.schema.tags, node));
     const props = stringifyProps(node, tagObj, ctx);
     if (props.length > 0)
         ctx.indentAtStart = (ctx.indentAtStart ?? 0) + props.length + 1;
@@ -32136,6 +32146,7 @@ function addPairToJSMap(ctx, map, { key, value }) {
 function stringifyKey(key, jsKey, ctx) {
     if (jsKey === null)
         return '';
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     if (typeof jsKey !== 'object')
         return String(jsKey);
     if (identity.isNode(key) && ctx?.doc) {
@@ -32951,8 +32962,7 @@ const binary = {
         else {
             throw new Error('This environment does not support writing binary tags; either Buffer or btoa is required');
         }
-        if (!type)
-            type = Scalar_1$1.Scalar.BLOCK_LITERAL;
+        type ?? (type = Scalar_1$1.Scalar.BLOCK_LITERAL);
         if (type !== Scalar_1$1.Scalar.QUOTE_DOUBLE) {
             const lineWidth = Math.max(ctx.options.lineWidth - ctx.indent.length, ctx.options.minContentWidth);
             const n = Math.ceil(str.length / lineWidth);
@@ -34204,8 +34214,7 @@ function resolveProps(tokens, { flow, indicator, next, offset, onError, parentIn
                 if (token.source.endsWith(':'))
                     onError(token.offset + token.source.length - 1, 'BAD_ALIAS', 'Anchor ending in : is ambiguous', true);
                 anchor = token;
-                if (start === null)
-                    start = token.offset;
+                start ?? (start = token.offset);
                 atNewline = false;
                 hasSpace = false;
                 reqSpace = true;
@@ -34214,8 +34223,7 @@ function resolveProps(tokens, { flow, indicator, next, offset, onError, parentIn
                 if (tag)
                     onError(token, 'MULTIPLE_TAGS', 'A node can have at most one tag');
                 tag = token;
-                if (start === null)
-                    start = token.offset;
+                start ?? (start = token.offset);
                 atNewline = false;
                 hasSpace = false;
                 reqSpace = true;
@@ -35363,8 +35371,7 @@ var composeScalar_1 = {
 
 function emptyScalarPosition(offset, before, pos) {
     if (before) {
-        if (pos === null)
-            pos = before.length;
+        pos ?? (pos = before.length);
         for (let i = pos - 1; i >= 0; --i) {
             let st = before[i];
             switch (st.type) {
@@ -39245,7 +39252,7 @@ const toRegex = (start, end, options) => {
 };
 
 const rangeError = (...args) => {
-  return new RangeError('Invalid range arguments: ' + nodeUtil.inspect(...args));
+  return new RangeError('Invalid range arguments: ' + util$7.inspect(...args));
 };
 
 const invalidRange = (start, end, options) => {
@@ -42336,7 +42343,7 @@ micromatch.not = (list, patterns, options = {}) => {
 
 micromatch.contains = (str, pattern, options) => {
   if (typeof str !== 'string') {
-    throw new TypeError(`Expected a string: "${nodeUtil.inspect(str)}"`);
+    throw new TypeError(`Expected a string: "${util$7.inspect(str)}"`);
   }
 
   if (Array.isArray(pattern)) {
@@ -42482,7 +42489,7 @@ micromatch.every = (list, patterns, options) => {
 
 micromatch.all = (str, patterns, options) => {
   if (typeof str !== 'string') {
-    throw new TypeError(`Expected a string: "${nodeUtil.inspect(str)}"`);
+    throw new TypeError(`Expected a string: "${util$7.inspect(str)}"`);
   }
 
   return [].concat(patterns).every(p => picomatch(p, options)(str));
@@ -44853,7 +44860,7 @@ function assertPatternsInput$1(input) {
 }
 var out = FastGlob;
 
-const {promisify} = nodeUtil;
+const {promisify} = util$7;
 
 
 async function isType(fsStatType, statsMethodName, filePath) {
@@ -45671,7 +45678,7 @@ const getIsIgnoredPredicate = (files, cwd) => {
 };
 
 const normalizeOptions$1 = (options = {}) => ({
-	cwd: toPath(options.cwd) || node_process.cwd(),
+	cwd: toPath(options.cwd) || process$1.cwd(),
 	suppressErrors: Boolean(options.suppressErrors),
 	deep: typeof options.deep === 'number' ? options.deep : Number.POSITIVE_INFINITY,
 });
