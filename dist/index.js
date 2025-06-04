@@ -46767,7 +46767,12 @@ async function push (octokit, {
     }
     core$1.debug(`${repo}: new tree: ${newTree.sha}`);
     core$1.debug(inspect(newTree));
-    let commitMessage = `chore(template): sync with ${github$1.context.repo.owner}/${github$1.context.repo.repo}`;
+    const prefix = inputs.commitPrefix || 'chore(template): sync with';
+    const suffix = inputs.commitSuffix || '';
+    let commitMessage = `${prefix} ${github$1.context.repo.owner}/${github$1.context.repo.repo}`;
+    if (suffix) {
+      commitMessage += ` ${suffix}`;
+    }
     if (inputs.skipCi === 'true') {
       commitMessage += ' [skip ci]';
     }
@@ -46959,6 +46964,12 @@ const inputs = {
     required: false
   }),
   skipCi: core$1.getInput('skip-ci', {
+    required: false
+  }),
+  commitPrefix: core$1.getInput('commit-prefix', {
+    required: false
+  }),
+  commitSuffix: core$1.getInput('commit-suffix', {
     required: false
   })
 };
