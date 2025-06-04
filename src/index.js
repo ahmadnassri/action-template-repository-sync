@@ -33,7 +33,9 @@ const inputs = {
   token: core.getInput('github-token', { required: true }),
   config: core.getInput('config', { required: false }),
   dry: core.getInput('dry-run', { required: false }),
-  skipCi: core.getInput('skip-ci', { required: false })
+  skipCi: core.getInput('skip-ci', { required: false }),
+  commitPrefix: core.getInput('commit-prefix', { required: false }),
+  commitSuffix: core.getInput('commit-suffix', { required: false })
 }
 
 // error handler
