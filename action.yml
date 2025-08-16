@@ -25,6 +25,16 @@ inputs:
     default: "false"
     required: false
 
+  commit-prefix:
+    description: Prefix for commit message
+    default: "chore(template): sync with"
+    required: false
+
+  commit-suffix:
+    description: Suffix for commit message
+    default: ""
+    required: false
+
 runs:
   using: node20
   main: dist/index.js
