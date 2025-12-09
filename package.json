@@ -26,7 +26,7 @@
     "test:report": "opener coverage/lcov-report/index.html"
   },
   "dependencies": {
-    "@actions/core": "^1.11.1",
+    "@actions/core": "^2.0.0",
     "@actions/github": "^6.0.0",
     "diff": "^5.1.0",
     "globby": "^13.2.2",
