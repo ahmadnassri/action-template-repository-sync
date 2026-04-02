@@ -67,7 +67,12 @@ export default async function (octokit, { changedRepositories, localFiles, input
     core.debug(`${repo}: new tree: ${newTree.sha}`)
     core.debug(inspect(newTree))
 
-    let commitMessage = `chore(template): sync with ${github.context.repo.owner}/${github.context.repo.repo}`
+    const prefix = inputs.commitPrefix || 'chore(template): sync with'
+    const suffix = inputs.commitSuffix || ''
+    let commitMessage = `${prefix} ${github.context.repo.owner}/${github.context.repo.repo}`
+    if (suffix) {
+      commitMessage += ` ${suffix}`
+    }
     if (inputs.skipCi === 'true') {
       commitMessage += ' [skip ci]'
     }
